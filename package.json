@@ -1,5 +1,5 @@
 {
-	"name": "app-template",
+	"name": "pact",
 	"version": "0.1.0",
 	"private": true,
 	"description": "8x monorepo template — Expo mobile app + Next.js marketing site & admin + shared brand + Supabase. Clone, rename @app/* to your project, and build.",
