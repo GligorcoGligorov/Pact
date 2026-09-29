@@ -2,7 +2,7 @@
 
 Durable notes for this play. One line per note. See `AGENTS.md` ("Project memory") for how to write one.
 
-Nothing recorded yet — this is a fresh clone of the template.
+- [trial-local-only](trial-local-only.md) — 8x trial: local only, no CI/store; free Apple ID means no push or Apple sign-in
 
 Worth writing early, once each is decided:
 
