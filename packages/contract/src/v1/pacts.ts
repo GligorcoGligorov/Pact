@@ -291,3 +291,4 @@ export type JoinSource = z.infer<typeof joinSourceSchema>
 export type CheckIn = z.infer<typeof checkInSchema>
 export type CreateCheckInBody = z.infer<typeof createCheckInBody>
 export type Verdict = z.infer<typeof verdictSchema>
+export type MemberState = z.infer<typeof memberStateSchema>

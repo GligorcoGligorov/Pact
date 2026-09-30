@@ -163,11 +163,15 @@ export type CreatePactResult =
 	{ outcome: 'created' | 'existing'; pact: PactRecord } | { outcome: 'conflict' }
 
 export type JoinResult =
-	{ outcome: 'joined' | 'existing'; member: MemberRecord } | { outcome: 'full' | 'left' }
+	| { outcome: 'joined' | 'existing'; member: MemberRecord }
+	| { outcome: 'full' }
+	| { outcome: 'left' }
 
 export type CreateCheckInResult =
 	| { outcome: 'created' | 'existing'; checkIn: CheckInRecord }
-	| { outcome: 'already_checked_in' | 'saver_used' | 'conflict' }
+	| { outcome: 'already_checked_in' }
+	| { outcome: 'saver_used' }
+	| { outcome: 'conflict' }
 
 export function createPactStore(client: PrismaClient, codes: () => string = newInviteCode) {
 	return {
