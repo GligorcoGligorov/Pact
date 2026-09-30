@@ -7,6 +7,7 @@ Durable notes for this play. One line per note. See `AGENTS.md` ("Project memory
 - [no-play-stats-in-trial](no-play-stats-in-trial.md) — no Play Stats API, pulse or 8xsend in the trial; .mcp.json removed
 - [local-replay-on-supabase](local-replay-on-supabase.md) — migration replay runs on the stack's Postgres as supabase_admin, in a throwaway DB
 - [device-build-traps](device-build-traps.md) — free-team entitlements, OTP email template, Xcode 16.2 on macOS 14, CocoaPods
+- [ai-judge-models](ai-judge-models.md) — which vision models the free Gemini/Groq keys can use; how to check safely
 
 Worth writing early, once each is decided:
 

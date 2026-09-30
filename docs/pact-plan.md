@@ -264,8 +264,8 @@ the fallback is the iOS simulator for Thursday).
 - `apps/web/src/server/storage/proofs.ts` (new): proof upload URLs, own-path check, existence
   check, signed read URLs, removal.
 - `apps/web/src/server/ai/judge.ts` (new): a small provider interface with Gemini (a Flash
-  model, `GEMINI_API_KEY`) by default and Groq (Llama 4 Scout, `GROQ_API_KEY`) as the fallback,
-  over `fetch` (changed 2026-10-01 from the Anthropic SDK with Haiku 4.5). A structured
+  model, `GEMINI_API_KEY`) by default and Groq (`GROQ_API_KEY`) as the fallback, over `fetch`
+  (changed 2026-09-30 from the Anthropic SDK with Haiku 4.5). A structured
   verdict, and `not_configured` / `error` / `skipped` (R13–R16). It writes to a minimal
   `ai_usage` table designed here. Tested with a mocked provider.
 - Routes under `apps/web/src/app/api/app/v1/`:

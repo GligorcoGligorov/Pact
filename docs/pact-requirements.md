@@ -33,7 +33,7 @@ the Supabase stack on the developer's Mac.
    `Notification` row, with no enum change.
 6. **The template has no AI call.** Per AGENTS.md, adding one adopts template-web's AI usage
    rule and `ai_usage` table as-is. template-web isn't available to this play, so Pact
-   designs a minimal `ai_usage` table itself (changed 2026-10-01, a recorded deviation).
+   designs a minimal `ai_usage` table itself (changed 2026-09-30, a recorded deviation).
 7. **Events:** the mobile registry has no product events yet, just the `TODO` in
    `apps/mobile/lib/analytics.ts`. `user_activated` has not been assigned to any action.
    PostHog and Play Events are off locally (no keys), so first-party `analytics_events` is the
@@ -116,8 +116,8 @@ day pass in silence. Nobody sees it until the streak is already gone.
 - **R13.** After a check-in is created, it is judged asynchronously. The server downloads the
   photo from storage (never from the request body) and asks a vision model, behind a small
   provider interface, for three things, as structured output: Google Gemini (a Flash model)
-  by default, Groq (Llama 4 Scout) as the fallback (changed 2026-10-01 from Claude Haiku 4.5,
-  to use free providers):
+  by default, Groq as the fallback (changed 2026-09-30 from Claude Haiku 4.5, to use free
+  providers; the models are in docs/pact-status.md):
   - `verdict`: `pass` or `suspicious`, judged on the habit and the challenge,
   - `reason`: one sentence,
   - `caption`: a one-line deadpan comment.
@@ -202,7 +202,7 @@ day pass in silence. Nobody sees it until the streak is already gone.
   It prints the invite code so the developer's real account can join from the phone.
 
 - **R30.** `GEMINI_API_KEY` and `GROQ_API_KEY` are declared in the web env schema and
-  `.env.example` (`check:env`), and are optional (changed 2026-10-01 from `ANTHROPIC_API_KEY`).
+  `.env.example` (`check:env`), and are optional (changed 2026-09-30 from `ANTHROPIC_API_KEY`).
 
 ### The Thursday slice (R-slice)
 
