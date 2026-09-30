@@ -77,6 +77,12 @@ there is no CI in this trial, see [trial-local-only](memory/trial-local-only.md)
 - **Seed:** lives in the web workspace to reuse the day math, writes PNG placeholders (no image
   dependency), and refuses any non-local database or Supabase URL.
 
+**Play Stats, pulse, 8xsend (decided 2026-09-30):** 8x confirmed the trial doesn't need them.
+`.mcp.json` and the setup docs for the two servers are removed; the Play Stats API code stays
+untouched. Events stay registered locally and `check:events` still gates them. Where AGENTS.md,
+the session brief or a skill says to ask `pulse`, skip that step for the trial. See
+[no-play-stats-in-trial](memory/no-play-stats-in-trial.md).
+
 ## Open items
 
 - **`AiUsage` model:** the plan says to adopt it from template-web as-is, but

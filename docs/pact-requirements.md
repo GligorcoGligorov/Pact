@@ -273,7 +273,8 @@ No money moments, since v1 has no payments.
   go; the tables stay until a hand-written migration is worth it).
 - Universal links / deferred deep links (the web page links to the custom scheme and shows
   the code).
-- Play Stats API changes (`pulse` is unavailable; revisit once 8x answers in #help).
+- The Play Stats API and the `pulse` / `8xsend` MCP servers: 8x confirmed in #help that the
+  trial doesn't need them (2026-09-30). The servers are removed; the API's code stays as is.
 
 ## Decisions
 

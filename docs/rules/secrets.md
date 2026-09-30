@@ -11,7 +11,7 @@ kind of place, and it is never a file in git.
 | `apps/web` (server)              | The hosting provider's environment variables (Vercel, per environment); `apps/web/.env.local` on your machine | Source, `.env.example`, a `NEXT_PUBLIC_*` name, a log line, a comment |
 | `apps/mobile` builds and updates | **EAS environment variables** (`eas env:set`, per environment); `apps/mobile/.env.local` on your machine      | `eas.json`, `app.json`, source, an `EXPO_PUBLIC_*` name               |
 | CI                               | GitHub Actions secrets                                                                                        | The workflow file                                                     |
-| Your agent's MCP servers         | Your shell environment (`PULSE_TOKEN`, `EIGHTXSEND_MANAGE_KEY`); `.mcp.json` only references them as `${VAR}` | `.mcp.json`, chat                                                     |
+| Your agent's MCP servers         | Your shell environment; `.mcp.json` only references them as `${VAR}`                                          | `.mcp.json`, chat                                                     |
 | A database migration in CI       | The `production-database` GitHub environment (`PRODUCTION_DATABASE_URL`)                                      | The workflow file, a migration, `run-once.sql`                        |
 
 `.gitignore` ignores the real env files, so they can't land in git: `.env`, `.env.local`,

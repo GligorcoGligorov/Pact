@@ -24,17 +24,6 @@ Committed under `.claude/skills/`, so every clone gets them:
 CI. An agent merges a pull request only when the person explicitly tells it to merge that pull
 request. `ship` runs `local-review` for the gates and `store-review` when the app changed.
 
-## MCP servers
-
-`.mcp.json` wires two. Each reads a token from your shell environment; the tokens are never in
-the repo, and never pasted into a conversation:
-
-- **`pulse`** (`PULSE_TOKEN`): the plays dashboard. `integration_check` audits this play live
-  and names the exact fields it is not sending; `integration_docs` is the current Play Stats
-  API contract (non-negotiable 2). Get a token from the dashboard's **Help → Connect Claude**
-  page.
-- **`8xsend`** (`EIGHTXSEND_MANAGE_KEY`): this play's email automation.
-
 ## Hooks
 
 `.claude/settings.json` configures two hooks and one permission rule:
