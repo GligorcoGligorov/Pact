@@ -424,9 +424,9 @@ export function createPactStore(client: PrismaClient, codes: () => string = newI
 			return count === 1
 		},
 
-		/** How many check-ins the person has, across every pact: 1 means this was their first. */
-		async checkInCount(userId: string): Promise<number> {
-			return client.checkIn.count({ where: { userId } })
+		/** Members who haven't left: two or more make it a group (the activation moment). */
+		async activeMemberCount(pactId: string): Promise<number> {
+			return client.pactMember.count({ where: { pactId, leftDay: null } })
 		}
 	}
 }
