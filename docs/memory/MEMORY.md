@@ -3,6 +3,7 @@
 Durable notes for this play. One line per note. See `AGENTS.md` ("Project memory") for how to write one.
 
 - [trial-local-only](trial-local-only.md) — 8x trial: local only, no CI/store; free Apple ID means no push or Apple sign-in
+- [local-replay-on-supabase](local-replay-on-supabase.md) — migration replay runs on the stack's Postgres as supabase_admin, in a throwaway DB
 
 Worth writing early, once each is decided:
 
