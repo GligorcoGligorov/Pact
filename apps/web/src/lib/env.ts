@@ -62,6 +62,11 @@ const baseSchema = z.object({
 	// Unset falls back to https://dash.8x.social.
 	PLATFORM_BASE_URL: z.string().url().optional().or(z.literal('')),
 
+	// The AI check-in judge (src/server/ai/). Server-only, never NEXT_PUBLIC_. Gemini is
+	// tried first, Groq second; with neither set, every verdict is `not_configured`.
+	GEMINI_API_KEY: z.string().optional(),
+	GROQ_API_KEY: z.string().optional(),
+
 	// Required by cron routes only; an unset secret must not break unrelated pages.
 	CRON_SECRET: z.string().optional(),
 

@@ -3,7 +3,7 @@
 The one "where are we" file. Read it first; update it at the end of every phase.
 Spec: [pact-requirements.md](pact-requirements.md) (R-numbers). Plan: [pact-plan.md](pact-plan.md).
 
-**Last updated:** 2026-09-30, end of Phase 0, on branch `feat/phase-0-device-build` (no CI in
+**Last updated:** 2026-10-01, end of Phase 2, on branch `feat/phase-2-api-ai-judge` (no CI in
 this trial, see [trial-local-only](memory/trial-local-only.md)). Build traps:
 [device-build-traps](memory/device-build-traps.md).
 
@@ -12,16 +12,17 @@ this trial, see [trial-local-only](memory/trial-local-only.md)). Build traps:
 | Phase                              | State    | Notes                                                                                |
 | ---------------------------------- | -------- | ------------------------------------------------------------------------------------ |
 | 0 — Device path                    | done     | On the simulator, from an EAS cloud build. iPhone only if there's time.              |
-| 1 — Events, schema, day math, seed | done     | Except `AiUsage` and `ANTHROPIC_API_KEY`, moved to Phase 2 (see open items).         |
-| 2 — API for the slice              | **next** | Contract, `pactStore`, proofs storage, AI judge, the slice's routes.                 |
-| 3 — Mobile slice                   | –        | **Thursday checkpoint:** R-slice steps 1–6 on the simulator by Thu 2026-10-01 night. |
+| 1 — Events, schema, day math, seed | done     | `AiUsage` and the AI keys moved to Phase 2, and done there.                          |
+| 2 — API for the slice              | done     | All but the eval's 12 real photos (see open items).                                  |
+| 3 — Mobile slice                   | **next** | **Thursday checkpoint:** R-slice steps 1–6 on the simulator by Thu 2026-10-01 night. |
 | 4 — Social loop                    | –        | After the Fri 2026-10-02 feedback call.                                              |
 | 5 — Closer, results, onboarding    | –        |                                                                                      |
 | 6 — Dogfood and gates              | –        |                                                                                      |
 
 ## What exists and where
 
-**Events** (registered, none fired yet; `check:events` warns "never fired" until Phases 2–4):
+**Events** (registered in Phase 1; Phase 2's routes fire `pact_created`, `pact_joined`,
+`check_in_created`, `check_in_judged` and `user_activated`; the rest wait for Phases 3–4):
 
 - `apps/web/src/lib/analytics/events.ts`: `PACT_EVENTS` (recorded server-side by the routes),
   `JOIN_PAGE_EVENTS` (the public join page, via the beacon), `SERVER_ONLY_EVENT_NAMES`.
@@ -33,8 +34,9 @@ this trial, see [trial-local-only](memory/trial-local-only.md)). Build traps:
 
 - `pacts.prisma`: `Pact`, `PactMember`, `CheckIn`, `Nudge`, `CheckInReport` and their enums.
 - `accounts.prisma`: `Profile.aiConsentAt` and the back-relations.
-- Migrations `20260930004416_pact_domain` (generated) and `20260930004417_pact_domain_security`
-  (RLS on, all revoked from `anon` / `authenticated`).
+- `ai.prisma`: `AiUsage` (`ai_usage`), one row per model call, designed here (see Decisions).
+- Migrations `20260930004416_pact_domain`, `20260930200645_ai_usage` (generated) and their
+  `_security` migrations (RLS on, all revoked from `anon` / `authenticated`).
 
 **Day math** (`apps/web/src/lib/pacts/`, pure, no I/O):
 
@@ -60,6 +62,23 @@ this trial, see [trial-local-only](memory/trial-local-only.md)). Build traps:
   scheduling). `apps/mobile/lib/proofPhoto.ts`: the check-in photo; on a simulator in a dev build
   it comes from the library. Settings → Developer (dev builds only): test notification and photo.
 - `supabase/templates/sign-in-code.html`: the sign-in emails carry the six-digit code.
+
+**The slice's API (Phase 2)**, all under `/api/app/v1`, each route with a `route.test.mts`:
+
+- Contract: `packages/contract/src/v1/pacts.ts` (eight endpoints in `endpoints.ts`), `ai_consent`
+  on the profile, and the error codes `pact_full`, `pact_closed`, `not_held`,
+  `already_checked_in`, `saver_used`.
+- `GET`/`POST pacts`, `GET pacts/:id` (the pact, its members, today's board), `GET invites/:code`,
+  `POST invites/:code/join`, `POST pacts/:id/check-ins/upload`, `POST pacts/:id/check-ins`,
+  `GET check-ins/:id` (the verdict poll).
+- `apps/web/src/server/db/pacts.ts` (`pactStore`, with a real-database suite in `pacts.test.mts`),
+  `ai-usage.ts`, and `profiles.ts`'s `hasAiConsent`.
+- `apps/web/src/server/api/pact-wire.ts` (rows → wire, the board), `pact-guards.ts` (held today),
+  `background.ts` (`after()`), `pact-fixtures.mts` (test rows).
+- `apps/web/src/server/storage/proofs.ts`: proof photos under `<user id>/proofs/`.
+- `apps/web/src/server/ai/`: `prompt.ts` (the approved prompt and the answer parser),
+  `providers.ts` (the interface), `gemini.ts`, `groq.ts`, `registry.ts`, `judge.ts`, and
+  `judge.eval.mts` (hand-run, see below).
 
 ## Decisions made in code
 
@@ -98,6 +117,41 @@ localhost through Metro. Nothing else uses EAS: no EAS environment variables, no
 submit. Verified: sign-in as `ana.demo@example.com` with the Mailpit code, and the test local
 notification. The iPhone build stays parked (free Apple ID, iOS 18.5, and the same Xcode limit).
 
+**AI judge on free providers (decided 2026-09-30, replaces R13's Claude Haiku and R30's
+`ANTHROPIC_API_KEY`):** the judge sits behind a small provider interface. Default: Google
+Gemini, a Flash model with image input, via `GEMINI_API_KEY`. Fallback: Groq, via
+`GROQ_API_KEY`. With neither key set the verdict is `not_configured` (R14). Both keys are
+declared in `apps/web/src/lib/env.ts` and `.env.example`, and their values are never read into
+a conversation. The verdict, reason and caption, and every rule in R13–R16, are unchanged.
+Only test photos go to a model.
+
+**The judge's models (decided 2026-10-01):** `gemini-3.8-flash`, because `gemini-2.5-flash`
+is closed to new keys and Google names 3.8 Flash as its replacement; and Groq's
+`qwen/qwen3.8-27b`, because Llama 4 Scout is gone from the key's model list and Qwen answered a
+test image correctly. Both checked against the keys without printing them.
+
+**The judge's behaviour (Phase 2):**
+
+- It runs in `after()`: the check-in answers first, `pending`, and the app polls
+  `GET check-ins/:id`. It never throws and never blocks; every verdict counts (R15).
+- `skipped` for a saver or without AI consent (checked when the check-in is made and again
+  before the photo leaves storage); `not_configured` with no key; `error` when every provider
+  fails. A verdict is written once, only over `pending`.
+- Each provider call writes one `ai_usage` row (provider, model, outcome, error code, tokens,
+  latency). A failure, a timeout (20 s) or an answer that isn't the JSON asked for moves on to
+  the next provider.
+- The prompt was reviewed and approved on 2026-10-01, with four caption examples added for the
+  voice. The habit is fenced as data, with angle brackets stripped.
+- `user_activated` (`first_group_check_in`) fires on a person's first check-in in a pact with
+  two or more active members: first-party once (`dedupeForever`) and to the Play Events API only
+  if it wasn't recorded before.
+- A member who left can't rejoin by code (409 `conflict`); a member joining again gets 200.
+
+**`AiUsage` (decided 2026-09-30, a deviation from AGENTS.md's "adopt template-web's as-is"):**
+`8xsocial/template-web` isn't available, so `ai_usage` is designed here: one row per call, no
+prompt or answer stored, the user and check-in set to null when they are deleted. Adopt
+template-web's whole if it becomes available.
+
 **Play Stats, pulse, 8xsend (decided 2026-09-30):** 8x confirmed the trial doesn't need them.
 `.mcp.json` and the setup docs for the two servers are removed; the Play Stats API code stays
 untouched. Events stay registered locally and `check:events` still gates them. Where AGENTS.md,
@@ -106,13 +160,13 @@ the session brief or a skill says to ask `pulse`, skip that step for the trial. 
 
 ## Open items
 
-- **`AiUsage` model:** the plan says to adopt it from template-web as-is, but
-  `8xsocial/template-web` is private or not visible to this account. Needed before Phase 2's judge
-  writes to `ai_usage`. **Parked (2026-09-30):** the developer is asking 8x in #help on
-  2026-10-01 whether template-web is available. If it isn't by Phase 2, design a minimal
-  `AiUsage` model here and record it below as a deviation from AGENTS.md's "adopt as-is".
-- **`ANTHROPIC_API_KEY` (R30):** not yet declared in `apps/web/src/lib/env.ts` and
-  `apps/web/.env.example`. Do it with Phase 2.
+- **The eval's 12 real photos:** the developer takes them on the iPhone (2026-10-01/02) into
+  `apps/web/eval-photos/<folder>/` with a `labels.json` (see How to run). The 8 synthetic fakes
+  agree 8 of 8; the plan's bar is 16 of 20 with the real ones.
+- **Caption repetition:** "A minimalist approach to…" opened 4 of the 8 synthetic captions. The
+  synthetic images are flat drawings, which invites it; check on the real photos before tuning.
+- **Gemini latency:** up to 15 s on one synthetic photo, against the 20 s per-provider timeout,
+  and three 503s in one run (Groq answered each). Watch `ai_usage` latency and error codes.
 - **`test:db` ran as a superuser** on the local replay, not as CI's non-superuser role.
 
 ## How to run things
@@ -161,6 +215,22 @@ npm run db:migrate
 throwaway `pact_replay` database, then
 `node scripts/generate-migration.mjs --name <name> --db-url "$DATABASE_URL"`, the hand-written
 RLS migration, `prisma migrate diff --exit-code` and `npm run check:rls`.
+
+**The slice end to end** (web server and stack running): sign in two demo accounts with their
+Mailpit codes, then create → preview → join → upload → PUT → check in → poll. Done by hand on
+2026-09-30 with a generated test image: every step answered as specified, `not_configured`
+with no key, and the five first-party events landed.
+
+**The judge's eval** (keys in `apps/web/.env.local`; calls the real APIs, writes nothing):
+
+```bash
+swift apps/web/scripts/eval-synthetic-photos.swift             # the 8 synthetic fakes, once
+npm run eval:judge --workspace=@app/web                        # Gemini, then Groq
+npm run eval:judge --workspace=@app/web -- --provider=groq     # one provider alone
+```
+
+Every folder in `apps/web/eval-photos/` (gitignored) with a `labels.json` is read. Each label:
+`{ "file", "habit", "challenge", "expected": "pass" | "suspicious", "why" }`.
 
 **Day math tests alone:**
 

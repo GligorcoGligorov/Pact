@@ -10,6 +10,21 @@ import {
 	listItemsResponse
 } from './items'
 import { listNotificationsQuery, listNotificationsResponse } from './notifications'
+import {
+	checkInParams,
+	checkInResponse,
+	createCheckInBody,
+	createCheckInUploadBody,
+	createPactBody,
+	inviteParams,
+	inviteResponse,
+	joinPactBody,
+	joinPactResponse,
+	listPactsResponse,
+	pactDetailResponse,
+	pactParams,
+	pactResponse
+} from './pacts'
 import { profileResponse, updateProfileBody } from './profile'
 import { createTaskBody, listTasksQuery, listTasksResponse, taskResponse } from './tasks'
 import { createUploadBody, createUploadResponse } from './uploads'
@@ -127,6 +142,72 @@ export const endpoints = {
 		body: createUploadBody,
 		response: createUploadResponse,
 		status: 201
+	},
+	listPacts: {
+		method: 'GET',
+		path: '/api/app/v1/pacts',
+		auth: 'user',
+		response: listPactsResponse,
+		status: 200
+	},
+	createPact: {
+		method: 'POST',
+		path: '/api/app/v1/pacts',
+		auth: 'user',
+		body: createPactBody,
+		response: pactResponse,
+		status: 201
+	},
+	getPact: {
+		method: 'GET',
+		path: '/api/app/v1/pacts/:id',
+		auth: 'user',
+		params: pactParams,
+		response: pactDetailResponse,
+		status: 200
+	},
+	getInvite: {
+		method: 'GET',
+		path: '/api/app/v1/invites/:code',
+		auth: 'user',
+		params: inviteParams,
+		response: inviteResponse,
+		status: 200
+	},
+	joinPact: {
+		method: 'POST',
+		path: '/api/app/v1/invites/:code/join',
+		auth: 'user',
+		params: inviteParams,
+		body: joinPactBody,
+		response: joinPactResponse,
+		status: 201
+	},
+	createCheckInUpload: {
+		method: 'POST',
+		path: '/api/app/v1/pacts/:id/check-ins/upload',
+		auth: 'user',
+		params: pactParams,
+		body: createCheckInUploadBody,
+		response: createUploadResponse,
+		status: 201
+	},
+	createCheckIn: {
+		method: 'POST',
+		path: '/api/app/v1/pacts/:id/check-ins',
+		auth: 'user',
+		params: pactParams,
+		body: createCheckInBody,
+		response: checkInResponse,
+		status: 201
+	},
+	getCheckIn: {
+		method: 'GET',
+		path: '/api/app/v1/check-ins/:id',
+		auth: 'user',
+		params: checkInParams,
+		response: checkInResponse,
+		status: 200
 	}
 } as const satisfies Record<string, Endpoint>
 

@@ -27,6 +27,8 @@ export const profileSchema = z.object({
 	plan: planSchema,
 	locale: z.string().nullable(),
 	marketing_consent: z.boolean(),
+	/** R16: whether check-in photos may go to the AI judge. Asked before the first check-in. */
+	ai_consent: z.boolean(),
 	created_at: isoDateTime.nullable()
 })
 
@@ -38,6 +40,8 @@ export const updateProfileBody = z
 		display_name: z.string().trim().min(1).max(DISPLAY_NAME_MAX).nullable().optional(),
 		locale: localeSchema.nullable().optional(),
 		marketing_consent: z.boolean().optional(),
+		/** R16: true once the person agrees; false withdraws it. */
+		ai_consent: z.boolean().optional(),
 		/** From POST /api/app/v1/uploads. null removes the avatar. */
 		avatar_path: avatarPathSchema.nullable().optional()
 	})

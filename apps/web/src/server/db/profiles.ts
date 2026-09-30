@@ -39,13 +39,15 @@ export type AppProfile = {
 	planType: string
 	locale: string | null
 	marketingConsent: boolean
+	/** R16: when the person agreed to the AI judge seeing their check-in photos; null if not. */
+	aiConsentAt: Date | null
 	createdAt: Date | null
 }
 
 /**
  * What a person may change about their own profile, from PATCH /api/app/v1/profile, and
  * nothing else. Money (see the note at the top): no field here reaches plan_type, premium_*,
- * is_admin, region or last_seen_at, and `updateOwnSettings` copies these four by name, so an
+ * is_admin, region or last_seen_at, and `updateOwnSettings` copies these five by name, so an
  * object carrying more writes no more. undefined leaves a field as it is; null clears it.
  */
 export type OwnSettings = {
@@ -53,6 +55,8 @@ export type OwnSettings = {
 	avatarUrl?: string | null
 	locale?: string | null
 	marketingConsent?: boolean
+	/** true keeps the first time they agreed; false withdraws it. */
+	aiConsent?: boolean
 }
 
 /** What the RevenueCat webhook writes. Money: see the note at the top. */
@@ -103,6 +107,7 @@ const APP_PROFILE = {
 	planType: true,
 	locale: true,
 	marketingConsent: true,
+	aiConsentAt: true,
 	createdAt: true
 } as const satisfies Prisma.ProfileSelect
 
@@ -118,6 +123,15 @@ export function createProfileStore(client: PrismaClient) {
 					data: { marketingConsent: settings.marketingConsent }
 				})
 				consentChanged = count > 0
+			}
+			if (settings.aiConsent !== undefined) {
+				// Agreeing again keeps the first time they agreed.
+				await tx.profile.updateMany({
+					where: settings.aiConsent
+						? { id: userId, aiConsentAt: null }
+						: { id: userId, aiConsentAt: { not: null } },
+					data: { aiConsentAt: settings.aiConsent ? new Date() : null }
+				})
 			}
 			const profile = await tx.profile.update({
 				where: { id: userId },
@@ -167,6 +181,15 @@ export function createProfileStore(client: PrismaClient) {
 				where: { id: userId },
 				data: { lastSeenAt: seenAt, ...(region ? { region } : {}) }
 			})
+		},
+
+		/** R16: whether the person has agreed to the AI judge seeing their check-in photos. */
+		async hasAiConsent(userId: string): Promise<boolean> {
+			const row = await client.profile.findUnique({
+				where: { id: userId },
+				select: { aiConsentAt: true }
+			})
+			return !!row?.aiConsentAt
 		},
 
 		/** The person's own profile. Null when the signup trigger never made one. */

@@ -32,7 +32,8 @@ the Supabase stack on the developer's Mac.
    `GET /api/app/v1/notifications` route, and the Activity tab already reads it. A nudge is a
    `Notification` row, with no enum change.
 6. **The template has no AI call.** Per AGENTS.md, adding one adopts template-web's AI usage
-   rule and `ai_usage` table as-is.
+   rule and `ai_usage` table as-is. template-web isn't available to this play, so Pact
+   designs a minimal `ai_usage` table itself (changed 2026-09-30, a recorded deviation).
 7. **Events:** the mobile registry has no product events yet, just the `TODO` in
    `apps/mobile/lib/analytics.ts`. `user_activated` has not been assigned to any action.
    PostHog and Play Events are off locally (no keys), so first-party `analytics_events` is the
@@ -113,13 +114,15 @@ day pass in silence. Nobody sees it until the streak is already gone.
   device uploads it to a signed URL under its own `<user id>/proofs/` folder. The server
   accepts only a path in that folder that exists in storage.
 - **R13.** After a check-in is created, it is judged asynchronously. The server downloads the
-  photo from storage (never from the request body) and asks Claude Haiku 4.5
-  (`claude-haiku-4-5-20251001`) for three things, as structured output:
+  photo from storage (never from the request body) and asks a vision model, behind a small
+  provider interface, for three things, as structured output: Google Gemini (a Flash model)
+  by default, Groq as the fallback (changed 2026-09-30 from Claude Haiku 4.5, to use free
+  providers; the models are in docs/pact-status.md):
   - `verdict`: `pass` or `suspicious`, judged on the habit and the challenge,
   - `reason`: one sentence,
   - `caption`: a one-line deadpan comment.
-- **R14.** When the AI call fails, the verdict is `error`. When `ANTHROPIC_API_KEY` is unset,
-  the verdict is `not_configured` and the app shows "AI judge not configured". Nothing throws.
+- **R14.** When the AI call fails, the verdict is `error`. When neither `GEMINI_API_KEY` nor
+  `GROQ_API_KEY` is set, the verdict is `not_configured` and the app shows "AI judge not configured". Nothing throws.
 - **R15.** Every verdict counts as a check-in. **The AI advises; it never fails anyone.** A
   `suspicious` check-in shows its flag and the AI's reason to the whole group.
 - **R16.** The first time a person checks in, the app asks for consent before the photo is
@@ -198,8 +201,8 @@ day pass in silence. Nobody sees it until the streak is already gone.
 
   It prints the invite code so the developer's real account can join from the phone.
 
-- **R30.** `ANTHROPIC_API_KEY` is declared in the web env schema and `.env.example`
-  (`check:env`), and is optional.
+- **R30.** `GEMINI_API_KEY` and `GROQ_API_KEY` are declared in the web env schema and
+  `.env.example` (`check:env`), and are optional (changed 2026-09-30 from `ANTHROPIC_API_KEY`).
 
 ### The Thursday slice (R-slice)
 

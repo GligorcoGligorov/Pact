@@ -31,7 +31,18 @@ export const ERROR_CODES = {
 	conflict: 409,
 	internal: 500,
 	unavailable: 503,
-	not_configured: 503
+	not_configured: 503,
+	// Pacts: each a 409 the app words differently (docs/pact-requirements.md).
+	/** R4: the pact already has its maximum of active members. */
+	pact_full: 409,
+	/** R5, R6: cancelled, completed, or on its end day: a join would hold them to no day. */
+	pact_closed: 409,
+	/** R11: the pact isn't active today, or the caller isn't held today. */
+	not_held: 409,
+	/** R11: one check-in per member per pact-day. */
+	already_checked_in: 409,
+	/** R17: the member's one saver in this pact is used. */
+	saver_used: 409
 } as const
 
 export type ErrorCode = keyof typeof ERROR_CODES

@@ -116,6 +116,7 @@ describe('requests', () => {
 					plan: 'free',
 					locale: null,
 					marketing_consent: false,
+					ai_consent: false,
 					created_at: null
 				}
 			})

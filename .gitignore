@@ -16,6 +16,8 @@ out/
 # Native build artifacts
 apps/mobile/ios/
 apps/mobile/android/
+# The AI judge's eval photos (apps/web/src/server/ai/judge.eval.mts): local only, never committed.
+apps/web/eval-photos/
 ios/Pods/
 ios/build/
 android/.gradle/
