@@ -258,6 +258,8 @@ app's first-party and Play Events moments are emitted by the web routes it calls
 
 ## Project memory
 
+**Read `docs/pact-status.md` first; update it at the end of every phase.**
+
 Durable notes live in **`docs/memory/`**: the context that isn't derivable from the code or git
 history. Build environments, release state, monetization decisions, launch history, known
 traps.
