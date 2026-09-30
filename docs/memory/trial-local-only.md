@@ -17,6 +17,12 @@ simulator; the demo video is recorded from it. The developer unplugged the iPhon
 preparing it made the Mac unusable. Check-ins on the simulator use the dev-only photo-library
 fallback (`apps/mobile/lib/proofPhoto.ts`). Retry the device build only if there's time.
 
+**EAS Build, for the binary only (decided 2026-09-30):** Expo SDK 55 can't compile on this Mac
+(see [[device-build-traps]]), so the simulator app is built in the cloud with
+`eas build --profile simulator --platform ios` under `gligorcos-team`. It runs against localhost
+through Metro. No EAS environment variables, updates or submits: the "no Expo/EAS environments"
+rule still holds for everything else.
+
 **Why:** the trial is judged on the product loop, not on release engineering.
 
 **How to apply:**

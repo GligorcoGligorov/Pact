@@ -16,6 +16,13 @@ Found in Phase 0 (2026-09-30). Each one cost time once; don't rediscover them.
   digits, so `supabase/config.toml` points the `confirmation` and `magic_link` templates at
   `supabase/templates/sign-in-code.html` (`{{ .Token }}`). A config change needs
   `supabase stop && supabase start`.
+- **Expo SDK 55 does not compile with Xcode 16.2 (found 2026-09-30).** `expo-modules-core` uses
+  isolated conformances (`@MainActor AnyExpoSwiftUIHostingView`), a Swift 6.2 feature; Xcode
+  16.2 has Swift 6.0.3 and fails with `unknown attribute 'MainActor'`. Swift 6.2 is Xcode 26,
+  which needs macOS 15.6+. This blocks every local iOS build, simulator and device alike. The
+  way round it: an EAS cloud build, `--profile simulator`, installed with `xcrun simctl install`.
+  The first Metro bundle takes about 40 s and the dev client times out first ("Error loading
+  app"): tap OK and reload.
 - **This Mac is macOS 14 (Sonoma) with Xcode 16.2.** Xcode 16.3+ needs macOS 15, so a newer
   Xcode for iOS 18.5 means an OS upgrade first. Not worth it before a demo: use the simulator.
 - **CocoaPods: don't let Expo install it.** System Ruby 2.6 can't: its native extensions don't

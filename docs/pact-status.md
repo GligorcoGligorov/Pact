@@ -3,21 +3,21 @@
 The one "where are we" file. Read it first; update it at the end of every phase.
 Spec: [pact-requirements.md](pact-requirements.md) (R-numbers). Plan: [pact-plan.md](pact-plan.md).
 
-**Last updated:** 2026-09-30, Phase 0 in progress, on branch `feat/phase-0-device-build` (no CI
-in this trial, see [trial-local-only](memory/trial-local-only.md)). Build traps:
+**Last updated:** 2026-09-30, end of Phase 0, on branch `feat/phase-0-device-build` (no CI in
+this trial, see [trial-local-only](memory/trial-local-only.md)). Build traps:
 [device-build-traps](memory/device-build-traps.md).
 
 ## Phases
 
-| Phase                              | State           | Notes                                                                                |
-| ---------------------------------- | --------------- | ------------------------------------------------------------------------------------ |
-| 0 — Device path                    | **in progress** | Simulator only (decided 2026-09-30); iPhone retried later only if there's time.      |
-| 1 — Events, schema, day math, seed | done            | Except `AiUsage` and `ANTHROPIC_API_KEY`, moved to Phase 2 (see open items).         |
-| 2 — API for the slice              | next            | After Phase 0. Contract, `pactStore`, proofs storage, AI judge, the slice's routes.  |
-| 3 — Mobile slice                   | –               | **Thursday checkpoint:** R-slice steps 1–6 on the simulator by Thu 2026-10-01 night. |
-| 4 — Social loop                    | –               | After the Fri 2026-10-02 feedback call.                                              |
-| 5 — Closer, results, onboarding    | –               |                                                                                      |
-| 6 — Dogfood and gates              | –               |                                                                                      |
+| Phase                              | State    | Notes                                                                                |
+| ---------------------------------- | -------- | ------------------------------------------------------------------------------------ |
+| 0 — Device path                    | done     | On the simulator, from an EAS cloud build. iPhone only if there's time.              |
+| 1 — Events, schema, day math, seed | done     | Except `AiUsage` and `ANTHROPIC_API_KEY`, moved to Phase 2 (see open items).         |
+| 2 — API for the slice              | **next** | Contract, `pactStore`, proofs storage, AI judge, the slice's routes.                 |
+| 3 — Mobile slice                   | –        | **Thursday checkpoint:** R-slice steps 1–6 on the simulator by Thu 2026-10-01 night. |
+| 4 — Social loop                    | –        | After the Fri 2026-10-02 feedback call.                                              |
+| 5 — Closer, results, onboarding    | –        |                                                                                      |
+| 6 — Dogfood and gates              | –        |                                                                                      |
 
 ## What exists and where
 
@@ -47,6 +47,19 @@ in this trial, see [trial-local-only](memory/trial-local-only.md)). Build traps:
 - Tests: `day.test.mts`, `progress.test.mts` (run in `npm test`).
 
 **Seed:** `apps/web/scripts/seed-demo.ts`, run with `npm run seed:demo` (root or web workspace).
+
+**App config and device path (Phase 0):**
+
+- `apps/mobile/app.json`: Pact, `pact://`, `com.gligorcogligorov.pact`, the camera purpose
+  string, no microphone, `expo-notifications`; owner `gligorcos-team`, EAS project
+  `@gligorcos-team/pact` (`62e729af-e435-45b2-9c49-50f2361ad44f`).
+- `apps/mobile/app.config.ts`: `PACT_LOCAL_SIGNING=1` drops the push and Apple sign-in
+  entitlements (a free Apple ID can't sign them).
+- `apps/mobile/eas.json`: the `simulator` profile (dev client, `ios.simulator`, local signing).
+- `apps/mobile/lib/notifications.ts`: local notifications (permission, foreground handler,
+  scheduling). `apps/mobile/lib/proofPhoto.ts`: the check-in photo; on a simulator in a dev build
+  it comes from the library. Settings → Developer (dev builds only): test notification and photo.
+- `supabase/templates/sign-in-code.html`: the sign-in emails carry the six-digit code.
 
 ## Decisions made in code
 
@@ -78,6 +91,13 @@ in this trial, see [trial-local-only](memory/trial-local-only.md)). Build traps:
 - **Seed:** lives in the web workspace to reuse the day math, writes PNG placeholders (no image
   dependency), and refuses any non-local database or Supabase URL.
 
+**Phase 0 (decided 2026-09-30):** the trial runs on the **iOS simulator**; the demo video is
+recorded from it. Expo SDK 55 needs Xcode 26 (Swift 6.2) and this Mac has Xcode 16.2 on macOS
+14.5, so the app is built by **EAS in the cloud** (`--profile simulator`) and runs against
+localhost through Metro. Nothing else uses EAS: no EAS environment variables, no updates, no
+submit. Verified: sign-in as `ana.demo@example.com` with the Mailpit code, and the test local
+notification. The iPhone build stays parked (free Apple ID, iOS 18.5, and the same Xcode limit).
+
 **Play Stats, pulse, 8xsend (decided 2026-09-30):** 8x confirmed the trial doesn't need them.
 `.mcp.json` and the setup docs for the two servers are removed; the Play Stats API code stays
 untouched. Events stay registered locally and `check:events` still gates them. Where AGENTS.md,
@@ -93,49 +113,30 @@ the session brief or a skill says to ask `pulse`, skip that step for the trial. 
   `AiUsage` model here and record it below as a deviation from AGENTS.md's "adopt as-is".
 - **`ANTHROPIC_API_KEY` (R30):** not yet declared in `apps/web/src/lib/env.ts` and
   `apps/web/.env.example`. Do it with Phase 2.
-- **Phase 0 (2026-09-30, branch `feat/phase-0-device-build`), simulator only.** 8x: localhost
-  only, no Vercel, hosted Supabase or EAS; judged from a demo video plus a live demo. The iPhone
-  was unplugged (Xcode preparing it made the Mac unusable); retry it only if there's time.
-  - **Done and committed:** `app.json` (Pact, `pact://`, `com.gligorcogligorov.pact`, camera
-    string, no microphone, Android `CAMERA`, `expo-notifications`); `app.config.ts`
-    (`PACT_LOCAL_SIGNING=1` strips the push and Apple sign-in entitlements, verified with
-    `expo config --type introspect`); `lib/notifications.ts`; `lib/proofPhoto.ts` (dev build on a
-    simulator: photo library instead of camera); a dev-only Settings → Developer section (test
-    notification, test proof photo); the OTP email templates (the stack sent a link, no code);
-    ENV_SETUP.md "Running Pact locally"; [device-build-traps](memory/device-build-traps.md).
-  - **Done, not committed (gitignored):** `apps/web/.env.local`, `apps/mobile/.env.local`, from
-    `supabase status`, LAN IP `192.168.1.215`.
-  - **Mac tooling installed:** Ruby 3.3.12 in `~/.rubies/ruby-3.3.12` with CocoaPods 1.17.0;
-    Homebrew `ruby-build`; Xcode's iOS platform (simulator runtime iOS 18.3.1).
-  - **Verified:** web and Supabase answer on the LAN IP; `seed:demo` runs from `.env.local`;
-    over the LAN, the app's own calls: OTP request → code in Mailpit ("Your Pact sign-in code") →
-    verify 200 → `GET /api/app/v1/profile` with the bearer token, 200. Mobile typecheck and lint
-    of the changed files.
-  - **Where it stopped:** the simulator build (iPhone 16 Pro, iOS 18.1,
-    `D6BC6750-90CB-4971-90AA-AA4448444181`) was compiling the pods with 0 errors when it was
-    stopped for a Mac restart. `pod install` had succeeded; `apps/mobile/ios/` exists (gitignored).
-  - **Not yet verified:** the app launching, sign-in inside the app, the test notification.
-  - **"See the seeded demo pact" in the app needs Phase 2's route and Phase 3's screen.** In
-    Phase 0 the seed is verified in the database only.
-  - **After the restart, to finish Phase 0:**
-
-    ```bash
-    supabase start                                  # the repo root; the stack stops on restart
-    npm run web:dev                                 # terminal 1, keep it running
-    ipconfig getifaddr en0                          # still 192.168.1.215? else update the 3 LAN URLs
-    cd apps/mobile                                  # terminal 2
-    PATH="$HOME/.rubies/ruby-3.3.12/bin:$PATH" LANG=en_US.UTF-8 PACT_LOCAL_SIGNING=1 \
-      SENTRY_DISABLE_AUTO_UPLOAD=true npx expo run:ios --device "iPhone 16 Pro"
-    ```
-
-    The first build compiles everything again (Xcode keeps some of it in DerivedData). Then in
-    the simulator: sign in as `ana.demo@example.com` with the code from Mailpit
-    (<http://127.0.0.1:55324>); Settings → Developer → Test notification → Allow; it shows 10 s
-    later. Then set Phase 0 to done here.
-
 - **`test:db` ran as a superuser** on the local replay, not as CI's non-superuser role.
 
 ## How to run things
+
+**The app on the simulator** (local stack running):
+
+```bash
+npm run web:dev                                    # terminal 1
+cd apps/mobile && npx expo start --dev-client      # terminal 2, then press i
+```
+
+Pact must already be installed on the simulator. The first bundle takes about 40 s; if the app
+says "Error loading app", tap OK and reload. If `ipconfig getifaddr en0` is no longer
+`192.168.1.215`, update the three LAN URLs in the `.env.local` files and start Metro with
+`--clear`.
+
+**A new app build**, only after a native change (a dependency with native code, `app.json`,
+`app.config.ts`):
+
+```bash
+cd apps/mobile && npx eas-cli@latest build --profile simulator --platform ios
+# download the .app from the build page, then:
+xcrun simctl install booted Pact.app
+```
 
 **Demo seed** (local stack running, its database migrated). Once `apps/web/.env.local` exists,
 `npm run seed:demo` reads it. Until then, pass the stack's values:
