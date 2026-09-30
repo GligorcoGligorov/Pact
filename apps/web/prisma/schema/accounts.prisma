@@ -61,6 +61,7 @@ model Profile {
   nudgesSent         Nudge[]             @relation("nudgesSent")
   nudgesReceived     Nudge[]             @relation("nudgesReceived")
   checkInReports     CheckInReport[]
+  aiUsage            AiUsage[]
 
   @@index([createdAt])
   @@index([lastSeenAt], map: "profiles_last_seen_idx")

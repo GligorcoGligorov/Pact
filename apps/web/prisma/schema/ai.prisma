@@ -1,0 +1,40 @@
+// One row per call to an AI model: what was asked of which provider, how it went, what it
+// cost in tokens and time. Designed for Pact because template-web's `ai_usage` isn't available
+// to this play (docs/pact-status.md, a recorded deviation from AGENTS.md's "adopt as-is").
+// Nothing the model saw or said is stored here: the verdict lives on the check-in.
+//
+// Written by server code only (src/server/ai/). RLS on, no policies, nothing granted to the
+// API roles, like every table (the security migration beside the generated one).
+
+model AiUsage {
+  id           String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  /// Whose request it served. Kept, as null, when the account is deleted: the usage happened.
+  userId       String?        @map("user_id") @db.Uuid
+  /// What the call was for, e.g. `check_in_judge`.
+  feature      String
+  /// `gemini` or `groq`.
+  provider     String
+  model        String
+  outcome      AiUsageOutcome
+  /// A short, internal reason when `outcome` is `error` (never shown to a person).
+  errorCode    String?        @map("error_code")
+  inputTokens  Int?           @map("input_tokens")
+  outputTokens Int?           @map("output_tokens")
+  latencyMs    Int            @map("latency_ms")
+  checkInId    String?        @map("check_in_id") @db.Uuid
+  createdAt    DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  profile      Profile?       @relation(fields: [userId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  checkIn      CheckIn?       @relation(fields: [checkInId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+
+  @@index([createdAt])
+  @@index([userId])
+  @@index([checkInId])
+  @@map("ai_usage")
+}
+
+enum AiUsageOutcome {
+  ok
+  error
+
+  @@map("ai_usage_outcome")
+}

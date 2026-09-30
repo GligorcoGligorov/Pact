@@ -89,6 +89,7 @@ model CheckIn {
   createdAt      DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
   member         PactMember      @relation(fields: [pactId, userId], references: [pactId, userId], onDelete: Cascade, onUpdate: NoAction)
   reports        CheckInReport[]
+  aiUsage        AiUsage[]
 
   @@unique([pactId, userId, day])
   @@index([pactId, day])
