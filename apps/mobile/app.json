@@ -1,17 +1,21 @@
 {
 	"expo": {
-		"name": "MyApp",
-		"slug": "my-app",
+		"name": "Pact",
+		"slug": "pact",
 		"version": "1.0.0",
-		"runtimeVersion": { "policy": "fingerprint" },
+		"runtimeVersion": {
+			"policy": "fingerprint"
+		},
 		"updates": {
 			"url": "https://u.expo.dev/REPLACE_WITH_YOUR_EAS_PROJECT_ID",
 			"checkAutomatically": "ON_LOAD",
 			"fallbackToCacheTimeout": 0,
-			"requestHeaders": { "expo-channel-name": "production" }
+			"requestHeaders": {
+				"expo-channel-name": "production"
+			}
 		},
 		"orientation": "portrait",
-		"scheme": "myapp",
+		"scheme": "pact",
 		"icon": "./assets/icon.png",
 		"userInterfaceStyle": "automatic",
 		"splash": {
@@ -21,7 +25,7 @@
 		},
 		"ios": {
 			"supportsTablet": false,
-			"bundleIdentifier": "com.yourcompany.myapp",
+			"bundleIdentifier": "com.gligorcogligorov.pact",
 			"usesAppleSignIn": true,
 			"privacyManifests": {
 				"NSPrivacyAccessedAPITypes": [
@@ -45,7 +49,7 @@
 			}
 		},
 		"android": {
-			"package": "com.yourcompany.myapp",
+			"package": "com.gligorcogligorov.pact",
 			"adaptiveIcon": {
 				"foregroundImage": "./assets/icon.png",
 				"backgroundColor": "#090f1e"
@@ -54,7 +58,6 @@
 			"blockedPermissions": [
 				"android.permission.READ_EXTERNAL_STORAGE",
 				"android.permission.WRITE_EXTERNAL_STORAGE",
-				"android.permission.CAMERA",
 				"android.permission.RECORD_AUDIO"
 			],
 			"androidStatusBar": {
@@ -67,7 +70,11 @@
 				{
 					"action": "VIEW",
 					"autoVerify": true,
-					"data": [{ "scheme": "myapp" }],
+					"data": [
+						{
+							"scheme": "pact"
+						}
+					],
 					"category": ["BROWSABLE", "DEFAULT"]
 				}
 			]
@@ -91,12 +98,12 @@
 			[
 				"expo-image-picker",
 				{
-					"//": "🎨 REPLACE: say what YOUR app does with photos, the camera and the microphone, with an example (Apple 5.1.1). iOS keeps all three strings: the picker's code can ask for each. Android declares only what the app uses: picking photos needs no permission (the system photo picker), so storage stays blocked; unblock CAMERA (and RECORD_AUDIO for video) in android.blockedPermissions when a screen calls launchCameraAsync.",
-					"photosPermission": "$(PRODUCT_NAME) opens your photo library when you pick a photo to upload, like a profile picture. Only the photos you pick are shared with the app.",
-					"cameraPermission": "$(PRODUCT_NAME) uses your camera when you choose to take a photo to upload, like a profile picture.",
-					"microphonePermission": "$(PRODUCT_NAME) records sound only while you film a video to upload."
+					"photosPermission": "$(PRODUCT_NAME) opens your photo library only when you choose a photo yourself, like a new profile picture. Only the photos you pick are shared with the app.",
+					"cameraPermission": "$(PRODUCT_NAME) uses your camera to take the photo that proves today’s check-in, for example your running shoes after a run. Your pact sees the photo.",
+					"microphonePermission": false
 				}
 			],
+			["expo-notifications", {}],
 			"expo-localization",
 			"expo-font",
 			[
