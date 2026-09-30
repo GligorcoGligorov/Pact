@@ -6,7 +6,8 @@ import { profileStore } from '@/server/db/profiles'
 import { log } from '@/server/lib/logger'
 import { downloadProof } from '@/server/storage/proofs'
 import { JUDGE_SYSTEM_PROMPT, judgeUserPrompt, parseJudgeAnswer } from './prompt'
-import { configuredProviders, ProviderError, type VisionProvider } from './providers'
+import { ProviderError, type VisionProvider } from './providers'
+import { configuredProviders } from './registry'
 
 // The AI judge (R13–R16): one check-in's photo → a verdict, a reason and a caption.
 //

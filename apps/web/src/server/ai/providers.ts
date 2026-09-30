@@ -37,11 +37,40 @@ export class ProviderError extends Error {
 }
 
 /**
- * The providers that have a key, in the order the judge tries them: Gemini, then Groq. Empty
- * means no AI is configured, and every check-in's verdict is `not_configured` (R14).
- *
- * None yet: the Gemini and Groq calls land once the prompt in ./prompt is agreed.
+ * POSTs JSON and returns the parsed answer, turning every way it can fail into a
+ * ProviderError with a short code: `timeout`, `network`, `http_<status>` or `bad_json`. The
+ * response body of a failure is not kept: it can echo the request, photo included.
  */
-export function configuredProviders(): VisionProvider[] {
-	return []
+export async function postJson(
+	url: string,
+	headers: Record<string, string>,
+	body: unknown,
+	signal: AbortSignal
+): Promise<unknown> {
+	let res: Response
+	try {
+		res = await fetch(url, {
+			method: 'POST',
+			headers: { 'content-type': 'application/json', ...headers },
+			body: JSON.stringify(body),
+			signal
+		})
+	} catch (err) {
+		const aborted =
+			err instanceof Error && (err.name === 'TimeoutError' || err.name === 'AbortError')
+		throw new ProviderError(aborted ? 'timeout' : 'network', 'the provider did not answer', {
+			cause: err
+		})
+	}
+	if (!res.ok) {
+		await res.body?.cancel()
+		throw new ProviderError(`http_${res.status}`, `the provider answered ${res.status}`)
+	}
+	try {
+		return await res.json()
+	} catch (err) {
+		throw new ProviderError('bad_json', 'the provider answered something that is not JSON', {
+			cause: err
+		})
+	}
 }
