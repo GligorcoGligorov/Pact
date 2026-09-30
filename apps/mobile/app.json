@@ -7,7 +7,7 @@
 			"policy": "fingerprint"
 		},
 		"updates": {
-			"url": "https://u.expo.dev/REPLACE_WITH_YOUR_EAS_PROJECT_ID",
+			"url": "https://u.expo.dev/62e729af-e435-45b2-9c49-50f2361ad44f",
 			"checkAutomatically": "ON_LOAD",
 			"fallbackToCacheTimeout": 0,
 			"requestHeaders": {
@@ -118,8 +118,11 @@
 			"expo-web-browser"
 		],
 		"extra": {
-			"router": {}
+			"router": {},
+			"eas": {
+				"projectId": "62e729af-e435-45b2-9c49-50f2361ad44f"
+			}
 		},
-		"owner": "REPLACE_WITH_YOUR_EXPO_OWNER"
+		"owner": "gligorcos-team"
 	}
 }
