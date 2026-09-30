@@ -98,6 +98,14 @@ localhost through Metro. Nothing else uses EAS: no EAS environment variables, no
 submit. Verified: sign-in as `ana.demo@example.com` with the Mailpit code, and the test local
 notification. The iPhone build stays parked (free Apple ID, iOS 18.5, and the same Xcode limit).
 
+**AI judge on free providers (decided 2026-10-01, replaces R13's Claude Haiku and R30's
+`ANTHROPIC_API_KEY`):** the judge sits behind a small provider interface. Default: Google
+Gemini, a Flash model with image input, via `GEMINI_API_KEY`. Fallback: Groq, Llama 4 Scout
+(vision), via `GROQ_API_KEY`. With neither key set the verdict is `not_configured` (R14). Both
+keys are declared in `apps/web/src/lib/env.ts` and `.env.example`, and their values are never
+read into a conversation. The verdict, reason and caption, and every rule in R13–R16, are
+unchanged. Only test photos go to a model while this is built.
+
 **Play Stats, pulse, 8xsend (decided 2026-09-30):** 8x confirmed the trial doesn't need them.
 `.mcp.json` and the setup docs for the two servers are removed; the Play Stats API code stays
 untouched. Events stay registered locally and `check:events` still gates them. Where AGENTS.md,
@@ -106,13 +114,9 @@ the session brief or a skill says to ask `pulse`, skip that step for the trial. 
 
 ## Open items
 
-- **`AiUsage` model:** the plan says to adopt it from template-web as-is, but
-  `8xsocial/template-web` is private or not visible to this account. Needed before Phase 2's judge
-  writes to `ai_usage`. **Parked (2026-09-30):** the developer is asking 8x in #help on
-  2026-10-01 whether template-web is available. If it isn't by Phase 2, design a minimal
-  `AiUsage` model here and record it below as a deviation from AGENTS.md's "adopt as-is".
-- **`ANTHROPIC_API_KEY` (R30):** not yet declared in `apps/web/src/lib/env.ts` and
-  `apps/web/.env.example`. Do it with Phase 2.
+- **`AiUsage` model (deviation from AGENTS.md's "adopt template-web's as-is"):**
+  `8xsocial/template-web` isn't available, so Phase 2 designs a minimal one here (decided
+  2026-10-01). Adopt template-web's whole if it becomes available.
 - **`test:db` ran as a superuser** on the local replay, not as CI's non-superuser role.
 
 ## How to run things
