@@ -27,6 +27,14 @@ import { APP_NAME } from '@/lib/constants'
 import { hapticsPreference, saveHapticsPref } from '@/lib/haptics'
 import { logoutRevenueCat, MANAGE_SUBSCRIPTIONS_URL } from '@/lib/purchases'
 import { supabase } from '@/lib/supabase'
+import type * as DevTools from '@/components/DevToolsSection'
+
+// A require under `__DEV__`, not an import: an import is hoisted and always bundled, and the
+// developer tools must not be in a release build at all (lib/devPlaceholders.ts explains).
+const DevToolsSection: typeof DevTools.DevToolsSection | null = __DEV__
+	? // eslint-disable-next-line @typescript-eslint/no-require-imports
+		(require('@/components/DevToolsSection') as typeof DevTools).DevToolsSection
+	: null
 
 const STORE_NAME = Platform.OS === 'ios' ? 'the App Store' : 'Google Play'
 
@@ -170,6 +178,8 @@ export default function SettingsScreen() {
 					destructive
 				/>
 			</Section>
+
+			{DevToolsSection ? <DevToolsSection /> : null}
 
 			<Text variant="caption" tone="tertiary" style={s.version}>
 				{APP_NAME} {Constants.expoConfig?.version ?? ''}
