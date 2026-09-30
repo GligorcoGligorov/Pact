@@ -35,6 +35,9 @@ model Profile {
   locale             String?
   /// The person's own setting.
   marketingConsent   Boolean   @default(false) @map("marketing_consent")
+  /// When the person agreed to their check-in photos being sent to the AI judge (R16). Their
+  /// own setting, set through PATCH /api/app/v1/profile; null means never judged.
+  aiConsentAt        DateTime? @map("ai_consent_at") @db.Timestamptz(6)
   /// The BILLING status, which outranks the period type:
   /// 'trialing' | 'active' | 'past_due' | 'paused' | 'canceled' | 'expired'.
   premiumStatus      String?   @map("premium_status")
@@ -53,6 +56,11 @@ model Profile {
   premiumGranted     PremiumGrant[]      @relation("granter")
   analyticsEvents    AnalyticsEvent[]
   analyticsPageviews AnalyticsPageview[]
+  pactsOwned         Pact[]              @relation("pactOwner")
+  pactMemberships    PactMember[]
+  nudgesSent         Nudge[]             @relation("nudgesSent")
+  nudgesReceived     Nudge[]             @relation("nudgesReceived")
+  checkInReports     CheckInReport[]
 
   @@index([createdAt])
   @@index([lastSeenAt], map: "profiles_last_seen_idx")
