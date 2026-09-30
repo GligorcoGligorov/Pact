@@ -142,6 +142,65 @@ export const CHECKOUT_EVENTS = {
 export const CHECKOUT_EVENT_NAMES = Object.values(CHECKOUT_EVENTS)
 
 /**
+ * Pact — the product loop, judged on the pact completion rate: the share of
+ * held member-days that have a check-in (docs/pact-requirements.md).
+ *
+ * `checkInCreated` is THE metric's numerator. The loop, in order, is
+ * created → joined (a second member) → check-in → a check-in on day 2; a pact
+ * that stalls shows as the gap after its last step. The "aha" is not here: it
+ * is `user_activated` with `activation_type: 'first_group_check_in'`, emitted
+ * once per person (dedupeForever) by the check-in route.
+ *
+ * Every one of these is recorded SERVER-SIDE with `recordUserEvent` from the
+ * /api/app/v1 route that did the thing: the app cannot write first-party, and a
+ * browser must not be able to forge the metric, so /api/track refuses them
+ * (SERVER_ONLY_EVENT_NAMES below). All carry `pact_id`, and all are recorded
+ * with `dedupeDaily: false`: the database's unique constraints already bound
+ * them (one member row per person, one check-in per person per pact-day, one
+ * nudge per pair per day), and a UTC-day dedupe would drop a person's check-in
+ * in their second pact, or merge two pact-local days that share a UTC date.
+ */
+export const PACT_EVENTS = {
+	/** A pact was created. metadata: { pact_id, cadence } */
+	pactCreated: 'pact_created',
+	/** A NEW member joined (an idempotent re-join does not fire). metadata: { pact_id, source } */
+	pactJoined: 'pact_joined',
+	/** A check-in was created. metadata: { pact_id, kind: 'photo' | 'saver' } */
+	checkInCreated: 'check_in_created',
+	/**
+	 * The AI judge finished with a check-in. metadata: { pact_id, verdict }
+	 * A high `suspicious` share on real check-ins means the prompt is wrong,
+	 * not the people.
+	 */
+	checkInJudged: 'check_in_judged',
+	/** A member nudged a held member who was still out. metadata: { pact_id } */
+	nudgeSent: 'nudge_sent'
+} as const
+
+export const PACT_EVENT_NAMES = Object.values(PACT_EVENTS)
+
+/**
+ * The public join page (/join/[code]) — judged on how many people who open an
+ * invite link go on to open the app. Mostly GUESTS, so these go through the
+ * beacon against a session id.
+ *
+ * join_page_view → join_open_app_clicked is the web half of the invite loop;
+ * the app's own `join_viewed` → `pact_joined` is the other half.
+ */
+export const JOIN_PAGE_EVENTS = {
+	/** /join/[code] was viewed, for a code that exists. */
+	joinPageView: 'join_page_view',
+	/**
+	 * A way into the app was taken. metadata: { target: 'app' | 'code_copied' }
+	 * `target` is the discriminator: a copied code means the custom scheme did
+	 * not open, which is the universal-links question for later.
+	 */
+	joinOpenAppClicked: 'join_open_app_clicked'
+} as const
+
+export const JOIN_PAGE_EVENT_NAMES = Object.values(JOIN_PAGE_EVENTS)
+
+/**
  * Every registered web event, flat. This is what the whitelist and the CI check
  * read; adding a group above without spreading it here is the one mistake
  * `npm run check:events` is built to catch.
@@ -149,7 +208,19 @@ export const CHECKOUT_EVENT_NAMES = Object.values(CHECKOUT_EVENTS)
 export const ALL_EVENT_NAMES = [
 	...FUNNEL_EVENT_NAMES,
 	...LIFECYCLE_EVENT_NAMES,
-	...CHECKOUT_EVENT_NAMES
+	...CHECKOUT_EVENT_NAMES,
+	...PACT_EVENT_NAMES,
+	...JOIN_PAGE_EVENT_NAMES
 ] as const
 
 export type AppEvent = (typeof ALL_EVENT_NAMES)[number]
+
+/**
+ * Events only server code may record. /api/track answers 400 to these: they
+ * are this play's activation and completion numbers, and a signed-in browser
+ * posting them to the beacon would inflate both.
+ */
+export const SERVER_ONLY_EVENT_NAMES: readonly AppEvent[] = [
+	...PACT_EVENT_NAMES,
+	LIFECYCLE_EVENTS.userActivated
+]

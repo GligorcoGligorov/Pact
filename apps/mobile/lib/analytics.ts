@@ -129,7 +129,55 @@ type EventName =
 	// Profile
 	| 'profile_viewed'
 	| 'profile_updated'
-// TODO: add your app-specific events here
+	// Pact — the product loop. Judged on the pact completion rate (share of held
+	// member-days with a check-in), which the server records first-party as
+	// `check_in_created`; these are the app-side steps around it, for PostHog
+	// funnels. The "aha" is the server's `user_activated`
+	// (activation_type: 'first_group_check_in'), not an app event. Every event
+	// below that happens inside a pact also carries { pact_id }.
+	//
+	// Create: pact_create_started → pact_created
+	//   pact_created  metadata: { cadence: 'daily' | 'weekdays', days, has_stake }
+	| 'pact_create_started'
+	| 'pact_created'
+	// Invite, the growth loop. metadata: { method: 'share_sheet' | 'copy_code' }
+	// `method` is the discriminator: does the share sheet or the typed code carry
+	// the invite?
+	| 'invite_shared'
+	// Join: join_viewed → pact_joined, or join_failed by reason.
+	//   metadata (all): { source: 'deep_link' | 'code' }, the discriminator.
+	//   join_failed also: { reason: 'not_found' | 'full' | 'closed' | 'network' }
+	| 'join_viewed'
+	| 'pact_joined'
+	| 'join_failed'
+	// Check-in, the core loop. The drop-off steps, in order:
+	//   check_in_started      the check-in CTA was tapped
+	//   ai_consent_answered   first time only. metadata: { granted: boolean }
+	//   check_in_photo_taken  the camera returned a photo (not cancelled)
+	//   check_in_submitted    metadata: { kind: 'photo' | 'saver' }
+	//   check_in_failed       metadata: { reason: 'upload' | 'already_checked_in'
+	//                         | 'not_held' | 'network' }
+	//   check_in_verdict_viewed  the verdict and caption appeared.
+	//                         metadata: { verdict }, the discriminator: whether
+	//                         the "wow" landed, per verdict.
+	| 'check_in_started'
+	| 'ai_consent_answered'
+	| 'check_in_photo_taken'
+	| 'check_in_submitted'
+	| 'check_in_failed'
+	| 'check_in_verdict_viewed'
+	// Social pressure and the local 22:00 reminder. reminder_opened is the only
+	// way to tell whether a local notification brings anyone back.
+	| 'nudge_sent'
+	| 'reminder_opened'
+	// Safety. metadata: { reason: 'fake' | 'inappropriate' | 'other' }
+	| 'check_in_reported'
+	// Churn inside a pact: a member left, or the owner removed one.
+	| 'pact_left'
+	| 'pact_member_removed'
+	// End of the loop, and the growth it feeds.
+	| 'pact_result_viewed'
+	| 'pact_result_shared'
 
 /** Track an event. No-ops silently when PostHog is unconfigured. */
 export function track(event: EventName, properties?: TrackProperties) {

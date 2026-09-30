@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { recordUserEvent, TRACKED_EVENTS } from '@/lib/analytics/record'
 import { getRequestCountry } from '@/lib/geo'
+import { SERVER_ONLY_EVENT_NAMES } from '@/lib/analytics/events'
 
 export const runtime = 'nodejs'
 
@@ -26,7 +27,8 @@ const EVENT_DISCRIMINATORS: Record<string, readonly string[]> = {
 	checkout_started: ['plan'],
 	store_badge_clicked: ['store'],
 	cta_clicked: ['cta'],
-	faq_opened: ['question']
+	faq_opened: ['question'],
+	join_open_app_clicked: ['target']
 }
 
 const MAX_VALUE_LEN = 64
@@ -64,6 +66,10 @@ export async function POST(request: NextRequest) {
 		// Deliberately a 400 rather than a silent 200: an unregistered name is a
 		// bug in the call site, and `npm run check:events` catches it before here.
 		return NextResponse.json({ ok: false, error: 'unregistered_event' }, { status: 400 })
+	}
+	if ((SERVER_ONLY_EVENT_NAMES as readonly string[]).includes(name)) {
+		// Recorded by the route that did the thing; a browser may not claim it.
+		return NextResponse.json({ ok: false, error: 'server_only_event' }, { status: 400 })
 	}
 
 	if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
