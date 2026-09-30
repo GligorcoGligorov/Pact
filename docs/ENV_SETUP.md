@@ -198,6 +198,65 @@ the first assignment runs, so `DIRECT_URL` is empty and Prisma stops with `P1012
 catcher. The app on an Android emulator reaches your computer at `10.0.2.2`, and on a real
 phone at its LAN address, not `127.0.0.1`: use that host in both mobile URLs.
 
+## Running Pact locally (the 8x trial)
+
+Everything runs on this Mac: no Vercel, no hosted Supabase, no EAS. The app is a development
+build signed by a free Apple ID (a Personal Team).
+
+**Env files.** Both come from `supabase status`. Never paste them into a chat. The phone and the
+simulator reach the Mac by its LAN address (`ipconfig getifaddr en0`), so the mobile URLs use it:
+
+| File                     | Variable                                                      | Value                              |
+| ------------------------ | ------------------------------------------------------------- | ---------------------------------- |
+| `apps/web/.env.local`    | `NEXT_PUBLIC_SUPABASE_URL`                                    | `http://127.0.0.1:55321`           |
+|                          | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY` | from `supabase status`             |
+|                          | `DATABASE_URL`, `DIRECT_URL`                                  | the stack's database (table above) |
+|                          | `NEXT_PUBLIC_SITE_URL`                                        | `http://<LAN IP>:3000`             |
+| `apps/mobile/.env.local` | `EXPO_PUBLIC_SUPABASE_URL`                                    | `http://<LAN IP>:55321`            |
+|                          | `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`                        | from `supabase status`             |
+|                          | `EXPO_PUBLIC_SITE_URL`                                        | `http://<LAN IP>:3000`             |
+
+If the Mac's LAN address changes (another Wi-Fi), update the three LAN URLs and restart Metro
+with `--clear`: Expo inlines `EXPO_PUBLIC_*` into the bundle.
+
+**CocoaPods** must be on `PATH` before the first build. On macOS 14, don't let Expo install it
+(see `docs/memory/device-build-traps.md`): use a Ruby from `ruby-build` in `~/.rubies` and put
+its `bin` first on `PATH`.
+
+**Build.** `PACT_LOCAL_SIGNING=1` makes [`app.config.ts`](../apps/mobile/app.config.ts) drop
+the push and Sign in with Apple entitlements, which a Personal Team can't sign. The Apple
+button on the sign-in screen won't work in this build; use email.
+
+```bash
+npm run web:dev                                  # terminal 1
+cd apps/mobile
+PACT_LOCAL_SIGNING=1 SENTRY_DISABLE_AUTO_UPLOAD=true npx expo run:ios --device   # pick the iPhone
+# or a simulator:
+PACT_LOCAL_SIGNING=1 SENTRY_DISABLE_AUTO_UPLOAD=true npx expo run:ios --device "iPhone 16 Pro"
+```
+
+**On the iPhone, once:**
+
+1. Unlock it and plug it in. On **Trust This Computer?** tap **Trust** and enter the passcode.
+2. **Settings → Privacy & Security → Developer Mode** (at the bottom) → on → **Restart**. After
+   the restart, unlock and tap **Turn On**.
+3. After the first install, opening Pact says **Untrusted Developer**. **Settings → General →
+   VPN & Device Management → Apple Development: <your Apple ID> → Trust**.
+4. On first launch, **Pact would like to find and connect to devices on your local network** →
+   **Allow**. That is how it reaches Metro and the Mac. If you denied it: **Settings → Privacy &
+   Security → Local Network → Pact** on.
+5. **Settings (in the app) → Developer → Test notification** → **Allow**, then wait 10 s.
+
+A free-team profile expires after **7 days**: run the build again. A free team can also have only
+three of its apps on a device at once.
+
+**The simulator** has no camera. In a development build on a simulator only,
+[`lib/proofPhoto.ts`](../apps/mobile/lib/proofPhoto.ts) picks the proof photo from the library;
+drag an image onto the simulator window to add one. Release builds always use the camera.
+
+**Sign in:** the email's six-digit code is in the mail catcher, <http://127.0.0.1:55324>.
+`npm run seed:demo` prints the demo accounts and the demo pact's invite code.
+
 ## Making yourself an admin
 
 The admin panel (`/admin`) signs in with an email and a **password**, and lets in a user whose

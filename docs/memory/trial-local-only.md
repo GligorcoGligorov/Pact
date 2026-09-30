@@ -8,6 +8,15 @@ metadata:
 Pact is an 8x trial, not a store launch (decided 2026-09-30). 8x said: no deploy, no CI, everything
 runs locally. The app runs on the developer's iPhone as a dev build signed with a **free Apple ID**.
 
+**Update 2026-09-30 (8x, #announcements):** localhost only: no Vercel, no hosted Supabase, no
+Expo/EAS environments. 8x judges from a short demo video plus a live demo. The simulator is an
+acceptable demo target if the device build won't run.
+
+**Simulator only (decided 2026-09-30 evening):** Phase 0 and the Thursday slice run on the iOS
+simulator; the demo video is recorded from it. The developer unplugged the iPhone because Xcode
+preparing it made the Mac unusable. Check-ins on the simulator use the dev-only photo-library
+fallback (`apps/mobile/lib/proofPhoto.ts`). Retry the device build only if there's time.
+
 **Why:** the trial is judged on the product loop, not on release engineering.
 
 **How to apply:**
