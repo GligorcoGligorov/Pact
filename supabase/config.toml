@@ -87,6 +87,16 @@ secure_password_change = false
 otp_expiry = 86400
 otp_length = 6
 
+# The app signs in with the six-digit code, never a link. Supabase's default emails carry only a
+# link, so both the first sign-in (confirmation) and every later one (magic link) use this one.
+[auth.email.template.confirmation]
+subject = "Your Pact sign-in code"
+content_path = "./supabase/templates/sign-in-code.html"
+
+[auth.email.template.magic_link]
+subject = "Your Pact sign-in code"
+content_path = "./supabase/templates/sign-in-code.html"
+
 [auth.sms]
 enable_signup = false
 enable_confirmations = false
