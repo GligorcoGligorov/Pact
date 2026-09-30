@@ -7,8 +7,14 @@ import {
 	appConfigSchema,
 	createItemBody,
 	createTaskBody,
+	createCheckInBody,
+	createCheckInUploadBody,
+	createPactBody,
 	createUploadBody,
 	endpoints,
+	ERROR_CODES,
+	inviteCodeSchema,
+	pactDetailResponse,
 	errorBodySchema,
 	itemSchema,
 	listItemsResponse,
@@ -170,7 +176,8 @@ test('an error body parses a code the app does not know yet', () => {
 test('every endpoint: under /api/app/v1, one per method and path, a body only on writes', () => {
 	const seen = new Set<string>()
 	for (const [name, endpoint] of Object.entries(endpoints)) {
-		assert.match(endpoint.path, /^\/api\/app\/v1\/[a-z/:]+$/, name)
+		// Lowercase segments, kebab-case where a name has two words (`check-ins`).
+		assert.match(endpoint.path, /^\/api\/app\/v1\/[a-z/:-]+$/, name)
 		const key = `${endpoint.method} ${endpoint.path}`
 		assert.equal(seen.has(key), false, key)
 		seen.add(key)
@@ -181,5 +188,112 @@ test('every endpoint: under /api/app/v1, one per method and path, a body only on
 	assert.equal(endpoints.getConfig.auth, 'public')
 	for (const [name, endpoint] of Object.entries(endpoints)) {
 		if (name !== 'getConfig') assert.equal(endpoint.auth, 'user', name)
+	}
+})
+
+// ── Pacts ─────────────────────────────────────────────────────────────────────
+
+const pactBody = {
+	name: 'Morning run crew',
+	habit: 'Run 3 km before 9',
+	cadence: 'daily',
+	days: 21,
+	start_day: '2026-10-01',
+	timezone: 'Europe/Skopje'
+}
+
+test('create pact: 7 to 90 days, a bounded habit and stake, nothing else', () => {
+	assert.ok(createPactBody.safeParse(pactBody).success)
+	assert.ok(createPactBody.safeParse({ ...pactBody, stake: 'Loser buys coffee', id: ID }).success)
+	for (const bad of [
+		{ ...pactBody, days: 6 },
+		{ ...pactBody, days: 91 },
+		{ ...pactBody, habit: 'x'.repeat(81) },
+		{ ...pactBody, stake: 'x'.repeat(81) },
+		{ ...pactBody, habit: '   ' },
+		{ ...pactBody, cadence: 'weekly' },
+		{ ...pactBody, start_day: '2026-10-01T00:00:00Z' },
+		{ ...pactBody, owner_id: USER },
+		{ ...pactBody, invite_code: 'STREAK' }
+	]) {
+		assert.equal(createPactBody.safeParse(bad).success, false, JSON.stringify(bad))
+	}
+})
+
+test('invite codes: six unambiguous characters, typed in any case', () => {
+	assert.equal(inviteCodeSchema.parse('streak'), 'STREAK')
+	assert.equal(inviteCodeSchema.parse(' Streak '), 'STREAK')
+	for (const bad of ['STREA', 'STREAKS', 'STRE0K', 'STREOK', 'STRE1K', 'STREIK', 'STRELK']) {
+		assert.equal(inviteCodeSchema.safeParse(bad).success, false, bad)
+	}
+})
+
+test('check-ins: a photo names its own proof path, a saver names none', () => {
+	const photoPath = `${USER}/proofs/${ID}.jpg`
+	assert.ok(createCheckInBody.safeParse({ kind: 'photo', photo_path: photoPath }).success)
+	assert.ok(createCheckInBody.safeParse({ kind: 'saver', note: 'sick day' }).success)
+	for (const bad of [
+		{ kind: 'photo' },
+		{ kind: 'photo', photo_path: `${USER}/avatar/${ID}.jpg` },
+		{ kind: 'photo', photo_path: `${USER}/proofs/../avatar/${ID}.jpg` },
+		{ kind: 'saver', photo_path: photoPath },
+		{ kind: 'photo', photo_path: photoPath, day: '2026-10-01' },
+		{ kind: 'photo', photo_path: photoPath, verdict: 'pass' }
+	]) {
+		assert.equal(createCheckInBody.safeParse(bad).success, false, JSON.stringify(bad))
+	}
+	assert.ok(
+		createCheckInUploadBody.safeParse({ content_type: 'image/jpeg', size_bytes: 1 }).success
+	)
+	assert.equal(
+		createCheckInUploadBody.safeParse({ content_type: 'image/gif', size_bytes: 1 }).success,
+		false
+	)
+})
+
+test("pact detail parses a pact with today's board, and one with none", () => {
+	const pact = {
+		id: ID,
+		name: 'Morning run crew',
+		habit: 'Run 3 km before 9',
+		cadence: 'daily',
+		timezone: 'Europe/Skopje',
+		start_day: '2026-09-23',
+		end_day: '2026-10-13',
+		stake: null,
+		invite_code: 'STREAK',
+		max_members: 8,
+		status: 'active',
+		role: 'owner',
+		created_at: NOW
+	}
+	const today = {
+		day: '2026-09-30',
+		challenge: 'Hold up three fingers',
+		closes_at: '2026-09-30T22:00:00.000Z',
+		in_count: 1,
+		held_count: 2,
+		members: [
+			{
+				user_id: USER,
+				display_name: 'Ana',
+				state: 'in',
+				check_in: { id: ID, kind: 'photo', verdict: 'pass', ai_reason: null, ai_caption: 'Fine.' }
+			}
+		],
+		me: { held: true, state: 'in', saver_available: true }
+	}
+	assert.ok(pactDetailResponse.safeParse({ pact, members: [], today }).success)
+	assert.ok(pactDetailResponse.safeParse({ pact, members: [], today: null }).success)
+	assert.equal(
+		pactDetailResponse.safeParse({ pact: { ...pact, status: 'paused' }, members: [], today: null })
+			.success,
+		false
+	)
+})
+
+test('the pact error codes are 409s the app can tell apart', () => {
+	for (const code of ['pact_full', 'pact_closed', 'not_held', 'already_checked_in', 'saver_used']) {
+		assert.equal(ERROR_CODES[code as keyof typeof ERROR_CODES], 409, code)
 	}
 })
