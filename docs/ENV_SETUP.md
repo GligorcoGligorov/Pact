@@ -161,12 +161,6 @@ Review: never raise it above a build that is in review.
 `supabase/config.toml`. A bucket of that name that existed before is left as it was: check in
 Supabase → Storage that it is private, limited to 5 MB, and takes JPEG, PNG, WebP and HEIC only.
 
-### MCP tokens
-
-`.mcp.json` wires the `pulse` (plays dashboard) and `8xsend` servers. They read
-`PULSE_TOKEN` and `EIGHTXSEND_MANAGE_KEY` from your shell environment, not from the repo.
-Get a Pulse token from the dashboard's **Help → Connect Claude** page.
-
 ## Local Supabase
 
 `supabase start` runs the stack on the ports in [`supabase/config.toml`](../supabase/config.toml),

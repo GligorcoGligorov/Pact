@@ -42,9 +42,9 @@ model PactMember {
   pactId       String    @map("pact_id") @db.Uuid     // onDelete: Cascade
   userId       String    @map("user_id") @db.Uuid     // onDelete: Cascade
   role         PactRole  @default(member)             // owner | member
-  joinedDay    DateTime  @map("joined_day") @db.Date  // max(join date local, startDay)
+  joinedDay    DateTime  @map("joined_day") @db.Date  // startDay in the lobby, else the day after joining (R6)
   leftAt       DateTime? @map("left_at") @db.Timestamptz(6)
-  leftDay      DateTime? @map("left_day") @db.Date    // last day NOT held
+  leftDay      DateTime? @map("left_day") @db.Date    // first day NOT held (the day they left)
   saverUsedDay DateTime? @map("saver_used_day") @db.Date  // set by a conditional update: one per pact
   createdAt    DateTime  ...
   @@unique([pactId, userId])

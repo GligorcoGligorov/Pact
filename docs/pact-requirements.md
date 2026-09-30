@@ -83,8 +83,12 @@ day pass in silence. Nobody sees it until the streak is already gone.
 
 - **R5.** A signed-in person joins with the code, from a deep link or by typing it. Joining is
   idempotent. A full, cancelled or completed pact refuses the join with a distinct error code.
-- **R6.** Late joiners are allowed. A member is **held** from the pact-local day they joined
-  (or the start day, whichever is later) to the day they leave or the end day.
+- **R6.** Late joiners are allowed. A member who joins in the lobby is **held** from the start
+  day. A member who joins an active pact is held from the **next** pact-local day, so a join
+  never breaks a day already in progress: a friend who joins at 23:50 can't be expected to
+  check in within ten minutes. A join that would hold them to no day (on the end day) is
+  refused as `pact_closed`. They stay held until the day they leave or the end day.
+  (Changed 2026-09-30: held from the join day itself let a late join break the group's day.)
 - **R7.** A member can leave. The owner can remove a member. Days before the member left still
   count toward their record. Neither the pact nor the member is held after that.
 
@@ -269,7 +273,8 @@ No money moments, since v1 has no payments.
   go; the tables stay until a hand-written migration is worth it).
 - Universal links / deferred deep links (the web page links to the custom scheme and shows
   the code).
-- Play Stats API changes (`pulse` is unavailable; revisit once 8x answers in #help).
+- The Play Stats API and the `pulse` / `8xsend` MCP servers: 8x confirmed in #help that the
+  trial doesn't need them (2026-09-30). The servers are removed; the API's code stays as is.
 
 ## Decisions
 

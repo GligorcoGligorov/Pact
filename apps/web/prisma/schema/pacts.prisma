@@ -1,0 +1,173 @@
+// Pact: a small group holding each other to one habit for a fixed run of days
+// (docs/pact-requirements.md). The app reaches these only through /api/app/v1.
+//
+// Days are pact-local calendar dates (@db.Date) in the pact's timezone, computed by the server
+// (src/lib/pacts/day.ts), never sent by the client. There is no day, streak or result table:
+// the board, the chain, the streaks and the result are computed on every read from the pact,
+// its members and their check-ins (R10). The closer writes only `closed_through`, the photo
+// cleanup columns and inbox rows.
+//
+// Not expressible here, and kept by the migrations: RLS on every table, with no policies and
+// nothing granted to the API roles.
+
+model Pact {
+  id            String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  /// Restrict, not Cascade: deleting an owner's account passes the pact to its earliest-joined
+  /// remaining member first (R28), so a pact is never deleted out from under its members.
+  ownerId       String       @map("owner_id") @db.Uuid
+  name          String
+  habit         String
+  cadence       PactCadence  @default(daily)
+  /// IANA name, validated on create; never changes.
+  timezone      String
+  startDay      DateTime     @map("start_day") @db.Date
+  /// Inclusive: start_day + days - 1, in calendar days for either cadence.
+  endDay        DateTime     @map("end_day") @db.Date
+  /// Free text, never money.
+  stake         String?
+  inviteCode    String       @unique @map("invite_code")
+  maxMembers    Int          @default(8) @map("max_members")
+  cancelledAt   DateTime?    @map("cancelled_at") @db.Timestamptz(6)
+  /// The closer's bookkeeping only: the last pact-day whose notifications were written.
+  closedThrough DateTime?    @map("closed_through") @db.Date
+  createdAt     DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime     @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  owner         Profile      @relation("pactOwner", fields: [ownerId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  members       PactMember[]
+  nudges        Nudge[]
+
+  @@index([ownerId])
+  @@index([endDay])
+  @@map("pacts")
+}
+
+// One row per person per pact. Leaving or being removed sets left_at / left_day and keeps the
+// row, because the days before still count toward the person's record (R7).
+model PactMember {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  pactId       String    @map("pact_id") @db.Uuid
+  userId       String    @map("user_id") @db.Uuid
+  role         PactRole  @default(member)
+  /// The first day the member is held: the start day when joined in the lobby, else the day
+  /// AFTER joining, so a late joiner never breaks a day already in progress (R6).
+  joinedDay    DateTime  @map("joined_day") @db.Date
+  leftAt       DateTime? @map("left_at") @db.Timestamptz(6)
+  /// The pact-local day they left: the first day NOT held. Leaving never breaks today.
+  leftDay      DateTime? @map("left_day") @db.Date
+  /// Set by a conditional update (where saver_used_day is null): one saver per pact (R17).
+  saverUsedDay DateTime? @map("saver_used_day") @db.Date
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  pact         Pact      @relation(fields: [pactId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  profile      Profile   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  checkIns     CheckIn[]
+
+  @@unique([pactId, userId])
+  @@index([userId])
+  @@map("pact_members")
+}
+
+// One per member per pact-day, enforced here (R11). Belongs to the membership, so it goes
+// with the account (R28) and can only exist for someone who is a member.
+model CheckIn {
+  id             String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  pactId         String          @map("pact_id") @db.Uuid
+  userId         String          @map("user_id") @db.Uuid
+  /// Server-computed, pact-local.
+  day            DateTime        @db.Date
+  kind           CheckInKind
+  /// The challenge text it was taken against; null for a saver.
+  challenge      String?
+  /// `<user id>/proofs/...` in the user-uploads bucket; null for a saver, and once deleted.
+  photoPath      String?         @map("photo_path")
+  photoDeletedAt DateTime?       @map("photo_deleted_at") @db.Timestamptz(6)
+  note           String?
+  /// Advisory only: every verdict counts as a check-in (R15).
+  verdict        AiVerdict       @default(pending)
+  aiReason       String?         @map("ai_reason")
+  aiCaption      String?         @map("ai_caption")
+  judgedAt       DateTime?       @map("judged_at") @db.Timestamptz(6)
+  createdAt      DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  member         PactMember      @relation(fields: [pactId, userId], references: [pactId, userId], onDelete: Cascade, onUpdate: NoAction)
+  reports        CheckInReport[]
+
+  @@unique([pactId, userId, day])
+  @@index([pactId, day])
+  @@index([pactId, createdAt])
+  @@map("check_ins")
+}
+
+// Once per sender, recipient and pact-day (R20). The inbox row it writes is a `team`
+// Notification; this row is what makes it once.
+model Nudge {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  pactId     String   @map("pact_id") @db.Uuid
+  fromUserId String   @map("from_user_id") @db.Uuid
+  toUserId   String   @map("to_user_id") @db.Uuid
+  day        DateTime @db.Date
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  pact       Pact     @relation(fields: [pactId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  from       Profile  @relation("nudgesSent", fields: [fromUserId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  to         Profile  @relation("nudgesReceived", fields: [toUserId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([pactId, fromUserId, toUserId, day])
+  @@index([fromUserId])
+  @@index([toUserId])
+  @@map("nudges")
+}
+
+// Stored for an admin; the reporter stops seeing the photo (R23).
+model CheckInReport {
+  id         String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  checkInId  String       @map("check_in_id") @db.Uuid
+  reporterId String       @map("reporter_id") @db.Uuid
+  reason     ReportReason
+  detail     String?
+  createdAt  DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  resolvedAt DateTime?    @map("resolved_at") @db.Timestamptz(6)
+  checkIn    CheckIn      @relation(fields: [checkInId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  reporter   Profile      @relation(fields: [reporterId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([checkInId, reporterId])
+  @@index([reporterId])
+  @@map("check_in_reports")
+}
+
+enum PactCadence {
+  daily
+  weekdays
+
+  @@map("pact_cadence")
+}
+
+enum PactRole {
+  owner
+  member
+
+  @@map("pact_role")
+}
+
+enum CheckInKind {
+  photo
+  saver
+
+  @@map("check_in_kind")
+}
+
+enum AiVerdict {
+  pending
+  pass
+  suspicious
+  error
+  not_configured
+  skipped
+
+  @@map("ai_verdict")
+}
+
+enum ReportReason {
+  fake
+  inappropriate
+  other
+
+  @@map("report_reason")
+}
