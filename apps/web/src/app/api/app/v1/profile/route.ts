@@ -19,7 +19,7 @@ export const GET = createAppRoute(endpoints.getProfile, async ({ user }) => {
 })
 
 /**
- * PATCH /api/app/v1/profile: the person's own settings, and only those four (the contract
+ * PATCH /api/app/v1/profile: the person's own settings, and only those five (the contract
  * refuses any other key with a 400, so plan_type and premium_* can't even be sent: AGENTS.md,
  * non-negotiable 3). Answers with the whole profile as it now is.
  *
@@ -28,6 +28,8 @@ export const GET = createAppRoute(endpoints.getProfile, async ({ user }) => {
  * - `marketing_consent`: a change fires `marketing_consent_changed`, first-party and to the
  *   Play Events API, so the platform's email automation follows the person's choice. Sending
  *   the value it already has fires nothing.
+ * - `ai_consent` (R16): whether check-in photos may go to the AI judge. The check-in route
+ *   reads it server-side; without it a check-in is never judged (`skipped`).
  */
 export const PATCH = createAppRoute(endpoints.updateProfile, async ({ user, body }) => {
 	if (body.avatar_path && !isOwnAvatarPath(user.id, body.avatar_path)) {
@@ -40,7 +42,8 @@ export const PATCH = createAppRoute(endpoints.updateProfile, async ({ user, body
 		displayName: body.display_name,
 		avatarUrl: body.avatar_path,
 		locale: body.locale,
-		marketingConsent: body.marketing_consent
+		marketingConsent: body.marketing_consent,
+		aiConsent: body.ai_consent
 	})
 	// The account was deleted after requireUser() checked the token: nothing was written.
 	if (!saved) throw unauthorized()
@@ -62,6 +65,7 @@ async function toWireProfile(user: AppUser, row: AppProfile | null): Promise<Pro
 		plan: row?.planType === 'premium' ? 'premium' : 'free',
 		locale: row?.locale ?? null,
 		marketing_consent: row?.marketingConsent ?? false,
+		ai_consent: !!row?.aiConsentAt,
 		created_at: row?.createdAt?.toISOString() ?? null
 	}
 }

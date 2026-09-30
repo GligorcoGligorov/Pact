@@ -129,6 +129,7 @@ test('profile response parses a complete profile', () => {
 		avatar_url: null,
 		plan: 'free',
 		locale: null,
+		ai_consent: false,
 		marketing_consent: false,
 		created_at: NOW
 	}

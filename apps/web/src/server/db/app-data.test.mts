@@ -294,11 +294,12 @@ describe(
 						planType: 'free',
 						locale: 'pt-BR',
 						marketingConsent: true,
+						aiConsentAt: null,
 						createdAt: null
 					}
 				)
 
-				// Money: an object carrying more than the four settings writes no more.
+				// Money: an object carrying more than the five settings writes no more.
 				const smuggled = {
 					displayName: null,
 					planType: 'premium',
@@ -366,6 +367,25 @@ describe(
 				// Gone for good (the account was deleted): an empty last page.
 				const ended = await items.list(who, { limit: 5, after: randomUUID() })
 				assert.deepEqual(ended, { rows: [], nextAfter: null })
+			} finally {
+				await deleteUsers(who)
+			}
+		})
+
+		test('AI consent: agreeing again keeps the first time; false withdraws it', async () => {
+			const who = randomUUID()
+			await signUp(who)
+			try {
+				assert.equal(await profiles.hasAiConsent(who), false)
+				const first = await profiles.updateOwnSettings(who, { aiConsent: true })
+				const agreedAt = first?.profile.aiConsentAt
+				assert.ok(agreedAt)
+				const again = await profiles.updateOwnSettings(who, { aiConsent: true })
+				assert.deepEqual(again?.profile.aiConsentAt, agreedAt)
+				assert.equal(await profiles.hasAiConsent(who), true)
+				const withdrawn = await profiles.updateOwnSettings(who, { aiConsent: false })
+				assert.equal(withdrawn?.profile.aiConsentAt, null)
+				assert.equal(await profiles.hasAiConsent(who), false)
 			} finally {
 				await deleteUsers(who)
 			}

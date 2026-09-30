@@ -21,6 +21,7 @@ const row = {
 	planType: 'premium',
 	locale: 'pt-BR',
 	marketingConsent: true,
+	aiConsentAt: null as Date | null,
 	createdAt: new Date('2026-09-01T00:00:00.000Z')
 }
 
@@ -93,6 +94,7 @@ test("GET: the person's profile, plan read-only, avatar signed for an hour", asy
 			plan: 'premium',
 			locale: 'pt-BR',
 			marketing_consent: true,
+			ai_consent: false,
 			created_at: '2026-09-01T00:00:00.000Z'
 		}
 	})
@@ -118,8 +120,18 @@ test('GET: no profile row reads as the defaults, with the name from sign-up', as
 		plan: 'free',
 		locale: null,
 		marketing_consent: false,
+		ai_consent: false,
 		created_at: null
 	})
+})
+
+test('GET: ai_consent is whether the person agreed, at any time', async () => {
+	fakeStore(profileStore, 'appProfile', () => ({
+		...row,
+		aiConsentAt: new Date('2026-09-30T09:00:00.000Z')
+	}))
+	const res = await send(profile.GET, '/api/app/v1/profile')
+	assert.equal(res.body.profile.ai_consent, true)
 })
 
 test('GET: any plan_type but premium is free', async () => {
@@ -178,10 +190,10 @@ test('GET and PATCH: no session is a 401, and nothing is read or written', async
 	assert.deepEqual(fake.storeCalls, [])
 })
 
-test('PATCH: only the four own settings reach the store, trimmed', async () => {
+test('PATCH: only the five own settings reach the store, trimmed', async () => {
 	const res = await send(profile.PATCH, '/api/app/v1/profile', {
 		method: 'PATCH',
-		body: { display_name: '  Sam R  ', locale: 'en-GB', marketing_consent: true }
+		body: { display_name: '  Sam R  ', locale: 'en-GB', marketing_consent: true, ai_consent: true }
 	})
 	assert.equal(res.status, 200)
 	assert.ok(profileResponse.safeParse(res.body).success)
@@ -190,7 +202,13 @@ test('PATCH: only the four own settings reach the store, trimmed', async () => {
 		[
 			[
 				USER,
-				{ displayName: 'Sam R', avatarUrl: undefined, locale: 'en-GB', marketingConsent: true }
+				{
+					displayName: 'Sam R',
+					avatarUrl: undefined,
+					locale: 'en-GB',
+					marketingConsent: true,
+					aiConsent: true
+				}
 			]
 		]
 	)
