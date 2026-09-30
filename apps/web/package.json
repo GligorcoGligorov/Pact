@@ -10,6 +10,7 @@
 		"lint": "eslint .",
 		"typecheck": "tsc --noEmit",
 		"test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --conditions=react-server --import ./scripts/register-ts.mjs --test \"src/**/*.test.mts\"",
+		"eval:judge": "node --env-file-if-exists=.env.local --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/register-ts.mjs src/server/ai/judge.eval.mts",
 		"test:db": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --conditions=react-server --import ./scripts/register-ts.mjs --test --test-concurrency=1 \"src/server/db/**/*.test.mts\"",
 		"db:migrate": "prisma migrate deploy",
 		"prisma:generate": "prisma generate",
