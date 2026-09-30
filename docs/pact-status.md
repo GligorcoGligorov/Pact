@@ -81,7 +81,9 @@ there is no CI in this trial, see [trial-local-only](memory/trial-local-only.md)
 
 - **`AiUsage` model:** the plan says to adopt it from template-web as-is, but
   `8xsocial/template-web` is private or not visible to this account. Needed before Phase 2's judge
-  writes to `ai_usage`. Get access, or paste the model.
+  writes to `ai_usage`. **Parked (2026-09-30):** the developer is asking 8x in #help on
+  2026-10-01 whether template-web is available. If it isn't by Phase 2, design a minimal
+  `AiUsage` model here and record it below as a deviation from AGENTS.md's "adopt as-is".
 - **`ANTHROPIC_API_KEY` (R30):** not yet declared in `apps/web/src/lib/env.ts` and
   `apps/web/.env.example`. Do it with Phase 2.
 - **`apps/web/.env.local` does not exist yet.** Phase 0 creates it (LAN IP, Supabase keys).
