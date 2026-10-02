@@ -370,6 +370,8 @@ function AppTree({
                         Accessible only when signed in + onboarding done. */}
 													<Stack.Protected guard={isAuthed && onboardingCompleted === true}>
 														<Stack.Screen name="(tabs)" />
+														<Stack.Screen name="pact/new" options={MODAL} />
+														<Stack.Screen name="pact/[id]/invite" options={MODAL} />
 														<Stack.Screen name="settings" options={PUSH} />
 														<Stack.Screen name="support" options={PUSH} />
 													</Stack.Protected>
