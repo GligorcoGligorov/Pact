@@ -372,6 +372,8 @@ function AppTree({
 														<Stack.Screen name="(tabs)" />
 														<Stack.Screen name="pact/new" options={MODAL} />
 														<Stack.Screen name="pact/[id]/invite" options={MODAL} />
+														<Stack.Screen name="join/index" options={PUSH} />
+														<Stack.Screen name="join/[code]" options={PUSH} />
 														<Stack.Screen name="settings" options={PUSH} />
 														<Stack.Screen name="support" options={PUSH} />
 													</Stack.Protected>

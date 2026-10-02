@@ -10,6 +10,7 @@ import Animated, {
 	withSequence,
 	withTiming
 } from 'react-native-reanimated'
+import { INVITE_CODE_ALPHABET } from '@app/contract'
 import { useTheme } from '@/contexts/ThemeContext'
 import { haptic } from '@/lib/haptics'
 import { Durations, shake } from '@/lib/motion'
@@ -40,7 +41,8 @@ export function CodeInput({
 	inputRef,
 	disabled,
 	error,
-	accessibilityLabel = 'Six-digit code'
+	kind = 'digits',
+	accessibilityLabel = kind === 'invite' ? 'Six-character invite code' : 'Six-digit code'
 }: {
 	value: string
 	onChange: (next: string) => void
@@ -48,6 +50,8 @@ export function CodeInput({
 	disabled?: boolean
 	/** Flip to true to shake and colour the row; clear it on the next change. */
 	error?: boolean
+	/** `invite`: a pact's invite code, letters and digits from INVITE_CODE_ALPHABET. */
+	kind?: 'digits' | 'invite'
 	accessibilityLabel?: string
 }) {
 	const { colors: c, isDark, radii } = useTheme()
@@ -102,14 +106,18 @@ export function CodeInput({
 			<TextInput
 				ref={inputRef}
 				value={value}
-				onChangeText={(t) => onChange(t.replace(/\D/g, '').slice(0, CODE_LENGTH))}
+				onChangeText={(t) => onChange(clean(t, kind))}
 				onFocus={() => setFocused(true)}
 				onBlur={() => setFocused(false)}
 				editable={!disabled}
-				keyboardType="number-pad"
 				keyboardAppearance={isDark ? 'dark' : 'light'}
-				textContentType="oneTimeCode"
-				autoComplete={Platform.OS === 'android' ? 'sms-otp' : 'one-time-code'}
+				{...(kind === 'invite'
+					? { autoCapitalize: 'characters', autoCorrect: false, spellCheck: false }
+					: {
+							keyboardType: 'number-pad',
+							textContentType: 'oneTimeCode',
+							autoComplete: Platform.OS === 'android' ? 'sms-otp' : 'one-time-code'
+						})}
 				maxLength={CODE_LENGTH}
 				caretHidden
 				accessibilityLabel={accessibilityLabel}
@@ -118,6 +126,14 @@ export function CodeInput({
 			/>
 		</Animated.View>
 	)
+}
+
+const NOT_INVITE = new RegExp(`[^${INVITE_CODE_ALPHABET}]`, 'g')
+
+function clean(text: string, kind: 'digits' | 'invite'): string {
+	const kept =
+		kind === 'invite' ? text.toUpperCase().replace(NOT_INVITE, '') : text.replace(/\D/g, '')
+	return kept.slice(0, CODE_LENGTH)
 }
 
 function Caret({ color }: { color: string }) {
