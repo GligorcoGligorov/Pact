@@ -1,7 +1,7 @@
 // The judge's eval: labelled test photos through the real prompt and providers, and how often
 // the verdict agrees with the label. Run by hand, never in `npm test` (it calls real APIs):
 //
-//   npm run eval:judge --workspace=@app/web                      # Gemini, falling back to Groq
+//   npm run eval:judge --workspace=@app/web                      # Groq, falling back to Gemini
 //   npm run eval:judge --workspace=@app/web -- --provider=groq   # one provider alone
 //
 // Photos live in apps/web/eval-photos/, which is gitignored: every folder in it with a

@@ -16,7 +16,7 @@ import { configuredProviders } from './registry'
 // photo comes from storage, never from a request (R13), and only for a person who agreed to
 // it (R16), checked again here in case they withdrew in between.
 //
-// Providers are tried in order (Gemini, then Groq): a call that fails, times out or answers
+// Providers are tried in order (Groq, then Gemini): a call that fails, times out or answers
 // something that isn't the JSON asked for moves on to the next. Every call writes one
 // `ai_usage` row. Only a pending check-in takes a verdict, once (pactStore.setVerdict).
 
