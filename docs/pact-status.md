@@ -3,7 +3,7 @@
 The one "where are we" file. Read it first; update it at the end of every phase.
 Spec: [pact-requirements.md](pact-requirements.md) (R-numbers). Plan: [pact-plan.md](pact-plan.md).
 
-**Last updated:** 2026-10-01, end of Phase 2, on branch `feat/phase-2-api-ai-judge` (no CI in
+**Last updated:** 2026-10-03, start of Phase 3, on branch `feat/phase-3-mobile-slice` (no CI in
 this trial, see [trial-local-only](memory/trial-local-only.md)). Build traps:
 [device-build-traps](memory/device-build-traps.md).
 
@@ -125,6 +125,17 @@ declared in `apps/web/src/lib/env.ts` and `.env.example`, and their values are n
 a conversation. The verdict, reason and caption, and every rule in R13–R16, are unchanged.
 Only test photos go to a model.
 
+**Groq first, Gemini second (decided 2026-10-03):** the eval on the real photos (below) had
+Gemini time out or answer 503 on 7 of 11, while Groq answered each in about 1 s. Groq's
+accuracy held up, so it is now the primary provider and Gemini the fallback
+(`registry.ts`).
+
+**The judge's eval (2026-10-03): 17 of 19,** above the plan's bar of 16 of 20. The 8 synthetic
+fakes agree 8 of 8, and the 11 real photos (`eval-photos/real/`; the photos and their
+`labels.json` stay local) agree 9 of 11. Both misses were finger counts: a peace sign lying
+flat on a book page read as missing, and two fingers read as three. The AI only advises (R15),
+so these are acceptable.
+
 **The judge's models (decided 2026-10-01):** `gemini-3.8-flash`, because `gemini-2.5-flash`
 is closed to new keys and Google names 3.8 Flash as its replacement; and Groq's
 `qwen/qwen3.8-27b`, because Llama 4 Scout is gone from the key's model list and Qwen answered a
@@ -160,13 +171,13 @@ the session brief or a skill says to ask `pulse`, skip that step for the trial. 
 
 ## Open items
 
-- **The eval's 12 real photos:** the developer takes them on the iPhone (2026-10-01/02) into
-  `apps/web/eval-photos/<folder>/` with a `labels.json` (see How to run). The 8 synthetic fakes
-  agree 8 of 8; the plan's bar is 16 of 20 with the real ones.
+- **The 12th real photo** was never taken; the eval passed without it (see Decisions).
+- **Finger counting** is the judge's weak spot (both real-photo misses). Watch for it in
+  dogfooding before touching the prompt.
 - **Caption repetition:** "A minimalist approach to…" opened 4 of the 8 synthetic captions. The
   synthetic images are flat drawings, which invites it; check on the real photos before tuning.
-- **Gemini latency:** up to 15 s on one synthetic photo, against the 20 s per-provider timeout,
-  and three 503s in one run (Groq answered each). Watch `ai_usage` latency and error codes.
+- **Gemini latency:** up to 23 s and 7 of 11 failures (503s and timeouts) on the real photos,
+  which is why Groq now goes first. Watch `ai_usage` for Groq's error rate as the primary.
 - **`test:db` ran as a superuser** on the local replay, not as CI's non-superuser role.
 
 ## How to run things
@@ -225,7 +236,7 @@ with no key, and the five first-party events landed.
 
 ```bash
 swift apps/web/scripts/eval-synthetic-photos.swift             # the 8 synthetic fakes, once
-npm run eval:judge --workspace=@app/web                        # Gemini, then Groq
+npm run eval:judge --workspace=@app/web                        # Groq, then Gemini
 npm run eval:judge --workspace=@app/web -- --provider=groq     # one provider alone
 ```
 
