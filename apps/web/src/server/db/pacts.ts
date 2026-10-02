@@ -262,12 +262,16 @@ export function createPactStore(client: PrismaClient, codes: () => string = newI
 				}
 			})
 			if (!pact) return null
-			const checkIns = await client.checkIn.findMany({
-				where: { pactId, day },
-				select: CHECK_IN
-			})
+			const [checkIns, marks] = await Promise.all([
+				client.checkIn.findMany({ where: { pactId, day }, select: CHECK_IN }),
+				// Every check-in's who, day and kind: what the chain and the streaks are made of.
+				client.checkIn.findMany({
+					where: { pactId },
+					select: { userId: true, day: true, kind: true }
+				})
+			])
 			const { members, ...rest } = pact
-			return { pact: rest, members: members.map(toMember), checkIns }
+			return { pact: rest, members: members.map(toMember), checkIns, marks }
 		},
 
 		/** What an invite code joins: the pact, its active member count, whether the caller is in. */

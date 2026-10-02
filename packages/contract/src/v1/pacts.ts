@@ -163,12 +163,25 @@ export const todayBoardSchema = z.object({
 	})
 })
 
+export const DAY_STATUSES = ['kept', 'broken', 'open'] as const
+export const dayStatusSchema = z.enum(DAY_STATUSES)
+
+/** R19: the chain and the streaks, computed on every read from check-ins and membership (R10). */
+export const pactProgressSchema = z.object({
+	/** Every pact day from the start through today (or the end), oldest first; empty in the lobby. */
+	chain: z.array(z.object({ day: isoDate, status: dayStatusSchema })),
+	/** Kept days in a row back from the last closed day, plus today once it is kept. */
+	current_streak: z.number().int(),
+	best_streak: z.number().int()
+})
+
 export const pactDetailResponse = z.object({
 	pact: pactSchema,
 	/** Every member, those who left included (their days still count, R7). */
 	members: z.array(pactMemberSchema),
 	/** Null unless the pact is active. */
-	today: todayBoardSchema.nullable()
+	today: todayBoardSchema.nullable(),
+	progress: pactProgressSchema
 })
 
 export const pactListItemSchema = pactSchema.extend({
@@ -292,3 +305,5 @@ export type CheckIn = z.infer<typeof checkInSchema>
 export type CreateCheckInBody = z.infer<typeof createCheckInBody>
 export type Verdict = z.infer<typeof verdictSchema>
 export type MemberState = z.infer<typeof memberStateSchema>
+export type DayStatus = z.infer<typeof dayStatusSchema>
+export type PactProgress = z.infer<typeof pactProgressSchema>

@@ -10,6 +10,7 @@ import {
 	type JoinSource
 } from '@app/contract'
 import { api, ApiError, type ResponseOf } from './api'
+import { supabase } from './supabase'
 
 // Pact's data, through /api/app/v1 (docs/rules/mobile-data.md): the pact list, one pact with
 // today's board, invites, joining and check-ins. Every pact read lives under ['pacts'], so one
@@ -87,6 +88,15 @@ export function useJoinPact() {
 				queryClient.invalidateQueries({ queryKey: pactKeys.all }),
 				queryClient.invalidateQueries({ queryKey: pactKeys.invite(code) })
 			])
+	})
+}
+
+/** The signed-in person's user id, to mark "you" on a board. */
+export function useMyUserId() {
+	return useQuery({
+		queryKey: ['session-user'],
+		queryFn: async () => (await supabase.auth.getSession()).data.session?.user.id ?? null,
+		staleTime: Infinity
 	})
 }
 
