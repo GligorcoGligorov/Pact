@@ -3,7 +3,7 @@
  *
  * Pact: the light scheme's ground and ink follow docs/design/pact-ui-brief.md (the
  * "Moe" reference): a warm off-white #f8faed and near-black #232323, under the
- * green accent set in brand.config.ts.
+ * deep green accent set in brand.config.ts, with white text on its fills.
  *
  * A warm stone-paper ground (not stark white, and not cream-plus-terracotta:
  * the accent is a marigold FILL carrying dark ink, never a coral text colour),
@@ -49,7 +49,8 @@ export const daylight: Preset = {
 				error: { solid: '#c52c2a', text: '#a92321' },
 				info: { solid: '#036eae', text: '#025c93' }
 			},
-			onFill: { ink: '#232323', paper: '#f8faed' },
+			// Pact: white on the deep green fills (#2f7d3d, 5.1:1), the developer's call.
+			onFill: { ink: '#232323', paper: '#ffffff' },
 			shadowTint: '#2c3322', // deep olive, never black
 			// The near-black floating bar and countdown panels of the brief.
 			hero: { bg: '#232323', text: '#f8faed', textSecondary: '#c3c6b8' },
