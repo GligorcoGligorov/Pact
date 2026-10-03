@@ -3,21 +3,21 @@
 The one "where are we" file. Read it first; update it at the end of every phase.
 Spec: [pact-requirements.md](pact-requirements.md) (R-numbers). Plan: [pact-plan.md](pact-plan.md).
 
-**Last updated:** 2026-10-03, start of Phase 3, on branch `feat/phase-3-mobile-slice` (no CI in
+**Last updated:** 2026-10-03, end of Phase 3, on branch `feat/phase-3-mobile-slice` (no CI in
 this trial, see [trial-local-only](memory/trial-local-only.md)). Build traps:
 [device-build-traps](memory/device-build-traps.md).
 
 ## Phases
 
-| Phase                              | State    | Notes                                                                                |
-| ---------------------------------- | -------- | ------------------------------------------------------------------------------------ |
-| 0 — Device path                    | done     | On the simulator, from an EAS cloud build. iPhone only if there's time.              |
-| 1 — Events, schema, day math, seed | done     | `AiUsage` and the AI keys moved to Phase 2, and done there.                          |
-| 2 — API for the slice              | done     | All but the eval's 12 real photos (see open items).                                  |
-| 3 — Mobile slice                   | **next** | **Thursday checkpoint:** R-slice steps 1–6 on the simulator by Thu 2026-10-01 night. |
-| 4 — Social loop                    | –        | After the Fri 2026-10-02 feedback call.                                              |
-| 5 — Closer, results, onboarding    | –        |                                                                                      |
-| 6 — Dogfood and gates              | –        |                                                                                      |
+| Phase                              | State    | Notes                                                                              |
+| ---------------------------------- | -------- | ---------------------------------------------------------------------------------- |
+| 0 — Device path                    | done     | On the simulator, from an EAS cloud build. iPhone only if there's time.            |
+| 1 — Events, schema, day math, seed | done     | `AiUsage` and the AI keys moved to Phase 2, and done there.                        |
+| 2 — API for the slice              | done     | All but the eval's 12 real photos (see open items).                                |
+| 3 — Mobile slice                   | done     | Built and committed 2026-10-03; a hand tap-through on the simulator is still owed. |
+| 4 — Social loop                    | **next** | The call slot moved; no feedback yet.                                              |
+| 5 — Closer, results, onboarding    | –        |                                                                                    |
+| 6 — Dogfood and gates              | –        |                                                                                    |
 
 ## What exists and where
 
@@ -79,6 +79,17 @@ this trial, see [trial-local-only](memory/trial-local-only.md)). Build traps:
 - `apps/web/src/server/ai/`: `prompt.ts` (the approved prompt and the answer parser),
   `providers.ts` (the interface), `gemini.ts`, `groq.ts`, `registry.ts`, `judge.ts`, and
   `judge.eval.mts` (hand-run, see below).
+
+**The mobile slice (Phase 3)**, in `apps/mobile`:
+
+- `lib/pacts.ts`: TanStack Query hooks for every slice endpoint, the photo upload
+  (`submitPhotoCheckIn`), the 1 s verdict poll, `useMyUserId`, date helpers.
+- Screens: `(tabs)/index` (home), `pact/new`, `pact/[id]/index` (board), `pact/[id]/invite`,
+  `pact/[id]/check-in` (consent → camera → preview → verdict), `join/index`, `join/[code]`.
+- `components/pact/`: `PactCard`, `Avatars` (avatars, stack, `crewLine`), `Ring`, `Chain`,
+  `Countdown`, `MemberRow`, `StateChip`, `WeekStrip`, `VerdictView`, `Confetti`.
+- API, additive: `GET pacts` and `GET pacts/:id` both carry `progress` (chain, current and best
+  streak); `GET pacts` also carries each pact's `today` board, for home's crew, ring and streak.
 
 ## Decisions made in code
 
@@ -169,8 +180,32 @@ untouched. Events stay registered locally and `check:events` still gates them. W
 the session brief or a skill says to ask `pulse`, skip that step for the trial. See
 [no-play-stats-in-trial](memory/no-play-stats-in-trial.md).
 
+**Phase 3 design (decided 2026-10-03, from the developer's feedback):** ref 01 is the style of
+every screen: light and warm, big type, soft white cards, one green accent, photos only inside
+cards, never under text. Ref 03's big thin countdown is used on the board only. The verdict is
+a light page: the photo as a tilted polaroid, "Day N kept", the caption, then the streak
+ticking up and the crew. Home is social first: each card shows the crew's faces with today's
+checks, the ring and the streak; New pact and Join sit behind a "+".
+
+**Phase 3 smaller calls:**
+
+- Brand: the daylight preset, accent `#50a65c`, ground `#f8faed`, ink `#232323`. Font:
+  Bricolage Grotesque, already bundled (Space Grotesk would need a package and web wiring and
+  has no 800). The countdown uses the system font for its thin numerals.
+- No clipboard: `expo-clipboard` is native; the invite uses the share sheet (it has Copy) and a
+  selectable code. Pact lengths are 7/14/21/30 presets.
+- Strings are inline English like the template's other screens; no screen uses i18next yet.
+- AI consent "Not now" lasts the app session; those check-ins are `skipped`.
+- The demo pact is "6am Run Club". The local DB's hand-made test pacts were renamed
+  ("Hydration Squad", "Page Turners"); Ben and Cleo were added to Hydration Squad by hand.
+
 ## Open items
 
+- **Tap-through on the simulator:** each screen was screenshotted, but no flow was tapped
+  through end to end in the app (simctl can't tap): create → invite → join from a second
+  account → check in → verdict. The same calls were run against the API and work.
+- **Splash and status bar** are set to the new ground in `app.json`; they show from the next
+  build only.
 - **The 12th real photo** was never taken; the eval passed without it (see Decisions).
 - **Finger counting** is the judge's weak spot (both real-photo misses). Watch for it in
   dogfooding before touching the prompt.
