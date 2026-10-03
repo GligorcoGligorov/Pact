@@ -5,8 +5,9 @@
  * It makes four demo accounts (Supabase Auth, email confirmed, so the simulator signs in with
  * an emailed code from Mailpit) and one active pact, invite code STREAK, that started 7 days
  * ago in the Mac's timezone. The week behind it: five kept days, a Cleo streak saver, a day
- * Dan missed (broken), a `suspicious` check-in from Ben, and today half done (Ana and Ben
- * in, Cleo and Dan out, Dan nudged by Ana). Placeholder photos go to storage under each
+ * Dan missed (broken), a `suspicious` check-in from Ben, and today half done (Ben and Cleo
+ * in, Ana and Dan out, Dan nudged by Ben). Ana is out on purpose: she is the account a live
+ * demo checks in with. Placeholder photos go to storage under each
  * member's `<user id>/proofs/`.
  *
  * Idempotent: run it again and it moves the pact to "started 7 days ago" from the new today
@@ -59,7 +60,7 @@ const TODAY_OFFSET = DAYS_AGO_STARTED
 const CLEO_SAVER_OFFSET = 4
 const DAN_MISSED_OFFSET = 5
 const BEN_SUSPICIOUS_OFFSET = 3
-const IN_TODAY = new Set<DemoMember['key']>(['ana', 'ben'])
+const IN_TODAY = new Set<DemoMember['key']>(['ben', 'cleo'])
 
 const CAPTIONS = [
 	'Three fingers, zero excuses.',
@@ -282,7 +283,7 @@ async function main() {
 		db.nudge.create({
 			data: {
 				pactId: pact.id,
-				fromUserId: idOf('ana'),
+				fromUserId: idOf('ben'),
 				toUserId: idOf('dan'),
 				day: dateFromDay(today)
 			}
