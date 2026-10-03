@@ -7,6 +7,9 @@ import { fake, fakeStore, reset, send } from '@/server/api/app-test-kit.mts'
 import { at, NOW, otherMember, PACT_ID, pactRow } from '@/server/api/pact-fixtures.mts'
 import type { PactRecord } from '@/server/db/pacts'
 
+const USER_A = '44444444-4444-4444-8444-444444444444'
+const USER_B = '55555555-5555-4555-8555-555555555555'
+
 const join = await import('./route')
 const invite = await import('../route')
 const { pactStore } = await import('@/server/db/pacts')
@@ -23,6 +26,10 @@ const post = (code = 'STREAK', source = 'code') =>
 function found(pact: PactRecord, extra: { isMember?: boolean; hasLeft?: boolean } = {}) {
 	fakeStore(pactStore, 'byInviteCode', () => ({
 		pact,
+		members: [
+			{ userId: USER_A, displayName: 'Ana' },
+			{ userId: USER_B, displayName: null }
+		],
 		memberCount: 3,
 		isMember: false,
 		hasLeft: false,
@@ -57,6 +64,10 @@ test('preview: the pact, its size and whether the caller is in; lowercase codes 
 	assert.ok(inviteResponse.safeParse(res.body).success)
 	assert.equal(res.body.invite.pact.status, 'active')
 	assert.equal(res.body.invite.member_count, 3)
+	assert.deepEqual(res.body.invite.members, [
+		{ user_id: USER_A, display_name: 'Ana' },
+		{ user_id: USER_B, display_name: null }
+	])
 	assert.equal(res.body.invite.is_member, false)
 	assert.equal(fake.storeCalls[0].args[0], 'STREAK', 'looked up upper-cased')
 	assert.equal(res.body.invite.pact.invite_code, undefined, 'the preview repeats no code')

@@ -286,12 +286,19 @@ export function createPactStore(client: PrismaClient, codes: () => string = newI
 			return { pact: rest, members: members.map(toMember), checkIns, marks }
 		},
 
-		/** What an invite code joins: the pact, its active member count, whether the caller is in. */
+		/**
+		 * What an invite code joins: the pact, its active members (id and display name, oldest
+		 * first), how many there are, and whether the caller is in.
+		 */
 		async byInviteCode(code: string, userId: string) {
 			const pact = await client.pact.findUnique({ where: { inviteCode: code }, select: PACT })
 			if (!pact) return null
-			const [memberCount, mine] = await Promise.all([
-				client.pactMember.count({ where: { pactId: pact.id, leftDay: null } }),
+			const [members, mine] = await Promise.all([
+				client.pactMember.findMany({
+					where: { pactId: pact.id, leftDay: null },
+					orderBy: [{ createdAt: 'asc' }, { userId: 'asc' }],
+					select: { userId: true, profile: { select: { displayName: true } } }
+				}),
 				client.pactMember.findUnique({
 					where: { pactId_userId: { pactId: pact.id, userId } },
 					select: { leftDay: true }
@@ -299,7 +306,8 @@ export function createPactStore(client: PrismaClient, codes: () => string = newI
 			])
 			return {
 				pact,
-				memberCount,
+				members: members.map((m) => ({ userId: m.userId, displayName: m.profile.displayName })),
+				memberCount: members.length,
 				isMember: !!mine && mine.leftDay === null,
 				hasLeft: !!mine?.leftDay
 			}

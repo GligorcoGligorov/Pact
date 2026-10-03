@@ -29,6 +29,7 @@ export const GET = createAppRoute(endpoints.getInvite, async ({ user, params }) 
 					status: statusOf(pact, todayIn(pact.timezone, new Date()))
 				},
 				member_count: found.memberCount,
+				members: found.members.map((m) => ({ user_id: m.userId, display_name: m.displayName })),
 				max_members: pact.maxMembers,
 				is_member: found.isMember
 			}

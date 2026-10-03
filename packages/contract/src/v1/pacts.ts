@@ -213,6 +213,8 @@ export const inviteResponse = z.object({
 	invite: z.object({
 		pact: invitePactSchema,
 		member_count: z.number().int(),
+		/** The active members, oldest first: the names a join page may show (R27). */
+		members: z.array(z.object({ user_id: uuid, display_name: z.string().nullable() })),
 		max_members: z.number().int(),
 		is_member: z.boolean()
 	})
