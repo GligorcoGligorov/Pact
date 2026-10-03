@@ -186,7 +186,10 @@ export const pactDetailResponse = z.object({
 
 export const pactListItemSchema = pactSchema.extend({
 	/** The caller's state today, or null when they aren't held today. */
-	my_state_today: memberStateSchema.nullable()
+	my_state_today: memberStateSchema.nullable(),
+	/** Today's board, as on the pact's own page; null unless the pact is active. */
+	today: todayBoardSchema.nullable(),
+	progress: pactProgressSchema
 })
 
 export const listPactsResponse = z.object({ pacts: z.array(pactListItemSchema) })

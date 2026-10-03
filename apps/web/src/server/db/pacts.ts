@@ -180,21 +180,33 @@ export function createPactStore(client: PrismaClient, codes: () => string = newI
 		 * membership and their check-ins from `sinceDay` on (enough to know their state today in
 		 * any timezone).
 		 */
-		async listForUser(userId: string, sinceDay: Date) {
+		async listForUser(userId: string) {
 			const memberships = await client.pactMember.findMany({
 				where: { userId, leftDay: null },
 				orderBy: { createdAt: 'desc' },
 				select: {
 					...MEMBER,
-					pact: { select: PACT },
-					checkIns: { where: { day: { gte: sinceDay } }, select: CHECK_IN }
+					pact: {
+						select: {
+							...PACT,
+							// Everyone in it and every check-in: home shows each pact's board, ring and streak.
+							members: {
+								orderBy: [{ createdAt: 'asc' }, { userId: 'asc' }],
+								select: { ...MEMBER, checkIns: { select: CHECK_IN } }
+							}
+						}
+					}
 				}
 			})
-			return memberships.map(({ pact, checkIns, ...member }) => ({
-				pact,
-				me: toMember(member),
-				checkIns
-			}))
+			return memberships.map(({ pact: { members: rows, ...pact }, ...member }) => {
+				const members: MemberRecord[] = []
+				const checkIns: CheckInRecord[] = []
+				for (const { checkIns: own, ...row } of rows) {
+					members.push(toMember(row))
+					checkIns.push(...own)
+				}
+				return { pact, me: toMember(member), members, checkIns }
+			})
 		},
 
 		/**

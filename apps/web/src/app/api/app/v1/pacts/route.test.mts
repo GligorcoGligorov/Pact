@@ -3,12 +3,13 @@
 import { test, beforeEach, mock } from 'node:test'
 import assert from 'node:assert/strict'
 import { listPactsResponse, pactResponse } from '@app/contract'
-import { fake, fakeStore, reset, send, USER } from '@/server/api/app-test-kit.mts'
+import { fake, fakeStore, OTHER, reset, send, USER } from '@/server/api/app-test-kit.mts'
 import {
 	at,
 	checkInRow,
 	memberRow,
 	NOW,
+	otherMember,
 	PACT_ID,
 	pactRow,
 	TODAY
@@ -141,16 +142,19 @@ test('create: a server-controlled field is refused, and no token is a 401', asyn
 
 test("list: each pact with the caller's state today; not held today is null", async () => {
 	const late = '11111111-1111-4111-8111-111111111111'
+	const lateMe = memberRow({ role: 'member', joinedDay: at('2026-10-01') })
 	fakeStore(pactStore, 'listForUser', () => [
-		{ pact: pactRow(), me: memberRow(), checkIns: [checkInRow()] },
+		{ pact: pactRow(), me: memberRow(), members: [memberRow()], checkIns: [checkInRow()] },
 		{
 			pact: pactRow({ id: late, inviteCode: 'LATEJN' }),
-			me: memberRow({ role: 'member', joinedDay: at('2026-10-01') }),
+			me: lateMe,
+			members: [lateMe],
 			checkIns: []
 		},
 		{
 			pact: pactRow({ id: '22222222-2222-4222-8222-222222222222', inviteCode: 'SAVERS' }),
 			me: memberRow(),
+			members: [memberRow()],
 			checkIns: [checkInRow({ kind: 'saver', day: at('2026-09-29') })]
 		}
 	])
@@ -162,8 +166,41 @@ test("list: each pact with the caller's state today; not held today is null", as
 		['in', null, 'out'],
 		"yesterday's saver doesn't count today"
 	)
-	assert.deepEqual(fake.storeCalls.find((c) => c.method === 'listForUser')?.args, [
-		USER,
-		at('2026-09-29')
+	assert.deepEqual(fake.storeCalls.find((c) => c.method === 'listForUser')?.args, [USER])
+})
+
+test("list: each active pact carries today's board and its progress, for the home cards", async () => {
+	const both = (day: string) => [
+		checkInRow({ day: at(day) }),
+		checkInRow({ userId: OTHER, day: at(day) })
+	]
+	fakeStore(pactStore, 'listForUser', () => [
+		{
+			pact: pactRow(),
+			me: memberRow(),
+			members: [memberRow(), otherMember()],
+			checkIns: [...both('2026-09-28'), ...both('2026-09-29'), checkInRow()]
+		},
+		{
+			pact: pactRow({ startDay: at('2026-10-05'), endDay: at('2026-10-25'), inviteCode: 'LOBBYS' }),
+			me: memberRow(),
+			members: [memberRow()],
+			checkIns: []
+		}
 	])
+	const res = await send(pacts.GET, '/api/app/v1/pacts')
+	assert.ok(listPactsResponse.safeParse(res.body).success)
+	const [active, lobby] = res.body.pacts
+	assert.equal(active.today.in_count, 1)
+	assert.equal(active.today.held_count, 2)
+	assert.deepEqual(
+		active.today.members.map((m: { user_id: string; state: string }) => [m.user_id, m.state]),
+		[
+			[USER, 'in'],
+			[OTHER, 'out']
+		]
+	)
+	assert.equal(active.progress.current_streak, 2, 'kept the 28th and 29th; today is still open')
+	assert.equal(lobby.today, null)
+	assert.deepEqual(lobby.progress, { chain: [], current_streak: 0, best_streak: 0 })
 })
