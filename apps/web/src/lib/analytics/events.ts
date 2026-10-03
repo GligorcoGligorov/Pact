@@ -186,6 +186,14 @@ export const PACT_EVENT_NAMES = Object.values(PACT_EVENTS)
  *
  * join_page_view → join_open_app_clicked is the web half of the invite loop;
  * the app's own `join_viewed` → `pact_joined` is the other half.
+ *
+ * Phase 4 lets a friend join on the page itself: join_page_view →
+ * join_code_requested → join_signed_in → `pact_joined` (source `web`, recorded
+ * server-side by the join route) → join_open_app_clicked. THE metric is that
+ * `pact_joined` with source `web` over join_page_view: whether the first thing a
+ * friend sees turns them into a member. Each step is its own event so the
+ * drop-off between them shows: an email the friend wouldn't give, a code that
+ * never arrived, a join that failed.
  */
 export const JOIN_PAGE_EVENTS = {
 	/** /join/[code] was viewed, for a code that exists. */
@@ -195,7 +203,11 @@ export const JOIN_PAGE_EVENTS = {
 	 * `target` is the discriminator: a copied code means the custom scheme did
 	 * not open, which is the universal-links question for later.
 	 */
-	joinOpenAppClicked: 'join_open_app_clicked'
+	joinOpenAppClicked: 'join_open_app_clicked',
+	/** The friend asked for a sign-in code by email on the page. */
+	joinCodeRequested: 'join_code_requested',
+	/** The emailed code was accepted: the friend is signed in on the page. */
+	joinSignedIn: 'join_signed_in'
 } as const
 
 export const JOIN_PAGE_EVENT_NAMES = Object.values(JOIN_PAGE_EVENTS)

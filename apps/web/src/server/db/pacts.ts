@@ -287,6 +287,33 @@ export function createPactStore(client: PrismaClient, codes: () => string = newI
 		},
 
 		/**
+		 * R27: what the public join page may show for a code, for anyone, signed in or not: the
+		 * pact, its members and every check-in's who, day and kind (the board and the streak are
+		 * computed from those). Never a photo, a verdict, a caption or a note.
+		 */
+		async publicPage(code: string) {
+			const pact = await client.pact.findUnique({
+				where: { inviteCode: code },
+				select: {
+					...PACT,
+					members: {
+						orderBy: [{ createdAt: 'asc' }, { userId: 'asc' }],
+						select: { ...MEMBER, checkIns: { select: { userId: true, day: true, kind: true } } }
+					}
+				}
+			})
+			if (!pact) return null
+			const { members: rows, ...rest } = pact
+			const members: MemberRecord[] = []
+			const marks: { userId: string; day: Date; kind: CheckInRecord['kind'] }[] = []
+			for (const { checkIns, ...row } of rows) {
+				members.push(toMember(row))
+				marks.push(...checkIns)
+			}
+			return { pact: rest, members, marks }
+		},
+
+		/**
 		 * What an invite code joins: the pact, its active members (id and display name, oldest
 		 * first), how many there are, and whether the caller is in.
 		 */

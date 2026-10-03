@@ -220,7 +220,8 @@ export const inviteResponse = z.object({
 	})
 })
 
-export const JOIN_SOURCES = ['deep_link', 'code'] as const
+/** `web`: joined on the public /join/[code] page. */
+export const JOIN_SOURCES = ['deep_link', 'code', 'web'] as const
 export const joinSourceSchema = z.enum(JOIN_SOURCES)
 
 export const joinPactBody = z.object({ source: joinSourceSchema }).strict()
