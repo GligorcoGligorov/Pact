@@ -16,7 +16,7 @@ import { Screen } from '@/components/ui/Screen'
 import { CardSkeleton } from '@/components/ui/Skeleton'
 import { Text } from '@/components/ui/Text'
 import TextInputField from '@/components/ui/TextInputField'
-import { useColors } from '@/contexts/ThemeContext'
+import { useColors, useTheme } from '@/contexts/ThemeContext'
 import { useProfile } from '@/hooks/useProfile'
 import { track } from '@/lib/analytics'
 import { api, errorMessage } from '@/lib/api'
@@ -53,6 +53,7 @@ type Phase =
  * note, then the upload, a short "judging…" and the verdict with the AI's caption.
  */
 export default function CheckInScreen() {
+	const { colors: c, elevation } = useTheme()
 	const { id } = useLocalSearchParams<{ id: string }>()
 	const pact = usePact(id)
 	const profile = useProfile()
@@ -239,10 +240,10 @@ export default function CheckInScreen() {
 				/>
 			) : phase && 'asset' in phase ? (
 				<>
-					<View style={s.photoWrap}>
+					<View style={[s.photoWrap, elevation.raised, { backgroundColor: c.surface }]}>
 						<Image source={{ uri: phase.asset.uri }} style={s.photo} contentFit="cover" />
-						{challenge ? <ChallengeTag challenge={challenge} /> : null}
 					</View>
+					{challenge ? <ChallengeTag challenge={challenge} /> : null}
 					<TextInputField
 						placeholder="Add a note (optional)"
 						value={note}
@@ -264,13 +265,11 @@ export default function CheckInScreen() {
 function ChallengeTag({ challenge }: { challenge: string }) {
 	const c = useColors()
 	return (
-		<View style={[s.tag, { backgroundColor: c.hero }]}>
-			<Text variant="caption" style={{ color: c.heroTextSecondary }}>
+		<View style={[s.tag, { backgroundColor: c.brandDim, borderColor: c.brandBorder }]}>
+			<Text variant="caption" tone="brand">
 				Today&apos;s challenge
 			</Text>
-			<Text variant="label" style={{ color: c.heroText }}>
-				{challenge}
-			</Text>
+			<Text variant="label">{challenge}</Text>
 		</View>
 	)
 }
@@ -385,12 +384,12 @@ const s = StyleSheet.create({
 	row: { flexDirection: 'row', gap: 10 },
 	flex: { flex: 1 },
 	grow: { flex: 2 },
-	photoWrap: { borderRadius: 24, overflow: 'hidden' },
-	photo: { width: '100%', aspectRatio: 3 / 4 },
+	photoWrap: { borderRadius: 24, padding: 8 },
+	photo: { width: '100%', aspectRatio: 3 / 4, borderRadius: 18 },
 	tag: {
-		position: 'absolute',
-		left: 14,
-		bottom: 14,
+		alignSelf: 'center',
+		alignItems: 'center',
+		borderWidth: StyleSheet.hairlineWidth,
 		borderRadius: 16,
 		paddingHorizontal: 14,
 		paddingVertical: 10,

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { RefreshControl, StyleSheet, View } from 'react-native'
 import { router, useLocalSearchParams } from 'expo-router'
 import { useQueryClient } from '@tanstack/react-query'
-import { Camera, Check, Flame, SearchX, UserPlus } from 'lucide-react-native'
+import { Camera, Check, Flame, ScanEye, SearchX, UserPlus } from 'lucide-react-native'
 import { Chain, chainTiles } from '@/components/pact/Chain'
 import { Countdown } from '@/components/pact/Countdown'
 import { MemberRow } from '@/components/pact/MemberRow'
@@ -18,7 +18,7 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { Screen } from '@/components/ui/Screen'
 import { CardSkeleton } from '@/components/ui/Skeleton'
 import { Text } from '@/components/ui/Text'
-import { useColors } from '@/contexts/ThemeContext'
+import { useColors, useTheme } from '@/contexts/ThemeContext'
 import { haptic } from '@/lib/haptics'
 import {
 	daysBetween,
@@ -101,7 +101,7 @@ export default function PactBoardScreen() {
 }
 
 function Board({ detail, myId }: { detail: PactDetail; myId: string | null }) {
-	const c = useColors()
+	const { colors: c, elevation } = useTheme()
 	const { pact, today, progress, members } = detail
 	const tiles = chainTiles(progress.chain, pact.start_day, pact.end_day, pact.cadence)
 	const totalDays = tiles.length
@@ -110,27 +110,27 @@ function Board({ detail, myId }: { detail: PactDetail; myId: string | null }) {
 	return (
 		<>
 			<FadeSlideIn index={0}>
-				<Card tier="hero" padding="spacious" style={s.hero}>
+				<View style={s.hero}>
 					<View style={s.heroTop}>
 						<View style={s.heroTitle}>
-							<Text variant="eyebrow" style={{ color: c.heroTextSecondary }} numberOfLines={1}>
+							<Text variant="eyebrow" tone="tertiary" numberOfLines={1}>
 								{pact.name}
 							</Text>
-							<Text variant="h2" style={{ color: c.heroText }}>
-								{pact.habit}
-							</Text>
+							<Text variant="h1">{pact.habit}</Text>
 						</View>
-						{today ? (
+						{today && today.held_count > 0 ? (
 							<Ring
 								value={today.in_count}
 								max={today.held_count}
+								size={76}
+								stroke={9}
 								color={c.brandFill}
-								track={c.heroBorder}
+								track={c.tintTrack}
 							>
-								<Text variant="h3" tabular style={{ color: c.heroText }}>
+								<Text variant="h3" tabular>
 									{today.in_count}/{today.held_count}
 								</Text>
-								<Text variant="caption" style={{ color: c.heroTextSecondary }}>
+								<Text variant="caption" tone="tertiary">
 									in
 								</Text>
 							</Ring>
@@ -141,31 +141,36 @@ function Board({ detail, myId }: { detail: PactDetail; myId: string | null }) {
 						<View>
 							<Countdown
 								closesAt={today.closes_at}
-								color={c.heroText}
-								unitColor={c.heroTextSecondary}
+								color={c.textPrimary}
+								unitColor={c.textTertiary}
 							/>
-							<Text variant="bodySm" style={{ color: c.heroTextSecondary }}>
+							<Text variant="bodySm" tone="secondary">
 								left to check in today
 							</Text>
 						</View>
 					) : (
-						<Text variant="lead" style={{ color: c.heroTextSecondary }}>
+						<Text variant="lead" tone="secondary">
 							{heroLine(detail)}
 						</Text>
 					)}
-				</Card>
+				</View>
 			</FadeSlideIn>
 
 			{today && today.held_count > 0 ? (
 				<FadeSlideIn index={1}>
-					<Card tier="selected" padding="spacious" style={s.challenge}>
-						<Text variant="eyebrow" tone="brand">
-							Today&apos;s challenge
-						</Text>
-						<Text variant="h2">{today.challenge}</Text>
-						<Text variant="bodySm" tone="secondary">
-							Show it in your photo, so everyone knows it&apos;s from today.
-						</Text>
+					<Card padding="normal" style={[s.challenge, elevation.card]}>
+						<View style={[s.challengeIcon, { backgroundColor: c.brandDim }]}>
+							<ScanEye size={24} color={c.brandInk} />
+						</View>
+						<View style={s.challengeText}>
+							<Text variant="eyebrow" tone="brand">
+								Today&apos;s challenge
+							</Text>
+							<Text variant="h3">{today.challenge}</Text>
+							<Text variant="caption" tone="secondary">
+								Show it in your photo, so everyone knows it&apos;s from today.
+							</Text>
+						</View>
 					</Card>
 				</FadeSlideIn>
 			) : null}
@@ -300,10 +305,18 @@ function BoardAction({ detail }: { detail: PactDetail }) {
 }
 
 const s = StyleSheet.create({
-	hero: { gap: 18 },
+	hero: { gap: 14, paddingTop: 4 },
 	heroTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 16 },
 	heroTitle: { flex: 1, gap: 6 },
-	challenge: { gap: 6 },
+	challenge: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+	challengeIcon: {
+		width: 48,
+		height: 48,
+		borderRadius: 16,
+		alignItems: 'center',
+		justifyContent: 'center'
+	},
+	challengeText: { flex: 1, gap: 3 },
 	memberName: { paddingVertical: 8 },
 	streakCard: { gap: 16 },
 	streakTop: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' },

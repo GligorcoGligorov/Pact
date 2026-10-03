@@ -92,6 +92,7 @@ export default function NewPactScreen() {
 			}
 		>
 			<ScreenTitle
+				variant="display"
 				title="New pact"
 				subtitle="Pick one habit. Everyone checks in with a photo every day, or the day breaks for all of you."
 			/>

@@ -3,8 +3,7 @@ import { TriangleAlert } from 'lucide-react-native'
 import type { TodayBoard } from '@app/contract'
 import { Text } from '@/components/ui/Text'
 import { useColors } from '@/contexts/ThemeContext'
-import { getInitials } from '@/lib/utils'
-import { Ring } from './Ring'
+import { Avatar } from './Avatars'
 import { StateChip } from './StateChip'
 
 type BoardMember = TodayBoard['members'][number]
@@ -16,7 +15,7 @@ const STATE_CHIP = {
 } as const
 
 /**
- * A member on today's board: their small ring (full once they're in), their state, and the AI's
+ * A member on today's board: their avatar (checked once they're in), their state, and the AI's
  * caption. A suspicious check-in shows its flag and the reason to everyone (R15).
  */
 export function MemberRow({ member, isMe }: { member: BoardMember; isMe: boolean }) {
@@ -26,18 +25,7 @@ export function MemberRow({ member, isMe }: { member: BoardMember; isMe: boolean
 	const suspicious = checkIn?.verdict === 'suspicious'
 	return (
 		<View style={s.row}>
-			<Ring
-				value={member.state === 'out' ? 0 : 1}
-				max={1}
-				size={44}
-				stroke={4}
-				color={member.state === 'saver' ? c.info : c.brandFill}
-				track={c.tintTrack}
-			>
-				<Text variant="label" tone="secondary">
-					{getInitials(name)}
-				</Text>
-			</Ring>
+			<Avatar userId={member.user_id} name={name} state={member.state} size={42} />
 			<View style={s.body}>
 				<View style={s.top}>
 					<Text variant="label" numberOfLines={1} style={s.name}>

@@ -12,7 +12,7 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { Screen } from '@/components/ui/Screen'
 import { CardSkeleton } from '@/components/ui/Skeleton'
 import { Text } from '@/components/ui/Text'
-import { useColors } from '@/contexts/ThemeContext'
+import { useTheme } from '@/contexts/ThemeContext'
 import { track } from '@/lib/analytics'
 import { ApiError, errorMessage } from '@/lib/api'
 import { haptic } from '@/lib/haptics'
@@ -52,7 +52,7 @@ const BLOCKED_COPY: Record<'full' | 'closed', { title: string; body: string }> =
  * from `pact://join/<code>` (source `deep_link`, the default).
  */
 export default function JoinPreviewScreen() {
-	const c = useColors()
+	const { colors: c, elevation } = useTheme()
 	const params = useLocalSearchParams<{ code: string; source?: string }>()
 	const code = (params.code ?? '').toUpperCase()
 	const source: JoinSource = params.source === 'code' ? 'code' : 'deep_link'
@@ -145,35 +145,33 @@ export default function JoinPreviewScreen() {
 				/>
 			) : (
 				<FadeSlideIn index={0}>
-					<Card tier="hero" padding="spacious" style={s.card}>
-						<Text variant="eyebrow" style={{ color: c.heroTextSecondary }}>
+					<Card padding="spacious" style={[s.card, elevation.card]}>
+						<Text variant="eyebrow" tone="tertiary">
 							{data.is_member ? "You're in this pact" : "You're invited to"}
 						</Text>
-						<Text variant="h1" style={{ color: c.heroText }}>
-							{data.pact.name}
-						</Text>
-						<Text variant="lead" style={{ color: c.heroBrandInk }}>
+						<Text variant="display">{data.pact.name}</Text>
+						<Text variant="lead" tone="brand">
 							{data.pact.habit}
 							{data.pact.cadence === 'weekdays' ? ', every weekday' : ', every day'}
 						</Text>
 						<View style={s.facts}>
 							<Fact
-								icon={<CalendarDays size={16} color={c.heroTextSecondary} />}
+								icon={<CalendarDays size={16} color={c.textTertiary} />}
 								text={`${shortDay(data.pact.start_day)} – ${shortDay(data.pact.end_day)}`}
 							/>
 							<Fact
-								icon={<Users size={16} color={c.heroTextSecondary} />}
+								icon={<Users size={16} color={c.textTertiary} />}
 								text={`${data.member_count} of ${data.max_members} in`}
 							/>
 							{data.pact.stake ? (
 								<Fact
-									icon={<Trophy size={16} color={c.heroTextSecondary} />}
+									icon={<Trophy size={16} color={c.textTertiary} />}
 									text={`Stake: ${data.pact.stake}`}
 								/>
 							) : null}
 						</View>
 						{data.pact.status === 'active' && !data.is_member ? (
-							<Text variant="bodySm" style={{ color: c.heroTextSecondary }}>
+							<Text variant="bodySm" tone="secondary">
 								{LATE_JOIN_NOTE}
 							</Text>
 						) : null}
@@ -185,11 +183,10 @@ export default function JoinPreviewScreen() {
 }
 
 function Fact({ icon, text }: { icon: React.ReactNode; text: string }) {
-	const c = useColors()
 	return (
 		<View style={s.fact}>
 			{icon}
-			<Text variant="bodySm" style={{ color: c.heroText }}>
+			<Text variant="bodySm" tone="body">
 				{text}
 			</Text>
 		</View>

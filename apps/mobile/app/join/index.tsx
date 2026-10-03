@@ -31,7 +31,11 @@ export default function JoinByCodeScreen() {
 				<Button label="Find pact" size="lg" fullWidth disabled={!complete} onPress={() => open()} />
 			}
 		>
-			<ScreenTitle title="Join a pact" subtitle="Enter the six-character code a friend sent you." />
+			<ScreenTitle
+				variant="display"
+				title="Join a pact"
+				subtitle="Enter the six-character code a friend sent you."
+			/>
 			<CodeInput
 				kind="invite"
 				value={code}

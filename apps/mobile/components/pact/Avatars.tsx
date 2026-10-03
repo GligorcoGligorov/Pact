@@ -81,13 +81,15 @@ export function Avatar({
 	)
 }
 
-/** The crew, overlapping: everyone held today, those who are in first. */
+type StackMember = { user_id: string; display_name: string | null; state?: MemberState }
+
+/** The crew, overlapping: those who are in first. Without `state`, just the faces. */
 export function AvatarStack({
 	members,
 	size = 36,
 	max = 5
 }: {
-	members: BoardMember[]
+	members: StackMember[]
 	size?: number
 	max?: number
 }) {
@@ -96,7 +98,7 @@ export function AvatarStack({
 	const shown = order.slice(0, max)
 	const extra = order.length - shown.length
 	return (
-		<View style={s.stack} accessibilityLabel={crewLine(members, null)}>
+		<View style={s.stack} accessibilityLabel={`${members.length} members`}>
 			{shown.map((m, i) => (
 				<View key={m.user_id} style={{ marginLeft: i === 0 ? 0 : -size * 0.3, zIndex: max - i }}>
 					<Avatar userId={m.user_id} name={displayName(m)} state={m.state} size={size} />

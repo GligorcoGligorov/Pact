@@ -1,6 +1,7 @@
 import { Share, StyleSheet, View } from 'react-native'
 import { router, useLocalSearchParams } from 'expo-router'
 import { SearchX, Share2 } from 'lucide-react-native'
+import { AvatarStack } from '@/components/pact/Avatars'
 import { QueryErrorState } from '@/components/QueryError'
 import { FadeSlideIn } from '@/components/motion/FadeSlideIn'
 import { Button } from '@/components/ui/Button'
@@ -10,7 +11,7 @@ import { PageHeader, ScreenTitle } from '@/components/ui/PageHeader'
 import { Screen } from '@/components/ui/Screen'
 import { CardSkeleton } from '@/components/ui/Skeleton'
 import { Text } from '@/components/ui/Text'
-import { useColors } from '@/contexts/ThemeContext'
+import { useTheme } from '@/contexts/ThemeContext'
 import { track } from '@/lib/analytics'
 import { log } from '@/lib/logger'
 import { usePact } from '@/lib/pacts'
@@ -21,10 +22,11 @@ import { usePact } from '@/lib/pacts'
  * native, and this slice ships without a new build).
  */
 export default function InviteScreen() {
-	const c = useColors()
+	const { elevation } = useTheme()
 	const { id } = useLocalSearchParams<{ id: string }>()
 	const query = usePact(id)
 	const pact = query.data?.pact
+	const crew = (query.data?.members ?? []).filter((m) => !m.left_day)
 
 	async function share() {
 		if (!pact) return
@@ -81,28 +83,37 @@ export default function InviteScreen() {
 			) : (
 				<>
 					<ScreenTitle
+						variant="display"
 						eyebrow={pact.name}
 						title="Bring your people"
 						subtitle="A pact needs at least two. Send them the code; up to 8 can join."
 					/>
 					<FadeSlideIn index={1}>
-						<Card tier="hero" padding="spacious" style={s.codeCard}>
-							<Text variant="eyebrow" style={{ color: c.heroTextSecondary }}>
+						<Card padding="spacious" style={[s.codeCard, elevation.card]}>
+							<Text variant="eyebrow" tone="tertiary">
 								Invite code
 							</Text>
 							<Text
 								selectable
 								variant="displayHero"
 								tabular
-								style={[s.code, { color: c.heroText }]}
+								style={s.code}
 								accessibilityLabel={`Invite code ${pact.invite_code.split('').join(' ')}`}
 							>
 								{pact.invite_code}
 							</Text>
-							<Text variant="bodySm" style={{ color: c.heroTextSecondary }}>
+							<Text variant="bodySm" tone="brand">
 								{pact.habit}
 							</Text>
 						</Card>
+					</FadeSlideIn>
+					<FadeSlideIn index={2} style={s.crew}>
+						<AvatarStack members={crew} size={36} max={8} />
+						<Text variant="bodySm" tone="secondary" style={s.flex}>
+							{crew.length === 1
+								? 'Just you so far.'
+								: `${crew.length} of ${pact.max_members} in so far.`}
+						</Text>
 					</FadeSlideIn>
 				</>
 			)}
@@ -113,5 +124,7 @@ export default function InviteScreen() {
 const s = StyleSheet.create({
 	footer: { gap: 6 },
 	codeCard: { alignItems: 'center', gap: 10, paddingVertical: 36 },
-	code: { letterSpacing: 6 }
+	code: { letterSpacing: 6 },
+	crew: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+	flex: { flex: 1 }
 })
