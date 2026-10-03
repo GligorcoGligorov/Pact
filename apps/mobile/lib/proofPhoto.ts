@@ -14,7 +14,11 @@ export const USES_SIMULATOR_LIBRARY_FALLBACK = __DEV__ && !Device.isDevice
 const OPTIONS: ImagePicker.ImagePickerOptions = {
 	mediaTypes: ['images'],
 	quality: 0.7,
-	exif: false
+	exif: false,
+	// JPEG, not the library's HEIC original: Groq, the judge's first provider, refuses HEIC with a
+	// 400 (Gemini takes it), and a JPEG at 0.7 is a fraction of the size.
+	preferredAssetRepresentationMode:
+		ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Compatible
 }
 
 export type ProofPhotoResult =
