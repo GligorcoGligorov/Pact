@@ -110,27 +110,30 @@ function Board({ detail, myId }: { detail: PactDetail; myId: string | null }) {
 	return (
 		<>
 			<FadeSlideIn index={0}>
-				<View style={s.hero}>
+				{/* The screen's one dark card: ref 03's countdown and the crew's ring. */}
+				<Card tier="hero" padding="spacious" style={s.hero}>
 					<View style={s.heroTop}>
 						<View style={s.heroTitle}>
-							<Text variant="eyebrow" tone="tertiary" numberOfLines={1}>
+							<Text variant="eyebrow" style={{ color: c.heroTextSecondary }} numberOfLines={1}>
 								{pact.name}
 							</Text>
-							<Text variant="h1">{pact.habit}</Text>
+							<Text variant="h1" style={{ color: c.heroText }}>
+								{pact.habit}
+							</Text>
 						</View>
 						{today && today.held_count > 0 ? (
 							<Ring
 								value={today.in_count}
 								max={today.held_count}
-								size={76}
+								size={80}
 								stroke={9}
 								color={c.brandFill}
-								track={c.tintTrack}
+								track={c.heroBorder}
 							>
-								<Text variant="h3" tabular>
+								<Text variant="h3" tabular style={{ color: c.heroText }}>
 									{today.in_count}/{today.held_count}
 								</Text>
-								<Text variant="caption" tone="tertiary">
+								<Text variant="caption" style={{ color: c.heroTextSecondary }}>
 									in
 								</Text>
 							</Ring>
@@ -141,19 +144,19 @@ function Board({ detail, myId }: { detail: PactDetail; myId: string | null }) {
 						<View>
 							<Countdown
 								closesAt={today.closes_at}
-								color={c.textPrimary}
-								unitColor={c.textTertiary}
+								color={c.heroText}
+								unitColor={c.heroTextSecondary}
 							/>
-							<Text variant="bodySm" tone="secondary">
+							<Text variant="bodySm" style={{ color: c.heroTextSecondary }}>
 								left to check in today
 							</Text>
 						</View>
 					) : (
-						<Text variant="lead" tone="secondary">
+						<Text variant="lead" style={{ color: c.heroTextSecondary }}>
 							{heroLine(detail)}
 						</Text>
 					)}
-				</View>
+				</Card>
 			</FadeSlideIn>
 
 			{today && today.held_count > 0 ? (
@@ -305,7 +308,7 @@ function BoardAction({ detail }: { detail: PactDetail }) {
 }
 
 const s = StyleSheet.create({
-	hero: { gap: 14, paddingTop: 4 },
+	hero: { gap: 18 },
 	heroTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 16 },
 	heroTitle: { flex: 1, gap: 6 },
 	challenge: { flexDirection: 'row', alignItems: 'center', gap: 14 },

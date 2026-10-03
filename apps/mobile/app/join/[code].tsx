@@ -3,6 +3,8 @@ import { StyleSheet, View } from 'react-native'
 import { router, useLocalSearchParams } from 'expo-router'
 import { CalendarDays, Lock, SearchX, Trophy, Users } from 'lucide-react-native'
 import type { JoinSource } from '@app/contract'
+import { CrewGrid } from '@/components/pact/CrewGrid'
+import { HowItWorks } from '@/components/pact/HowItWorks'
 import { QueryErrorState } from '@/components/QueryError'
 import { FadeSlideIn } from '@/components/motion/FadeSlideIn'
 import { Button } from '@/components/ui/Button'
@@ -16,7 +18,7 @@ import { useTheme } from '@/contexts/ThemeContext'
 import { track } from '@/lib/analytics'
 import { ApiError, errorMessage } from '@/lib/api'
 import { haptic } from '@/lib/haptics'
-import { shortDay, useInvite, useJoinPact, type InviteDetail } from '@/lib/pacts'
+import { shortDay, useInvite, useJoinPact, useMyUserId, type InviteDetail } from '@/lib/pacts'
 
 type JoinFailure = 'not_found' | 'full' | 'closed' | 'network'
 
@@ -58,6 +60,7 @@ export default function JoinPreviewScreen() {
 	const source: JoinSource = params.source === 'code' ? 'code' : 'deep_link'
 	const invite = useInvite(code)
 	const join = useJoinPact()
+	const { data: myId } = useMyUserId()
 
 	const viewed = useRef(false)
 	useEffect(() => {
@@ -144,7 +147,7 @@ export default function JoinPreviewScreen() {
 					action={{ label: 'Back home', onPress: () => router.replace('/') }}
 				/>
 			) : (
-				<FadeSlideIn index={0}>
+				<FadeSlideIn index={0} style={s.stack}>
 					<Card padding="spacious" style={[s.card, elevation.card]}>
 						<Text variant="eyebrow" tone="tertiary">
 							{data.is_member ? "You're in this pact" : "You're invited to"}
@@ -176,6 +179,15 @@ export default function JoinPreviewScreen() {
 							</Text>
 						) : null}
 					</Card>
+					{data.members.length > 0 ? (
+						<View style={s.section}>
+							<Text variant="label" tone="secondary">
+								{data.is_member ? 'Your crew' : "Who's in"}
+							</Text>
+							<CrewGrid members={data.members} myId={myId ?? null} />
+						</View>
+					) : null}
+					<HowItWorks />
 				</FadeSlideIn>
 			)}
 		</Screen>
@@ -194,6 +206,8 @@ function Fact({ icon, text }: { icon: React.ReactNode; text: string }) {
 }
 
 const s = StyleSheet.create({
+	stack: { gap: 22 },
+	section: { gap: 12 },
 	card: { gap: 10 },
 	facts: { gap: 8, marginTop: 8 },
 	fact: { flexDirection: 'row', alignItems: 'center', gap: 8 },

@@ -1,7 +1,8 @@
 import { Share, StyleSheet, View } from 'react-native'
 import { router, useLocalSearchParams } from 'expo-router'
 import { SearchX, Share2 } from 'lucide-react-native'
-import { AvatarStack } from '@/components/pact/Avatars'
+import { CrewGrid } from '@/components/pact/CrewGrid'
+import { HowItWorks } from '@/components/pact/HowItWorks'
 import { QueryErrorState } from '@/components/QueryError'
 import { FadeSlideIn } from '@/components/motion/FadeSlideIn'
 import { Button } from '@/components/ui/Button'
@@ -14,7 +15,7 @@ import { Text } from '@/components/ui/Text'
 import { useTheme } from '@/contexts/ThemeContext'
 import { track } from '@/lib/analytics'
 import { log } from '@/lib/logger'
-import { usePact } from '@/lib/pacts'
+import { useMyUserId, usePact } from '@/lib/pacts'
 
 /**
  * The invite: the pact's code, big, and the system share sheet. The share sheet carries iOS's
@@ -27,6 +28,7 @@ export default function InviteScreen() {
 	const query = usePact(id)
 	const pact = query.data?.pact
 	const crew = (query.data?.members ?? []).filter((m) => !m.left_day)
+	const { data: myId } = useMyUserId()
 
 	async function share() {
 		if (!pact) return
@@ -107,13 +109,16 @@ export default function InviteScreen() {
 							</Text>
 						</Card>
 					</FadeSlideIn>
-					<FadeSlideIn index={2} style={s.crew}>
-						<AvatarStack members={crew} size={36} max={8} />
-						<Text variant="bodySm" tone="secondary" style={s.flex}>
+					<FadeSlideIn index={2} style={s.section}>
+						<Text variant="label" tone="secondary">
 							{crew.length === 1
-								? 'Just you so far.'
-								: `${crew.length} of ${pact.max_members} in so far.`}
+								? 'Just you so far'
+								: `${crew.length} of ${pact.max_members} in so far`}
 						</Text>
+						<CrewGrid members={crew} myId={myId ?? null} />
+					</FadeSlideIn>
+					<FadeSlideIn index={3}>
+						<HowItWorks />
 					</FadeSlideIn>
 				</>
 			)}
@@ -125,6 +130,5 @@ const s = StyleSheet.create({
 	footer: { gap: 6 },
 	codeCard: { alignItems: 'center', gap: 10, paddingVertical: 36 },
 	code: { letterSpacing: 6 },
-	crew: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-	flex: { flex: 1 }
+	section: { gap: 12 }
 })
