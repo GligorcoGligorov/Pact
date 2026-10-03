@@ -204,6 +204,12 @@ checks, the ring and the streak; New pact and Join sit behind a "+".
 - **Tap-through on the simulator:** each screen was screenshotted, but no flow was tapped
   through end to end in the app (simctl can't tap): create → invite → join from a second
   account → check in → verdict. The same calls were run against the API and work.
+- **Button text on green (open):** dark ink on `#50a65c` is 5.2:1. White there is 3.0:1 and
+  fails AA; white needs a deeper green such as `#2f7d3d` (5.1:1). Waiting on the developer.
+- **Proof photos are JPEG** (fixed 2026-10-03): the simulator library sent HEIC, which Groq
+  refuses with a 400. Watch `ai_usage` for `http_400` from Groq on real camera photos.
+- **Dark mode:** the screens follow the espresso scheme when the app's theme is Dark. The
+  board's dark hero is close to the dark ground there; not tuned yet.
 - **Splash and status bar** are set to the new ground in `app.json`; they show from the next
   build only.
 - **The 12th real photo** was never taken; the eval passed without it (see Decisions).
