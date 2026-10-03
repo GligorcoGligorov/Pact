@@ -189,7 +189,9 @@ checks, the ring and the streak; New pact and Join sit behind a "+".
 
 **Phase 3 smaller calls:**
 
-- Brand: the daylight preset, accent `#50a65c`, ground `#f8faed`, ink `#232323`. Font:
+- Brand: the daylight preset, accent `#2f7d3d` with white text on its fills (decided
+  2026-10-03: white on the first green, `#50a65c`, was 3.0:1 and failed AA), ground `#f8faed`,
+  ink `#232323`. In dark mode the hero card is lifted a step and outlined. Font:
   Bricolage Grotesque, already bundled (Space Grotesk would need a package and web wiring and
   has no 800). The countdown uses the system font for its thin numerals.
 - No clipboard: `expo-clipboard` is native; the invite uses the share sheet (it has Copy) and a
@@ -201,15 +203,16 @@ checks, the ring and the streak; New pact and Join sit behind a "+".
 
 ## Open items
 
-- **Tap-through on the simulator:** each screen was screenshotted, but no flow was tapped
-  through end to end in the app (simctl can't tap): create → invite → join from a second
-  account → check in → verdict. The same calls were run against the API and work.
-- **Button text on green (open):** dark ink on `#50a65c` is 5.2:1. White there is 3.0:1 and
-  fails AA; white needs a deeper green such as `#2f7d3d` (5.1:1). Waiting on the developer.
+- **Deep link by hand:** `pact://join/STREAK` from Safari on the simulator wasn't checked (iOS
+  asks "Open in Pact?" and simctl can't tap). The rest of the slice was checked on 2026-10-03:
+  a real app check-in (Ana), the real verdict screen as a modal (Cleo), the last check-in
+  keeping the day (Ben, streak 0 → 1), create and join by code, and declined consent → `skipped`
+  (Dan), each through the local API.
 - **Proof photos are JPEG** (fixed 2026-10-03): the simulator library sent HEIC, which Groq
   refuses with a 400. Watch `ai_usage` for `http_400` from Groq on real camera photos.
-- **Dark mode:** the screens follow the espresso scheme when the app's theme is Dark. The
-  board's dark hero is close to the dark ground there; not tuned yet.
+- **Demo state:** `npm run seed:demo` leaves Ana out today on 6am Run Club (Ben and Cleo in),
+  for a live check-in. Re-run it on the demo day: "today" is the day it runs. Hydration Squad
+  and Page Turners are hand-made local pacts, not seeded.
 - **Splash and status bar** are set to the new ground in `app.json`; they show from the next
   build only.
 - **The 12th real photo** was never taken; the eval passed without it (see Decisions).
@@ -219,7 +222,9 @@ checks, the ring and the streak; New pact and Join sit behind a "+".
   synthetic images are flat drawings, which invites it; check on the real photos before tuning.
 - **Gemini latency:** up to 23 s and 7 of 11 failures (503s and timeouts) on the real photos,
   which is why Groq now goes first. Watch `ai_usage` for Groq's error rate as the primary.
-- **`test:db` ran as a superuser** on the local replay, not as CI's non-superuser role.
+- **`test:db`** passes 25 of 25 on the local replay (`pact_replay`, as `supabase_admin`), the
+  runtime-role suite included. Against the stack's own `postgres` database two runtime-role
+  tests fail: the stack turns RLS on for `auth.users`, which CI's shim doesn't. Use the replay.
 
 ## How to run things
 
