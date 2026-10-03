@@ -6,7 +6,7 @@ import type * as ImagePicker from 'expo-image-picker'
 import { useQueryClient } from '@tanstack/react-query'
 import { CameraOff, CircleCheck, ScanEye, SearchX } from 'lucide-react-native'
 import { CHECK_IN_NOTE_MAX, type CheckIn, type Verdict } from '@app/contract'
-import { VerdictView } from '@/components/pact/VerdictView'
+import { VerdictView, type VerdictProgress } from '@/components/pact/VerdictView'
 import { QueryErrorState } from '@/components/QueryError'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
@@ -26,6 +26,7 @@ import {
 	pactKeys,
 	submitPhotoCheckIn,
 	useCheckIn,
+	useMyUserId,
 	usePact,
 	type CheckInFailure
 } from '@/lib/pacts'
@@ -45,7 +46,7 @@ type Phase =
 	| { name: 'preview'; asset: Asset }
 	| { name: 'sending'; asset: Asset }
 	| { name: 'failed'; asset: Asset; reason: CheckInFailure; message: string }
-	| { name: 'verdict'; asset: Asset; checkIn: CheckIn }
+	| { name: 'verdict'; asset: Asset; checkIn: CheckIn; streakBefore: number; sentAt: number }
 
 /**
  * R11–R16: consent (first time), the camera, a preview with today's challenge and an optional
@@ -112,8 +113,10 @@ export default function CheckInScreen() {
 		try {
 			const checkIn = await submitPhotoCheckIn(id, asset, note.trim() || null)
 			track('check_in_submitted', { pact_id: id, kind: 'photo' })
+			const streakBefore = pact.data?.progress.current_streak ?? 0
+			const sentAt = Date.now()
 			void queryClient.invalidateQueries({ queryKey: pactKeys.all })
-			setPhase({ name: 'verdict', asset, checkIn })
+			setPhase({ name: 'verdict', asset, checkIn, streakBefore, sentAt })
 		} catch (error) {
 			const reason = checkInFailure(error)
 			track('check_in_failed', { pact_id: id, reason })
@@ -128,7 +131,16 @@ export default function CheckInScreen() {
 	}
 
 	if (phase?.name === 'verdict') {
-		return <Judged pactId={id} asset={phase.asset} initial={phase.checkIn} onDone={close} />
+		return (
+			<Judged
+				pactId={id}
+				asset={phase.asset}
+				initial={phase.checkIn}
+				streakBefore={phase.streakBefore}
+				sentAt={phase.sentAt}
+				onDone={close}
+			/>
+		)
 	}
 
 	return (
@@ -301,19 +313,30 @@ function PreviewActions({
 	)
 }
 
-/** The verdict, polled until the judge answers or the wait runs out. */
+/**
+ * The verdict, polled until the judge answers or the wait runs out, with the pact as it stands
+ * after this check-in: the board and the streak it may have just grown.
+ */
 function Judged({
 	pactId,
 	asset,
 	initial,
+	streakBefore,
+	sentAt,
 	onDone
 }: {
 	pactId: string
 	asset: Asset
 	initial: CheckIn
+	streakBefore: number
+	sentAt: number
 	onDone: () => void
 }) {
 	const query = useCheckIn(initial.id)
+	const pact = usePact(pactId)
+	const { data: myId } = useMyUserId()
+	// The pact as it was read after the check-in, not the cached copy from before it.
+	const fresh = pact.data && pact.dataUpdatedAt >= sentAt ? pact.data : null
 	const checkIn = query.data ?? initial
 	const [waitedOut, setWaitedOut] = useState(false)
 
@@ -322,8 +345,17 @@ function Judged({
 		return () => clearTimeout(timer)
 	}, [])
 
-	const verdict: Verdict | undefined =
-		checkIn.verdict !== 'pending' ? checkIn.verdict : waitedOut ? 'pending' : undefined
+	const judged = checkIn.verdict !== 'pending' ? checkIn.verdict : waitedOut ? 'pending' : undefined
+	const verdict: Verdict | undefined = fresh || waitedOut ? judged : undefined
+	const board = fresh?.today ?? null
+	const progress: VerdictProgress = {
+		dayNumber: fresh ? fresh.progress.chain.length : null,
+		dayKept: !!board && board.held_count > 0 && board.in_count === board.held_count,
+		streakBefore,
+		streakAfter: fresh?.progress.current_streak ?? streakBefore,
+		board,
+		myId: myId ?? null
+	}
 
 	const viewed = useRef(false)
 	const onViewed = useCallback(
@@ -341,7 +373,7 @@ function Judged({
 			verdict={verdict}
 			caption={checkIn.ai_caption}
 			reason={checkIn.ai_reason}
-			challenge={checkIn.challenge}
+			progress={progress}
 			onDone={onDone}
 			onViewed={onViewed}
 		/>
