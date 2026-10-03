@@ -196,7 +196,7 @@ async function main() {
 
 	const pactFields = {
 		ownerId: idOf('ana'),
-		name: 'Morning run crew',
+		name: '6am Run Club',
 		habit: 'Run for 20 minutes',
 		cadence: 'daily' as const,
 		timezone: timezone!,

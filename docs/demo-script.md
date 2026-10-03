@@ -31,7 +31,7 @@ breaks the day for the whole group, so your friends are the reason you keep goin
 **Step 1 — the demo data (Supabase Studio, http://127.0.0.1:55323 → Table editor →
 `check_ins`)**
 
-"This is a seeded demo pact, 'Morning run crew', with 4 people and a week of check-ins. Look at
+"This is a seeded demo pact, '6am Run Club', with 4 people and a week of check-ins. Look at
 these columns: each check-in has the AI's verdict and caption, like 'Three fingers, zero
 excuses.' and 'Proof, reluctantly accepted.'"
 
