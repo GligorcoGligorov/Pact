@@ -1,6 +1,10 @@
 /**
  * daylight — light, warm, confident.
  *
+ * Pact: the light scheme's ground and ink follow docs/design/pact-ui-brief.md (the
+ * "Moe" reference): a warm off-white #f8faed and near-black #232323, under the
+ * deep green accent set in brand.config.ts, with white text on its fills.
+ *
  * A warm stone-paper ground (not stark white, and not cream-plus-terracotta:
  * the accent is a marigold FILL carrying dark ink, never a coral text colour),
  * graphite ink, a bold grotesque display at 800 with tight tracking, warm
@@ -25,18 +29,18 @@ export const daylight: Preset = {
 			scheme: 'light',
 			name: 'daylight',
 			ground: {
-				bg: '#f3f0e9', //       oklch(0.955 0.0095 84) stone paper
-				well: '#ede8e0', //     oklch(0.932 0.012 82)
-				surface: '#fefdfb', //  oklch(0.994 0.003 84)
-				surface2: '#f6f3ee', // oklch(0.965 0.008 84)
-				surface3: '#e8e3da' //  oklch(0.918 0.013 82)
+				bg: '#f8faed', //       Pact off-white (brief)
+				well: '#eef1e0', //     a step darker, same hue
+				surface: '#ffffff', //  cards sit on white above the paper
+				surface2: '#f3f5e8', // chips, inputs on cards
+				surface3: '#e6ead5' //  pressed rows, segmented tracks
 			},
 			text: {
-				primary: '#1c1915', //   oklch(0.215 0.010 70) graphite
-				body: '#312d28', //      oklch(0.300 0.011 70)
-				secondary: '#4c4741', // oklch(0.400 0.012 70)
-				tertiary: '#645e58', //  oklch(0.485 0.012 70)
-				disabled: '#9c9792' //   oklch(0.680 0.010 72)
+				primary: '#232323', //   Pact near-black (brief)
+				body: '#2f302c', //
+				secondary: '#484a44', //
+				tertiary: '#5e6159', //
+				disabled: '#989b92' //
 			},
 			semantic: {
 				success: { solid: '#23773d', text: '#236436' },
@@ -45,9 +49,11 @@ export const daylight: Preset = {
 				error: { solid: '#c52c2a', text: '#a92321' },
 				info: { solid: '#036eae', text: '#025c93' }
 			},
-			onFill: { ink: '#1c1915', paper: '#efece6' },
-			shadowTint: '#513622', // oklch(0.360 0.050 58) — warm umber, never black
-			hero: { bg: '#2a1d16', text: '#efece6', textSecondary: '#c4bcb3' },
+			// Pact: white on the deep green fills (#2f7d3d, 5.1:1), the developer's call.
+			onFill: { ink: '#232323', paper: '#ffffff' },
+			shadowTint: '#2c3322', // deep olive, never black
+			// The near-black floating bar and countdown panels of the brief.
+			hero: { bg: '#232323', text: '#f8faed', textSecondary: '#c3c6b8' },
 			alpha: {
 				hairline: 0.09,
 				soft: 0.13,
@@ -90,7 +96,7 @@ export const daylight: Preset = {
 			},
 			onFill: { ink: '#1c1915', paper: '#efece6' },
 			shadowTint: '#060302', // oklch(0.100 0.012 45)
-			hero: { bg: '#2a1d16', text: '#efece6', textSecondary: '#c4bcb3' },
+			hero: { bg: '#232323', text: '#f8faed', textSecondary: '#c3c6b8' },
 			alpha: {
 				hairline: 0.08,
 				soft: 0.12,

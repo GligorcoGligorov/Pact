@@ -116,6 +116,8 @@ describe(
 			const invite = await pacts.byInviteCode(pact.inviteCode, winner)
 			assert.equal(invite?.memberCount, 2)
 			assert.equal(invite?.isMember, true)
+			assert.equal(invite?.members.length, 2)
+			assert.ok(invite?.members.some((m) => m.userId === winner))
 		})
 
 		test('check-ins: one per member per day, even two at once', async () => {

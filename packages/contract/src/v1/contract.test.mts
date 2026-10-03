@@ -284,12 +284,34 @@ test("pact detail parses a pact with today's board, and one with none", () => {
 		],
 		me: { held: true, state: 'in', saver_available: true }
 	}
-	assert.ok(pactDetailResponse.safeParse({ pact, members: [], today }).success)
-	assert.ok(pactDetailResponse.safeParse({ pact, members: [], today: null }).success)
+	const progress = {
+		chain: [
+			{ day: '2026-09-29', status: 'kept' },
+			{ day: '2026-09-30', status: 'open' }
+		],
+		current_streak: 1,
+		best_streak: 1
+	}
+	assert.ok(pactDetailResponse.safeParse({ pact, members: [], today, progress }).success)
+	assert.ok(pactDetailResponse.safeParse({ pact, members: [], today: null, progress }).success)
 	assert.equal(
-		pactDetailResponse.safeParse({ pact: { ...pact, status: 'paused' }, members: [], today: null })
-			.success,
+		pactDetailResponse.safeParse({
+			pact: { ...pact, status: 'paused' },
+			members: [],
+			today: null,
+			progress
+		}).success,
 		false
+	)
+	assert.equal(
+		pactDetailResponse.safeParse({
+			pact,
+			members: [],
+			today: null,
+			progress: { ...progress, chain: [{ day: '2026-09-29', status: 'skipped' }] }
+		}).success,
+		false,
+		'a chain day is kept, broken or open'
 	)
 })
 

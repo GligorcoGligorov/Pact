@@ -1,38 +1,38 @@
 import { endpoints, type MemberState } from '@app/contract'
 import { ApiError } from '@/server/api/app-errors'
 import { createAppRoute, idConflict } from '@/server/api/app-route'
-import { calendarOf, spanOf, toWirePact } from '@/server/api/pact-wire'
+import {
+	boardFor,
+	calendarOf,
+	progressFor,
+	spanOf,
+	statusOf,
+	toWirePact
+} from '@/server/api/pact-wire'
 import { fromIsoDate } from '@/server/api/wire'
 import { pactStore } from '@/server/db/pacts'
 import { PACT_EVENTS } from '@/lib/analytics/events'
 import { recordUserEvent } from '@/lib/analytics/record'
-import {
-	addDays,
-	canonicalTimeZone,
-	dayFromDate,
-	endDayFor,
-	isHeldOn,
-	todayIn
-} from '@/lib/pacts/day'
+import { canonicalTimeZone, dayFromDate, endDayFor, isHeldOn, todayIn } from '@/lib/pacts/day'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 /**
  * GET /api/app/v1/pacts: the pacts the caller belongs to, newest first, each with the caller's
- * state today in that pact's own timezone (null when they aren't held today).
+ * state today in that pact's own timezone (null when they aren't held today), today's board
+ * while it is active, and its chain and streaks (R10, R18, R19).
  */
 export const GET = createAppRoute(endpoints.listPacts, async ({ user }) => {
 	const now = new Date()
-	// Every timezone's today is within a day of UTC's, so this covers each pact's today.
-	const sinceDay = fromIsoDate(addDays(todayIn('UTC', now), -1))
-	const rows = await pactStore.listForUser(user.id, sinceDay)
+	const rows = await pactStore.listForUser(user.id)
 	return {
 		body: {
-			pacts: rows.map(({ pact, me, checkIns }) => {
+			pacts: rows.map(({ pact, me, members, checkIns }) => {
 				const today = todayIn(pact.timezone, now)
+				const todays = checkIns.filter((row) => dayFromDate(row.day) === today)
 				const held = isHeldOn(calendarOf(pact), spanOf(me), today)
-				const mine = checkIns.find((row) => dayFromDate(row.day) === today)
+				const mine = todays.find((row) => row.userId === user.id)
 				const state: MemberState | null = !held
 					? null
 					: !mine
@@ -40,7 +40,15 @@ export const GET = createAppRoute(endpoints.listPacts, async ({ user }) => {
 						: mine.kind === 'photo'
 							? 'in'
 							: 'saver'
-				return { ...toWirePact(pact, me.role, today), my_state_today: state }
+				return {
+					...toWirePact(pact, me.role, today),
+					my_state_today: state,
+					today:
+						statusOf(pact, today) === 'active'
+							? boardFor(pact, members, todays, today, user.id)
+							: null,
+					progress: progressFor(pact, members, checkIns, today)
+				}
 			})
 		}
 	}

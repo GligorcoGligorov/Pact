@@ -34,7 +34,7 @@ export function Screen({
 	gap?: number
 	refreshControl?: ReactElement<RefreshControlProps>
 	contentStyle?: StyleProp<ViewStyle>
-	/** Pinned below the scroll area (a CTA shelf). */
+	/** Pinned below the scroll area (a CTA shelf), inside the gutter and above the home indicator. */
 	footer?: ReactNode
 }) {
 	const insets = useSafeAreaInsets()
@@ -64,7 +64,17 @@ export function Screen({
 			) : (
 				<View style={[{ flex: 1 }, padding, contentStyle]}>{children}</View>
 			)}
-			{footer}
+			{footer ? (
+				<View
+					style={{
+						paddingHorizontal: layout.gutter,
+						paddingTop: 12,
+						paddingBottom: insets.bottom + 12
+					}}
+				>
+					{footer}
+				</View>
+			) : null}
 		</View>
 	)
 }

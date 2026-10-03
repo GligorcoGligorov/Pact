@@ -180,21 +180,33 @@ export function createPactStore(client: PrismaClient, codes: () => string = newI
 		 * membership and their check-ins from `sinceDay` on (enough to know their state today in
 		 * any timezone).
 		 */
-		async listForUser(userId: string, sinceDay: Date) {
+		async listForUser(userId: string) {
 			const memberships = await client.pactMember.findMany({
 				where: { userId, leftDay: null },
 				orderBy: { createdAt: 'desc' },
 				select: {
 					...MEMBER,
-					pact: { select: PACT },
-					checkIns: { where: { day: { gte: sinceDay } }, select: CHECK_IN }
+					pact: {
+						select: {
+							...PACT,
+							// Everyone in it and every check-in: home shows each pact's board, ring and streak.
+							members: {
+								orderBy: [{ createdAt: 'asc' }, { userId: 'asc' }],
+								select: { ...MEMBER, checkIns: { select: CHECK_IN } }
+							}
+						}
+					}
 				}
 			})
-			return memberships.map(({ pact, checkIns, ...member }) => ({
-				pact,
-				me: toMember(member),
-				checkIns
-			}))
+			return memberships.map(({ pact: { members: rows, ...pact }, ...member }) => {
+				const members: MemberRecord[] = []
+				const checkIns: CheckInRecord[] = []
+				for (const { checkIns: own, ...row } of rows) {
+					members.push(toMember(row))
+					checkIns.push(...own)
+				}
+				return { pact, me: toMember(member), members, checkIns }
+			})
 		},
 
 		/**
@@ -262,20 +274,31 @@ export function createPactStore(client: PrismaClient, codes: () => string = newI
 				}
 			})
 			if (!pact) return null
-			const checkIns = await client.checkIn.findMany({
-				where: { pactId, day },
-				select: CHECK_IN
-			})
+			const [checkIns, marks] = await Promise.all([
+				client.checkIn.findMany({ where: { pactId, day }, select: CHECK_IN }),
+				// Every check-in's who, day and kind: what the chain and the streaks are made of.
+				client.checkIn.findMany({
+					where: { pactId },
+					select: { userId: true, day: true, kind: true }
+				})
+			])
 			const { members, ...rest } = pact
-			return { pact: rest, members: members.map(toMember), checkIns }
+			return { pact: rest, members: members.map(toMember), checkIns, marks }
 		},
 
-		/** What an invite code joins: the pact, its active member count, whether the caller is in. */
+		/**
+		 * What an invite code joins: the pact, its active members (id and display name, oldest
+		 * first), how many there are, and whether the caller is in.
+		 */
 		async byInviteCode(code: string, userId: string) {
 			const pact = await client.pact.findUnique({ where: { inviteCode: code }, select: PACT })
 			if (!pact) return null
-			const [memberCount, mine] = await Promise.all([
-				client.pactMember.count({ where: { pactId: pact.id, leftDay: null } }),
+			const [members, mine] = await Promise.all([
+				client.pactMember.findMany({
+					where: { pactId: pact.id, leftDay: null },
+					orderBy: [{ createdAt: 'asc' }, { userId: 'asc' }],
+					select: { userId: true, profile: { select: { displayName: true } } }
+				}),
 				client.pactMember.findUnique({
 					where: { pactId_userId: { pactId: pact.id, userId } },
 					select: { leftDay: true }
@@ -283,7 +306,8 @@ export function createPactStore(client: PrismaClient, codes: () => string = newI
 			])
 			return {
 				pact,
-				memberCount,
+				members: members.map((m) => ({ userId: m.userId, displayName: m.profile.displayName })),
+				memberCount: members.length,
 				isMember: !!mine && mine.leftDay === null,
 				hasLeft: !!mine?.leftDay
 			}

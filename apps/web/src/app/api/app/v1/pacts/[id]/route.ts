@@ -1,6 +1,6 @@
 import { endpoints } from '@app/contract'
 import { createAppRoute, notFound } from '@/server/api/app-route'
-import { boardFor, statusOf, toWireMember, toWirePact } from '@/server/api/pact-wire'
+import { boardFor, progressFor, statusOf, toWireMember, toWirePact } from '@/server/api/pact-wire'
 import { fromIsoDate } from '@/server/api/wire'
 import { pactStore } from '@/server/db/pacts'
 import { todayIn } from '@/lib/pacts/day'
@@ -20,7 +20,7 @@ export const GET = createAppRoute(endpoints.getPact, async ({ user, params }) =>
 
 	const detail = await pactStore.detail(params.id, user.id, fromIsoDate(today))
 	if (!detail) throw notFound()
-	const { pact, members, checkIns } = detail
+	const { pact, members, checkIns, marks } = detail
 
 	return {
 		body: {
@@ -29,7 +29,8 @@ export const GET = createAppRoute(endpoints.getPact, async ({ user, params }) =>
 			today:
 				statusOf(pact, today) === 'active'
 					? boardFor(pact, members, checkIns, today, user.id)
-					: null
+					: null,
+			progress: progressFor(pact, members, marks, today)
 		}
 	}
 })

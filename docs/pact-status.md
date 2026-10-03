@@ -3,21 +3,21 @@
 The one "where are we" file. Read it first; update it at the end of every phase.
 Spec: [pact-requirements.md](pact-requirements.md) (R-numbers). Plan: [pact-plan.md](pact-plan.md).
 
-**Last updated:** 2026-10-01, end of Phase 2, on branch `feat/phase-2-api-ai-judge` (no CI in
+**Last updated:** 2026-10-03, end of Phase 3, on branch `feat/phase-3-mobile-slice` (no CI in
 this trial, see [trial-local-only](memory/trial-local-only.md)). Build traps:
 [device-build-traps](memory/device-build-traps.md).
 
 ## Phases
 
-| Phase                              | State    | Notes                                                                                |
-| ---------------------------------- | -------- | ------------------------------------------------------------------------------------ |
-| 0 — Device path                    | done     | On the simulator, from an EAS cloud build. iPhone only if there's time.              |
-| 1 — Events, schema, day math, seed | done     | `AiUsage` and the AI keys moved to Phase 2, and done there.                          |
-| 2 — API for the slice              | done     | All but the eval's 12 real photos (see open items).                                  |
-| 3 — Mobile slice                   | **next** | **Thursday checkpoint:** R-slice steps 1–6 on the simulator by Thu 2026-10-01 night. |
-| 4 — Social loop                    | –        | After the Fri 2026-10-02 feedback call.                                              |
-| 5 — Closer, results, onboarding    | –        |                                                                                      |
-| 6 — Dogfood and gates              | –        |                                                                                      |
+| Phase                              | State    | Notes                                                                              |
+| ---------------------------------- | -------- | ---------------------------------------------------------------------------------- |
+| 0 — Device path                    | done     | On the simulator, from an EAS cloud build. iPhone only if there's time.            |
+| 1 — Events, schema, day math, seed | done     | `AiUsage` and the AI keys moved to Phase 2, and done there.                        |
+| 2 — API for the slice              | done     | All but the eval's 12 real photos (see open items).                                |
+| 3 — Mobile slice                   | done     | Built and committed 2026-10-03; a hand tap-through on the simulator is still owed. |
+| 4 — Social loop                    | **next** | The call slot moved; no feedback yet.                                              |
+| 5 — Closer, results, onboarding    | –        |                                                                                    |
+| 6 — Dogfood and gates              | –        |                                                                                    |
 
 ## What exists and where
 
@@ -80,6 +80,17 @@ this trial, see [trial-local-only](memory/trial-local-only.md)). Build traps:
   `providers.ts` (the interface), `gemini.ts`, `groq.ts`, `registry.ts`, `judge.ts`, and
   `judge.eval.mts` (hand-run, see below).
 
+**The mobile slice (Phase 3)**, in `apps/mobile`:
+
+- `lib/pacts.ts`: TanStack Query hooks for every slice endpoint, the photo upload
+  (`submitPhotoCheckIn`), the 1 s verdict poll, `useMyUserId`, date helpers.
+- Screens: `(tabs)/index` (home), `pact/new`, `pact/[id]/index` (board), `pact/[id]/invite`,
+  `pact/[id]/check-in` (consent → camera → preview → verdict), `join/index`, `join/[code]`.
+- `components/pact/`: `PactCard`, `Avatars` (avatars, stack, `crewLine`), `Ring`, `Chain`,
+  `Countdown`, `MemberRow`, `StateChip`, `WeekStrip`, `VerdictView`, `Confetti`.
+- API, additive: `GET pacts` and `GET pacts/:id` both carry `progress` (chain, current and best
+  streak); `GET pacts` also carries each pact's `today` board, for home's crew, ring and streak.
+
 ## Decisions made in code
 
 - **R6, late join (decided 2026-09-30):** a lobby join is held from the start day; a join to an
@@ -125,6 +136,17 @@ declared in `apps/web/src/lib/env.ts` and `.env.example`, and their values are n
 a conversation. The verdict, reason and caption, and every rule in R13–R16, are unchanged.
 Only test photos go to a model.
 
+**Groq first, Gemini second (decided 2026-10-03):** the eval on the real photos (below) had
+Gemini time out or answer 503 on 7 of 11, while Groq answered each in about 1 s. Groq's
+accuracy held up, so it is now the primary provider and Gemini the fallback
+(`registry.ts`).
+
+**The judge's eval (2026-10-03): 17 of 19,** above the plan's bar of 16 of 20. The 8 synthetic
+fakes agree 8 of 8, and the 11 real photos (`eval-photos/real/`; the photos and their
+`labels.json` stay local) agree 9 of 11. Both misses were finger counts: a peace sign lying
+flat on a book page read as missing, and two fingers read as three. The AI only advises (R15),
+so these are acceptable.
+
 **The judge's models (decided 2026-10-01):** `gemini-3.8-flash`, because `gemini-2.5-flash`
 is closed to new keys and Google names 3.8 Flash as its replacement; and Groq's
 `qwen/qwen3.8-27b`, because Llama 4 Scout is gone from the key's model list and Qwen answered a
@@ -158,16 +180,51 @@ untouched. Events stay registered locally and `check:events` still gates them. W
 the session brief or a skill says to ask `pulse`, skip that step for the trial. See
 [no-play-stats-in-trial](memory/no-play-stats-in-trial.md).
 
+**Phase 3 design (decided 2026-10-03, from the developer's feedback):** ref 01 is the style of
+every screen: light and warm, big type, soft white cards, one green accent, photos only inside
+cards, never under text. Ref 03's big thin countdown is used on the board only. The verdict is
+a light page: the photo as a tilted polaroid, "Day N kept", the caption, then the streak
+ticking up and the crew. Home is social first: each card shows the crew's faces with today's
+checks, the ring and the streak; New pact and Join sit behind a "+".
+
+**Phase 3 smaller calls:**
+
+- Brand: the daylight preset, accent `#2f7d3d` with white text on its fills (decided
+  2026-10-03: white on the first green, `#50a65c`, was 3.0:1 and failed AA), ground `#f8faed`,
+  ink `#232323`. In dark mode the hero card is lifted a step and outlined. Font:
+  Bricolage Grotesque, already bundled (Space Grotesk would need a package and web wiring and
+  has no 800). The countdown uses the system font for its thin numerals.
+- No clipboard: `expo-clipboard` is native; the invite uses the share sheet (it has Copy) and a
+  selectable code. Pact lengths are 7/14/21/30 presets.
+- Strings are inline English like the template's other screens; no screen uses i18next yet.
+- AI consent "Not now" lasts the app session; those check-ins are `skipped`.
+- The demo pact is "6am Run Club". The local DB's hand-made test pacts were renamed
+  ("Hydration Squad", "Page Turners"); Ben and Cleo were added to Hydration Squad by hand.
+
 ## Open items
 
-- **The eval's 12 real photos:** the developer takes them on the iPhone (2026-10-01/02) into
-  `apps/web/eval-photos/<folder>/` with a `labels.json` (see How to run). The 8 synthetic fakes
-  agree 8 of 8; the plan's bar is 16 of 20 with the real ones.
+- **Deep link by hand:** `pact://join/STREAK` from Safari on the simulator wasn't checked (iOS
+  asks "Open in Pact?" and simctl can't tap). The rest of the slice was checked on 2026-10-03:
+  a real app check-in (Ana), the real verdict screen as a modal (Cleo), the last check-in
+  keeping the day (Ben, streak 0 → 1), create and join by code, and declined consent → `skipped`
+  (Dan), each through the local API.
+- **Proof photos are JPEG** (fixed 2026-10-03): the simulator library sent HEIC, which Groq
+  refuses with a 400. Watch `ai_usage` for `http_400` from Groq on real camera photos.
+- **Demo state:** `npm run seed:demo` leaves Ana out today on 6am Run Club (Ben and Cleo in),
+  for a live check-in. Re-run it on the demo day: "today" is the day it runs. Hydration Squad
+  and Page Turners are hand-made local pacts, not seeded.
+- **Splash and status bar** are set to the new ground in `app.json`; they show from the next
+  build only.
+- **The 12th real photo** was never taken; the eval passed without it (see Decisions).
+- **Finger counting** is the judge's weak spot (both real-photo misses). Watch for it in
+  dogfooding before touching the prompt.
 - **Caption repetition:** "A minimalist approach to…" opened 4 of the 8 synthetic captions. The
   synthetic images are flat drawings, which invites it; check on the real photos before tuning.
-- **Gemini latency:** up to 15 s on one synthetic photo, against the 20 s per-provider timeout,
-  and three 503s in one run (Groq answered each). Watch `ai_usage` latency and error codes.
-- **`test:db` ran as a superuser** on the local replay, not as CI's non-superuser role.
+- **Gemini latency:** up to 23 s and 7 of 11 failures (503s and timeouts) on the real photos,
+  which is why Groq now goes first. Watch `ai_usage` for Groq's error rate as the primary.
+- **`test:db`** passes 25 of 25 on the local replay (`pact_replay`, as `supabase_admin`), the
+  runtime-role suite included. Against the stack's own `postgres` database two runtime-role
+  tests fail: the stack turns RLS on for `auth.users`, which CI's shim doesn't. Use the replay.
 
 ## How to run things
 
@@ -225,7 +282,7 @@ with no key, and the five first-party events landed.
 
 ```bash
 swift apps/web/scripts/eval-synthetic-photos.swift             # the 8 synthetic fakes, once
-npm run eval:judge --workspace=@app/web                        # Gemini, then Groq
+npm run eval:judge --workspace=@app/web                        # Groq, then Gemini
 npm run eval:judge --workspace=@app/web -- --provider=groq     # one provider alone
 ```
 

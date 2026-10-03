@@ -5,7 +5,7 @@
  * (the Screen primitive does this when given `tabs`).
  */
 import { Tabs } from 'expo-router'
-import { Bell, CircleUser, Compass, House } from 'lucide-react-native'
+import { Bell, CircleUser, House } from 'lucide-react-native'
 import TabBar from '@/components/TabBar'
 import { useColors } from '@/contexts/ThemeContext'
 
@@ -28,15 +28,6 @@ export default function TabsLayout() {
 				options={{
 					tabBarLabel: 'Home',
 					tabBarIcon: ({ color, size }) => <House size={size} color={color} strokeWidth={STROKE} />
-				}}
-			/>
-			<Tabs.Screen
-				name="explore"
-				options={{
-					tabBarLabel: 'Explore',
-					tabBarIcon: ({ color, size }) => (
-						<Compass size={size} color={color} strokeWidth={STROKE} />
-					)
 				}}
 			/>
 			<Tabs.Screen

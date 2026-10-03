@@ -14,6 +14,8 @@ export interface UserProfile {
 	planType: Profile['plan']
 	/** A short-lived signed URL. Show it; never store it. */
 	avatarUrl: string | null
+	/** R16: whether check-in photos may go to the AI judge. */
+	aiConsent: boolean
 }
 
 export function toUserProfile(profile: Profile): UserProfile {
@@ -24,7 +26,8 @@ export function toUserProfile(profile: Profile): UserProfile {
 		email,
 		initials: getInitials(fullName),
 		planType: profile.plan,
-		avatarUrl: profile.avatar_url
+		avatarUrl: profile.avatar_url,
+		aiConsent: profile.ai_consent
 	}
 }
 

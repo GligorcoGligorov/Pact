@@ -115,7 +115,7 @@ test('failures are coded: http_<status>, bad_json, empty, blocked, network, time
 	await failsWith(createGroqProvider('k').complete(request()), 'empty')
 })
 
-test('registry: Gemini then Groq, only those with a key; none means not configured', () => {
+test('registry: Groq then Gemini, only those with a key; none means not configured', () => {
 	assert.deepEqual(configuredProviders(), [])
 	process.env.GROQ_API_KEY = 'k'
 	assert.deepEqual(
@@ -125,12 +125,12 @@ test('registry: Gemini then Groq, only those with a key; none means not configur
 	process.env.GEMINI_API_KEY = 'k'
 	assert.deepEqual(
 		configuredProviders().map((p) => p.name),
-		['gemini', 'groq']
+		['groq', 'gemini']
 	)
-	process.env.GEMINI_API_KEY = '   '
+	process.env.GROQ_API_KEY = '   '
 	assert.deepEqual(
 		configuredProviders().map((p) => p.name),
-		['groq'],
+		['gemini'],
 		'a blank key is no key'
 	)
 })

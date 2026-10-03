@@ -37,7 +37,7 @@ export function Card({
 	children,
 	...rest
 }: CardProps) {
-	const { colors: c, radii, elevation } = useTheme()
+	const { colors: c, radii, elevation, isDark } = useTheme()
 	const pad = PADDING[padding]
 
 	const look: ViewStyle = {
@@ -45,7 +45,11 @@ export function Card({
 		raised: { backgroundColor: c.surface2, borderColor: c.borderHairline, ...elevation.card },
 		well: { backgroundColor: c.well, borderColor: 'transparent' },
 		selected: { backgroundColor: c.brandDim, borderColor: c.brandBorder },
-		hero: { backgroundColor: c.hero, borderColor: c.heroBorder, ...elevation.raised }
+		// On a dark ground the hero colour sits too close to the page: lift it a step and outline
+		// it, so the one dark card still reads as a card.
+		hero: isDark
+			? { backgroundColor: c.surface2, borderColor: c.borderActive, ...elevation.raised }
+			: { backgroundColor: c.hero, borderColor: c.heroBorder, ...elevation.raised }
 	}[tier]
 
 	const cardStyle = [s.card, { borderRadius: radii.card, padding: pad }, look, style]

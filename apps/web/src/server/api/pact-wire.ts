@@ -1,4 +1,4 @@
-import type { CheckIn, Pact, PactMember, TodayBoard } from '@app/contract'
+import type { CheckIn, Pact, PactMember, PactProgress, TodayBoard } from '@app/contract'
 import { challengeFor } from '@/lib/pacts/challenges'
 import {
 	closesAt,
@@ -10,7 +10,7 @@ import {
 	type PactCalendar,
 	type PactStatus
 } from '@/lib/pacts/day'
-import { todayBoard } from '@/lib/pacts/progress'
+import { chain, streaks, todayBoard, type CheckInKind } from '@/lib/pacts/progress'
 import type { CheckInRecord, MemberRecord, PactRecord } from '@/server/db/pacts'
 
 // Pact rows → the /api/app/v1 wire format, and the day math on them. The store hands back
@@ -141,4 +141,25 @@ export function boardFor(
 			saver_available: !!me && me.saverUsedDay === null
 		}
 	}
+}
+
+/** R19: the pact's chain and streaks, from every check-in it has (R10). */
+export function progressFor(
+	pact: PactRecord,
+	members: readonly MemberRecord[],
+	marks: readonly { userId: string; day: Date; kind: CheckInKind }[],
+	today: Day
+): PactProgress {
+	const input = {
+		pact: calendarOf(pact),
+		members: members.map(spanOf),
+		checkIns: marks.map((row) => ({
+			userId: row.userId,
+			day: dayFromDate(row.day),
+			kind: row.kind
+		})),
+		today
+	}
+	const { current, best } = streaks(input)
+	return { chain: chain(input), current_streak: current, best_streak: best }
 }

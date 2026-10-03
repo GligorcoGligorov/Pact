@@ -28,10 +28,11 @@ function serve(
 	pact: PactRecord,
 	members: MemberRecord[],
 	checkIns: CheckInRecord[],
-	me: MemberRecord = members[0]
+	me: MemberRecord = members[0],
+	marks: CheckInRecord[] = checkIns
 ) {
 	fakeStore(pactStore, 'membership', () => ({ pact, me }))
-	fakeStore(pactStore, 'detail', () => ({ pact, members, checkIns }))
+	fakeStore(pactStore, 'detail', () => ({ pact, members, checkIns, marks }))
 }
 
 mock.timers.enable({ apis: ['Date'], now: NOW })
@@ -133,6 +134,36 @@ test('weekdays pact on a Saturday: active, nobody held, the board is empty', asy
 	assert.equal(res.body.today.held_count, 0)
 	assert.deepEqual(res.body.today.members, [])
 	assert.equal(res.body.today.me.held, false)
+})
+
+test('progress: the chain from the start day, and the streaks over every check-in', async () => {
+	const both = (day: string) => [
+		checkInRow({ day: at(day) }),
+		checkInRow({ userId: OTHER, day: at(day) })
+	]
+	// Started 2026-09-23: kept 23–25, broken 26 (only one in), kept 27–29, today open.
+	const marks = [
+		...['2026-09-23', '2026-09-24', '2026-09-25', '2026-09-27', '2026-09-28', '2026-09-29'].flatMap(
+			both
+		),
+		checkInRow({ day: at('2026-09-26') })
+	]
+	serve(pactRow(), [memberRow(), otherMember()], [], memberRow(), marks)
+	const res = await get()
+	assert.ok(pactDetailResponse.safeParse(res.body).success)
+	const { chain, current_streak, best_streak } = res.body.progress
+	assert.equal(chain.length, 8)
+	assert.deepEqual(chain[0], { day: '2026-09-23', status: 'kept' })
+	assert.equal(chain[3].status, 'broken')
+	assert.deepEqual(chain[7], { day: TODAY, status: 'open' })
+	assert.equal(current_streak, 3)
+	assert.equal(best_streak, 3)
+})
+
+test('progress in the lobby: no chain, no streak', async () => {
+	serve(pactRow({ startDay: at('2026-10-05'), endDay: at('2026-10-25') }), [memberRow()], [])
+	const res = await get()
+	assert.deepEqual(res.body.progress, { chain: [], current_streak: 0, best_streak: 0 })
 })
 
 test("not a member, or no such pact: 404, and a pact id that isn't a uuid is a 404 too", async () => {
