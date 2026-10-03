@@ -211,7 +211,7 @@ export default function CheckInScreen() {
 					<ScreenTitle
 						eyebrow="Before your first check-in"
 						title="Let the AI judge your photos?"
-						subtitle="Your photo goes to an AI model that checks it against the habit and today's challenge, and writes a one-line comment. It only advises: every check-in counts either way."
+						subtitle="Your photo goes to a third-party AI model, Groq (or Google Gemini as a backup), which checks it against the habit and today's challenge and writes a one-line comment. It only advises: every check-in counts either way."
 					/>
 					<Card tier="well" padding="spacious">
 						<Text variant="bodySm" tone="secondary">
