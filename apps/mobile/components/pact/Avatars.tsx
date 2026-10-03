@@ -125,12 +125,20 @@ export function AvatarStack({
 	)
 }
 
-/** "3 of 4 in · waiting on Marko", or "Everyone's in today". */
-export function crewLine(members: BoardMember[], myId: string | null): string {
+/**
+ * "3 of 4 in · waiting on Marko", or "Everyone's in today". `short` names who is left only
+ * when it is one person, for a card's single line.
+ */
+export function crewLine(
+	members: BoardMember[],
+	myId: string | null,
+	{ short = false }: { short?: boolean } = {}
+): string {
 	const waiting = members.filter((m) => m.state === 'out')
 	const inCount = members.length - waiting.length
 	if (members.length === 0) return 'Nobody is held today'
 	if (waiting.length === 0) return "Everyone's in today"
+	if (short && waiting.length > 1) return `${inCount} of ${members.length} in`
 	const names = waiting.map((m) => (m.user_id === myId ? 'you' : displayName(m).split(' ')[0]))
 	const who =
 		names.length === 1

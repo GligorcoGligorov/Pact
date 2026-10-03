@@ -1,11 +1,24 @@
 import { StyleSheet, View } from 'react-native'
 import { Text } from '@/components/ui/Text'
 import { useColors } from '@/contexts/ThemeContext'
+import { localIsoDate } from '@/lib/pacts'
+
+/** A closed day across the caller's pacts: kept everywhere, or broken somewhere. */
+export type DayMark = 'kept' | 'broken'
 
 const DAYS_EACH_SIDE = 3
 
-/** The brief's horizontal week: three days either side of today, today as a dark pill. */
-export function WeekStrip({ today = new Date() }: { today?: Date }) {
+/**
+ * The brief's horizontal week: three days either side of today, today as a dark pill, and a dot
+ * under each closed day: green when every pact kept it, red when one broke.
+ */
+export function WeekStrip({
+	today = new Date(),
+	marks
+}: {
+	today?: Date
+	marks?: Map<string, DayMark>
+}) {
 	const c = useColors()
 	const days = Array.from({ length: DAYS_EACH_SIDE * 2 + 1 }, (_, i) => {
 		const day = new Date(today)
@@ -16,6 +29,8 @@ export function WeekStrip({ today = new Date() }: { today?: Date }) {
 		<View style={s.row} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
 			{days.map((day, i) => {
 				const isToday = i === DAYS_EACH_SIDE
+				const mark = marks?.get(localIsoDate(day))
+				const dot = mark === 'kept' ? c.brandFill : mark === 'broken' ? c.error : 'transparent'
 				return (
 					<View key={day.toDateString()} style={[s.day, isToday && { backgroundColor: c.hero }]}>
 						<Text
@@ -27,6 +42,7 @@ export function WeekStrip({ today = new Date() }: { today?: Date }) {
 						<Text variant="label" tabular style={{ color: isToday ? c.heroText : c.textSecondary }}>
 							{day.getDate()}
 						</Text>
+						<View style={[s.dot, { backgroundColor: dot }]} />
 					</View>
 				)
 			})}
@@ -43,5 +59,6 @@ const s = StyleSheet.create({
 		alignItems: 'center',
 		gap: 4
 	},
-	weekday: { fontSize: 11, letterSpacing: 0.4 }
+	weekday: { fontSize: 11, letterSpacing: 0.4 },
+	dot: { width: 6, height: 6, borderRadius: 3 }
 })
