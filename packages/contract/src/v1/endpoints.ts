@@ -22,11 +22,13 @@ import {
 	checkInResponse,
 	createCheckInBody,
 	createCheckInUploadBody,
+	createNudgeBody,
 	createPactBody,
 	inviteParams,
 	inviteResponse,
 	joinPactBody,
 	joinPactResponse,
+	nudgeResponse,
 	listPactsResponse,
 	pactDetailResponse,
 	pactParams,
@@ -215,6 +217,15 @@ export const endpoints = {
 		params: checkInParams,
 		response: checkInResponse,
 		status: 200
+	},
+	createNudge: {
+		method: 'POST',
+		path: '/api/app/v1/pacts/:id/nudges',
+		auth: 'user',
+		params: pactParams,
+		body: createNudgeBody,
+		response: nudgeResponse,
+		status: 201
 	},
 	listFeed: {
 		method: 'GET',

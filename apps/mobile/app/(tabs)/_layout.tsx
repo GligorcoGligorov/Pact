@@ -8,11 +8,13 @@ import { Tabs } from 'expo-router'
 import { Bell, CircleUser, House } from 'lucide-react-native'
 import TabBar from '@/components/TabBar'
 import { useColors } from '@/contexts/ThemeContext'
+import { useInboxBanners } from '@/lib/inbox'
 
 const STROKE = 1.9
 
 export default function TabsLayout() {
 	const c = useColors()
+	useInboxBanners()
 	return (
 		<Tabs
 			tabBar={(props) => <TabBar {...props} />}

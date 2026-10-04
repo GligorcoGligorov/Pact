@@ -19,6 +19,9 @@ import { Screen } from '@/components/ui/Screen'
 import { CardSkeleton } from '@/components/ui/Skeleton'
 import { Text } from '@/components/ui/Text'
 import { useColors, useTheme } from '@/contexts/ThemeContext'
+import { useToast } from '@/contexts/ToastContext'
+import { track } from '@/lib/analytics'
+import { errorCode, errorMessage } from '@/lib/api'
 import { haptic } from '@/lib/haptics'
 import {
 	daysBetween,
@@ -26,6 +29,7 @@ import {
 	pactKeys,
 	shortDay,
 	useMyUserId,
+	useNudge,
 	usePact,
 	type PactDetail
 } from '@/lib/pacts'
@@ -102,6 +106,34 @@ export default function PactBoardScreen() {
 
 function Board({ detail, myId }: { detail: PactDetail; myId: string | null }) {
 	const { colors: c, elevation } = useTheme()
+	const { showToast } = useToast()
+	const nudge = useNudge(detail.pact.id)
+	// Marked at once on success, before the board's refetch says so.
+	const [sentTo, setSentTo] = useState<ReadonlySet<string>>(new Set())
+
+	function sendNudge(member: { user_id: string; display_name: string | null }) {
+		const first = member.display_name?.trim().split(/\s+/)[0] || 'them'
+		nudge.mutate(member.user_id, {
+			onSuccess: ({ text }) => {
+				haptic.success()
+				track('nudge_sent', { pact_id: detail.pact.id })
+				setSentTo((prev) => new Set(prev).add(member.user_id))
+				showToast(`Sent to ${first}: “${text}”`, 'success')
+			},
+			onError: (error) => {
+				const code = errorCode(error)
+				if (code === 'already_nudged') {
+					setSentTo((prev) => new Set(prev).add(member.user_id))
+					return showToast(`You already nudged ${first} today.`, 'info')
+				}
+				haptic.error()
+				showToast(
+					code === 'already_in' ? `${first} just checked in.` : errorMessage(error),
+					'error'
+				)
+			}
+		})
+	}
 	const { pact, today, progress, members } = detail
 	const tiles = chainTiles(progress.chain, pact.start_day, pact.end_day, pact.cadence)
 	const totalDays = tiles.length
@@ -183,7 +215,16 @@ function Board({ detail, myId }: { detail: PactDetail; myId: string | null }) {
 					<SectionHeader title="Today" />
 					<Card padding="compact">
 						{today.members.map((member) => (
-							<MemberRow key={member.user_id} member={member} isMe={member.user_id === myId} />
+							<MemberRow
+								key={member.user_id}
+								member={member}
+								isMe={member.user_id === myId}
+								nudge={{
+									sent: member.nudged_by_me || sentTo.has(member.user_id),
+									sending: nudge.isPending && nudge.variables === member.user_id,
+									onPress: () => sendNudge(member)
+								}}
+							/>
 						))}
 					</Card>
 				</FadeSlideIn>

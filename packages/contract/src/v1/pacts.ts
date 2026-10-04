@@ -141,7 +141,9 @@ export const boardMemberSchema = z.object({
 	user_id: uuid,
 	display_name: z.string().nullable(),
 	state: memberStateSchema,
-	check_in: boardCheckInSchema.nullable()
+	check_in: boardCheckInSchema.nullable(),
+	/** R20: the caller has nudged this member today (one per pair per day). */
+	nudged_by_me: z.boolean()
 })
 
 /** R18: today, for an active pact. Only the members held today are on it. */
@@ -299,6 +301,20 @@ export const checkInSchema = z.object({
 export const checkInParams = z.object({ id: uuid })
 
 export const checkInResponse = z.object({ check_in: checkInSchema })
+
+// ── Nudges ────────────────────────────────────────────────────────────────────
+
+/** R20: poke a crew member who is held today and still out. */
+export const createNudgeBody = z.object({ to_user_id: uuid }).strict()
+
+export const nudgeResponse = z.object({
+	nudge: z.object({
+		to_user_id: uuid,
+		day: isoDate,
+		/** What the friend reads: a short line, written by the AI, or a fixed one when it can't. */
+		text: z.string()
+	})
+})
 
 export type Pact = z.infer<typeof pactSchema>
 export type PactListItem = z.infer<typeof pactListItemSchema>

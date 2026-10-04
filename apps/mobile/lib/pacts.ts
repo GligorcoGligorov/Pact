@@ -109,6 +109,16 @@ export function useMyUserId() {
 	})
 }
 
+/** R20: poke a crew member who is still out today. The line they get comes back in `text`. */
+export function useNudge(pactId: string) {
+	const queryClient = useQueryClient()
+	return useMutation({
+		mutationFn: async (toUserId: string) =>
+			(await api('createNudge', { params: { id: pactId }, body: { to_user_id: toUserId } })).nudge,
+		onSettled: () => queryClient.invalidateQueries({ queryKey: pactKeys.detail(pactId) })
+	})
+}
+
 // ─── The crew feed ────────────────────────────────────────────────────────────
 
 export const FEED_PAGE_SIZE = 15

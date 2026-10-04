@@ -475,6 +475,36 @@ export function createPactStore(client: PrismaClient, codes: () => string = newI
 			return count === 1
 		},
 
+		/**
+		 * R20: one nudge from one member to another per pact-day. `exists` when this pair's is
+		 * already sent today (the unique constraint decides, so two taps at once send one).
+		 */
+		async createNudge(input: {
+			pactId: string
+			fromUserId: string
+			toUserId: string
+			day: Date
+		}): Promise<'created' | 'exists'> {
+			try {
+				await client.nudge.create({ data: input })
+				return 'created'
+			} catch (error) {
+				if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+					return 'exists'
+				}
+				throw error
+			}
+		},
+
+		/** The nudges a person sent on or after `sinceDay`, in the given pacts. */
+		async nudgesFrom(fromUserId: string, pactIds: string[], sinceDay: Date) {
+			if (pactIds.length === 0) return []
+			return client.nudge.findMany({
+				where: { fromUserId, pactId: { in: pactIds }, day: { gte: sinceDay } },
+				select: { pactId: true, toUserId: true, day: true }
+			})
+		},
+
 		/** Members who haven't left: two or more make it a group (the activation moment). */
 		async activeMemberCount(pactId: string): Promise<number> {
 			return client.pactMember.count({ where: { pactId, leftDay: null } })

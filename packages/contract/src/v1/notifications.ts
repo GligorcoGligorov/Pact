@@ -12,6 +12,8 @@ export const notificationSchema = z.object({
 	body: z.string().nullable(),
 	category: notificationCategorySchema,
 	read: z.boolean(),
+	/** The pact it is about (a nudge, a kept day), so the app can open it; null otherwise. */
+	pact_id: uuid.nullable(),
 	created_at: isoDateTime
 })
 

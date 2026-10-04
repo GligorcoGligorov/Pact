@@ -170,6 +170,8 @@ type EventName =
 	//   check_in_reacted  metadata: { pact_id, reaction: 'fire' | 'clap' | 'laugh' }; fired on
 	//                     add, not on take-back. The server records it first-party too.
 	| 'check_in_reacted'
+	// A crew banner (a nudge, a kept day) was tapped and opened its pact. metadata: { pact_id }
+	| 'nudge_opened'
 	// Social pressure and the local 22:00 reminder. reminder_opened is the only
 	// way to tell whether a local notification brings anyone back.
 	| 'nudge_sent'

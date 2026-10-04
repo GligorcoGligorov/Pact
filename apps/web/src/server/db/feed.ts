@@ -13,7 +13,7 @@ export type ActivityRecord = Pick<
 
 export type NotificationRecord = Pick<
 	Notification,
-	'id' | 'title' | 'body' | 'category' | 'read' | 'createdAt'
+	'id' | 'title' | 'body' | 'category' | 'read' | 'pactId' | 'createdAt'
 >
 
 const ACTIVITY = {
@@ -31,6 +31,7 @@ const NOTIFICATION = {
 	body: true,
 	category: true,
 	read: true,
+	pactId: true,
 	createdAt: true
 } as const satisfies Prisma.NotificationSelect
 

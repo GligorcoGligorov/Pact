@@ -11,29 +11,30 @@
 // nothing granted to the API roles.
 
 model Pact {
-  id            String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id            String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   /// Restrict, not Cascade: deleting an owner's account passes the pact to its earliest-joined
   /// remaining member first (R28), so a pact is never deleted out from under its members.
-  ownerId       String       @map("owner_id") @db.Uuid
+  ownerId       String         @map("owner_id") @db.Uuid
   name          String
   habit         String
-  cadence       PactCadence  @default(daily)
+  cadence       PactCadence    @default(daily)
   /// IANA name, validated on create; never changes.
   timezone      String
-  startDay      DateTime     @map("start_day") @db.Date
+  startDay      DateTime       @map("start_day") @db.Date
   /// Inclusive: start_day + days - 1, in calendar days for either cadence.
-  endDay        DateTime     @map("end_day") @db.Date
+  endDay        DateTime       @map("end_day") @db.Date
   /// Free text, never money.
   stake         String?
-  inviteCode    String       @unique @map("invite_code")
-  maxMembers    Int          @default(8) @map("max_members")
-  cancelledAt   DateTime?    @map("cancelled_at") @db.Timestamptz(6)
+  inviteCode    String         @unique @map("invite_code")
+  maxMembers    Int            @default(8) @map("max_members")
+  cancelledAt   DateTime?      @map("cancelled_at") @db.Timestamptz(6)
   /// The closer's bookkeeping only: the last pact-day whose notifications were written.
-  closedThrough DateTime?    @map("closed_through") @db.Date
-  createdAt     DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt     DateTime     @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  owner         Profile      @relation("pactOwner", fields: [ownerId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  closedThrough DateTime?      @map("closed_through") @db.Date
+  createdAt     DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime       @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  owner         Profile        @relation("pactOwner", fields: [ownerId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   members       PactMember[]
+  notifications Notification[]
   nudges        Nudge[]
 
   @@index([ownerId])

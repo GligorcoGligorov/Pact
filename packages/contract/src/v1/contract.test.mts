@@ -279,7 +279,8 @@ test("pact detail parses a pact with today's board, and one with none", () => {
 				user_id: USER,
 				display_name: 'Ana',
 				state: 'in',
-				check_in: { id: ID, kind: 'photo', verdict: 'pass', ai_reason: null, ai_caption: 'Fine.' }
+				check_in: { id: ID, kind: 'photo', verdict: 'pass', ai_reason: null, ai_caption: 'Fine.' },
+				nudged_by_me: false
 			}
 		],
 		me: { held: true, state: 'in', saver_available: true }

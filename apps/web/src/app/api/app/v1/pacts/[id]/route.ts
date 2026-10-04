@@ -21,6 +21,9 @@ export const GET = createAppRoute(endpoints.getPact, async ({ user, params }) =>
 	const detail = await pactStore.detail(params.id, user.id, fromIsoDate(today))
 	if (!detail) throw notFound()
 	const { pact, members, checkIns, marks } = detail
+	const nudged = new Set(
+		(await pactStore.nudgesFrom(user.id, [pact.id], fromIsoDate(today))).map((n) => n.toUserId)
+	)
 
 	return {
 		body: {
@@ -28,7 +31,7 @@ export const GET = createAppRoute(endpoints.getPact, async ({ user, params }) =>
 			members: members.map(toWireMember),
 			today:
 				statusOf(pact, today) === 'active'
-					? boardFor(pact, members, checkIns, today, user.id)
+					? boardFor(pact, members, checkIns, today, user.id, nudged)
 					: null,
 			progress: progressFor(pact, members, marks, today)
 		}

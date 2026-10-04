@@ -67,8 +67,11 @@ model Notification {
   body      String?
   category  NotificationCategory @default(system)
   read      Boolean              @default(false)
+  /// The pact it is about (a nudge, a kept day), so the app can open it. Gone with the pact.
+  pactId    String?              @map("pact_id") @db.Uuid
   createdAt DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
   profile   Profile              @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  pact      Pact?                @relation(fields: [pactId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@map("notifications")
 }
