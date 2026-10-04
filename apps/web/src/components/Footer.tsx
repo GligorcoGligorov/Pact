@@ -3,24 +3,18 @@ import { brandConfig } from '@app/brand'
 import { BrandMark } from './BrandMark'
 import { Container } from './Container'
 
-// 🎨 REPLACE: your pages, your contact address, your one-liner.
 const COLUMNS = [
 	{
 		title: 'Product',
 		links: [
-			{ href: '/#story', label: 'How it works' },
-			{ href: '/#features', label: 'Features' },
-			{ href: '/pricing', label: 'Pricing' },
-			{ href: '/#download', label: 'Download' }
+			{ href: '/#how', label: 'How it works' },
+			{ href: '/#app', label: 'The app' },
+			{ href: '/#join', label: 'Join a pact' }
 		]
 	},
 	{
 		title: 'Help',
-		links: [
-			{ href: '/support', label: 'Support' },
-			{ href: '/#faq', label: 'Questions' },
-			{ href: 'mailto:hello@example.com', label: 'Contact' }
-		]
+		links: [{ href: '/support', label: 'Support' }]
 	},
 	{
 		title: 'Legal',
@@ -32,7 +26,7 @@ const COLUMNS = [
 	}
 ]
 
-const TAGLINE = 'A calmer way to get things done, on iPhone and Android.'
+const TAGLINE = 'Habits your friends keep you to: a photo a day, an AI judge, one crew.'
 
 export function Footer() {
 	const { siteName } = brandConfig
