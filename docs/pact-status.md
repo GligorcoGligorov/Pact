@@ -203,6 +203,9 @@ checks, the ring and the streak; New pact and Join sit behind a "+".
 
 ## Open items
 
+- **Push is in-app, by design (decided 2026-10-04):** nudges and crew messages arrive as real iOS
+  banners while the app is open or reopened (it reads its inbox every 15 s). Closed-app push
+  needs a paid Apple Developer account and a new build; a known, deliberate limit of the trial.
 - **Deep link by hand:** `pact://join/STREAK` from Safari on the simulator wasn't checked (iOS
   asks "Open in Pact?" and simctl can't tap). The rest of the slice was checked on 2026-10-03:
   a real app check-in (Ana), the real verdict screen as a modal (Cleo), the last check-in
