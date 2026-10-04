@@ -20,6 +20,9 @@
 
 import { PrismaClient } from '@prisma/client'
 import { createClient } from '@supabase/supabase-js'
+import { readFile } from 'node:fs/promises'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { crc32, deflateSync } from 'node:zlib'
 import { challengeFor } from '../src/lib/pacts/challenges'
 import {
@@ -37,6 +40,9 @@ const PACT_DAYS = 21
 const DAYS_AGO_STARTED = 7
 const BUCKET = 'user-uploads'
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '::1', '[::1]'])
+/** Running shoes, with and without the three-finger challenge: the run club's proof. */
+const RUN_PHOTOS = ['6.jpeg', '8.jpeg']
+const TODAY_SPREAD_MS = 25 * 60 * 1000
 const HOUR_MS = 3_600_000
 const JUDGE_DELAY_MS = 6_000
 
@@ -90,6 +96,19 @@ function requireLocal(name: string, url: string | undefined): string {
 }
 
 /** A solid placeholder "photo" with a darker band, as a PNG: no image library needed. */
+/**
+ * The developer's own running photos from the judge's eval set, when they are on this machine
+ * (apps/web/eval-photos/ is gitignored, so this is local only), so the feed's demo check-ins
+ * look like real proof. Without them the seed falls back to flat placeholders.
+ */
+async function realRunPhotos(): Promise<Buffer[]> {
+	const dir = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'eval-photos', 'real')
+	const found = await Promise.all(
+		RUN_PHOTOS.map((name) => readFile(path.join(dir, name)).catch(() => null))
+	)
+	return found.flatMap((photo) => (photo ? [photo] : []))
+}
+
 function placeholderPng([r, g, b]: [number, number, number], width = 360, height = 480): Buffer {
 	const row = Buffer.alloc(1 + width * 3)
 	const rows: Buffer[] = []
@@ -214,23 +233,30 @@ async function main() {
 	})
 
 	const plan = checkInPlan()
-	const photoPath = (p: Plan) => `${idOf(p.key)}/proofs/demo-${p.offset}.png`
+	const real = await realRunPhotos()
+	const photoPath = (p: Plan) =>
+		`${idOf(p.key)}/proofs/demo-${p.offset}.${real.length > 0 ? 'jpg' : 'png'}`
 
 	for (const m of MEMBERS) {
 		const photos = plan.filter((p) => p.key === m.key && p.kind === 'photo')
 		const png = placeholderPng(m.colour)
-		for (const p of photos) {
-			const { error } = await supabase.storage
-				.from(BUCKET)
-				.upload(photoPath(p), png, { contentType: 'image/png', upsert: true })
+		for (const [i, p] of photos.entries()) {
+			const photo = real.length > 0 ? real[(i + m.key.length) % real.length] : null
+			const { error } = await supabase.storage.from(BUCKET).upload(photoPath(p), photo ?? png, {
+				contentType: photo ? 'image/jpeg' : 'image/png',
+				upsert: true
+			})
 			if (error) fail(`uploading ${photoPath(p)}: ${error.message}`)
 		}
 	}
 
 	const checkIns = plan.map((p, i) => {
 		const day = addDays(startDay, p.offset)
-		// Spread through the evening before the day closed: 2 to 9 hours before midnight.
-		const createdAt = new Date(closesAt(timezone!, day).getTime() - (2 + (i % 8)) * HOUR_MS)
+		// Spread through the evening before the day closed: 2 to 9 hours before midnight. Today's
+		// evening hasn't happened yet, so today's check-ins land in the past few hours instead:
+		// the feed is newest first and must never show a check-in from the future.
+		const evening = closesAt(timezone!, day).getTime() - (2 + (i % 8)) * HOUR_MS
+		const createdAt = new Date(Math.min(evening, Date.now() - (1 + (i % 5)) * TODAY_SPREAD_MS))
 		const suspicious = p.key === 'ben' && p.offset === BEN_SUSPICIOUS_OFFSET
 		const isPhoto = p.kind === 'photo'
 		return {
