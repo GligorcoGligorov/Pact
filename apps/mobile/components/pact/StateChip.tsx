@@ -1,11 +1,19 @@
-import { StyleSheet, View } from 'react-native'
+import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native'
 import { Text } from '@/components/ui/Text'
 import { useColors } from '@/contexts/ThemeContext'
 
 export type ChipTone = 'success' | 'warning' | 'info' | 'error' | 'neutral' | 'brand'
 
 /** The small status pill of the brief's habit cards: New / Skip / Done, here To do / Done / … */
-export function StateChip({ label, tone }: { label: string; tone: ChipTone }) {
+export function StateChip({
+	label,
+	tone,
+	style
+}: {
+	label: string
+	tone: ChipTone
+	style?: StyleProp<ViewStyle>
+}) {
 	const c = useColors()
 	const look = {
 		success: { bg: c.successSoft, fg: c.successText, dot: c.success },
@@ -16,7 +24,7 @@ export function StateChip({ label, tone }: { label: string; tone: ChipTone }) {
 		brand: { bg: c.brandDim, fg: c.brandInk, dot: c.brandFill }
 	}[tone]
 	return (
-		<View style={[s.chip, { backgroundColor: look.bg }]}>
+		<View style={[s.chip, { backgroundColor: look.bg }, style]}>
 			<View style={[s.dot, { backgroundColor: look.dot }]} />
 			<Text variant="caption" style={[s.label, { color: look.fg }]}>
 				{label}

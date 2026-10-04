@@ -123,7 +123,9 @@ export default function PactSettingsScreen() {
 										{displayName(member)}
 										{me ? ' (you)' : ''}
 									</Text>
-									{member.role === 'owner' ? <StateChip label="Owner" tone="brand" /> : null}
+									{member.role === 'owner' ? (
+										<StateChip label="Owner" tone="brand" style={s.chip} />
+									) : null}
 									{isOwner && !me ? (
 										<PressableScale
 											scaleTo="button"
@@ -206,6 +208,7 @@ const s = StyleSheet.create({
 	factValue: { flexShrink: 1, textAlign: 'right' },
 	member: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 8 },
 	name: { flex: 1 },
+	chip: { alignSelf: 'center' },
 	remove: {
 		width: 36,
 		height: 36,
