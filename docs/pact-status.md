@@ -220,8 +220,10 @@ checks, the ring and the streak; New pact and Join sit behind a "+".
 
 ## Open items
 
-- **Unblocking has no screen yet:** the API (`DELETE /blocks/:user`) exists; a "Blocked people"
-  list in Settings is still to build. Reports are stored but there's no admin screen for them.
+- **Reports have no admin screen:** they're stored in `check_in_reports` for an admin to read.
+  Unblocking is in Settings → Blocked people.
+- **The banner icon is Expo's placeholder:** crew banners and reminders show the dev client's
+  icon. Pact's own app icon arrives with the next native build (`app.json`), not over the air.
 - **Nudge lines** come from Groq with a word filter (bodies, weight, insults) and a fixed
   fallback; read a sample of real lines in `notifications` before a public launch.
 - **Link previews** render at `/join/<code>/opengraph-image`; WhatsApp and iMessage only unfurl
