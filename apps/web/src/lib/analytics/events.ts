@@ -175,6 +175,12 @@ export const PACT_EVENTS = {
 	 */
 	checkInReacted: 'check_in_reacted',
 	/**
+	 * The last member held today checked in, so the whole crew kept the day: the loop's best
+	 * moment, and the one the crew-complete banner celebrates. Recorded once per pact-day, for
+	 * the member whose check-in completed it. metadata: { pact_id, day_number, streak }
+	 */
+	pactDayKept: 'pact_day_kept',
+	/**
 	 * The AI judge finished with a check-in. metadata: { pact_id, verdict }
 	 * A high `suspicious` share on real check-ins means the prompt is wrong,
 	 * not the people.

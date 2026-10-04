@@ -4,7 +4,9 @@ import { router, useLocalSearchParams } from 'expo-router'
 import { useQueryClient } from '@tanstack/react-query'
 import { Camera, Check, Flame, ScanEye, SearchX, UserPlus } from 'lucide-react-native'
 import { Chain, chainTiles } from '@/components/pact/Chain'
+import { Confetti } from '@/components/pact/Confetti'
 import { Countdown } from '@/components/pact/Countdown'
+import { KeptCard, useFirstKeptView } from '@/components/pact/KeptCard'
 import { MemberRow } from '@/components/pact/MemberRow'
 import { Ring } from '@/components/pact/Ring'
 import { QueryErrorState } from '@/components/QueryError'
@@ -63,48 +65,64 @@ export default function PactBoardScreen() {
 		/>
 	)
 
+	const today = detail?.today ?? null
+	const kept = !!today && today.held_count >= MIN_CREW && today.in_count === today.held_count
+	const celebrate = useFirstKeptView(id, today?.day ?? '', kept)
+
 	return (
-		<Screen
-			header={<PageHeader right={detail ? invite : undefined} />}
-			gap={16}
-			refreshControl={
-				<RefreshControl
-					refreshing={refreshing}
-					onRefresh={onRefresh}
-					tintColor={c.brandInk}
-					colors={[c.brandInk]}
-					progressBackgroundColor={c.surface}
-				/>
-			}
-			footer={detail ? <BoardAction detail={detail} /> : undefined}
-		>
-			{detail === undefined && query.isError ? (
-				<QueryErrorState
-					error={query.error}
-					title="Couldn't load this pact"
-					onRetry={() => query.refetch()}
-				/>
-			) : detail === undefined ? (
-				<>
-					<CardSkeleton height={190} />
-					<CardSkeleton height={120} />
-					<CardSkeleton height={160} />
-				</>
-			) : detail === null ? (
-				<EmptyState
-					icon={SearchX}
-					title="This pact is gone"
-					body="It may have been cancelled, or you're no longer in it."
-					action={{ label: 'Back home', onPress: () => router.replace('/') }}
-				/>
-			) : (
-				<Board detail={detail} myId={myId ?? null} />
-			)}
-		</Screen>
+		<View style={s.root}>
+			<Screen
+				header={<PageHeader right={detail ? invite : undefined} />}
+				gap={16}
+				refreshControl={
+					<RefreshControl
+						refreshing={refreshing}
+						onRefresh={onRefresh}
+						tintColor={c.brandInk}
+						colors={[c.brandInk]}
+						progressBackgroundColor={c.surface}
+					/>
+				}
+				footer={detail ? <BoardAction detail={detail} /> : undefined}
+			>
+				{detail === undefined && query.isError ? (
+					<QueryErrorState
+						error={query.error}
+						title="Couldn't load this pact"
+						onRetry={() => query.refetch()}
+					/>
+				) : detail === undefined ? (
+					<>
+						<CardSkeleton height={190} />
+						<CardSkeleton height={120} />
+						<CardSkeleton height={160} />
+					</>
+				) : detail === null ? (
+					<EmptyState
+						icon={SearchX}
+						title="This pact is gone"
+						body="It may have been cancelled, or you're no longer in it."
+						action={{ label: 'Back home', onPress: () => router.replace('/') }}
+					/>
+				) : (
+					<Board detail={detail} myId={myId ?? null} kept={kept} />
+				)}
+			</Screen>
+			{celebrate ? <Confetti /> : null}
+		</View>
 	)
 }
 
-function Board({ detail, myId }: { detail: PactDetail; myId: string | null }) {
+function Board({
+	detail,
+	myId,
+	kept
+}: {
+	detail: PactDetail
+	myId: string | null
+	/** Everyone held today is in: the board leads with the celebration. */
+	kept: boolean
+}) {
 	const { colors: c, elevation } = useTheme()
 	const { showToast } = useToast()
 	const nudge = useNudge(detail.pact.id)
@@ -180,7 +198,7 @@ function Board({ detail, myId }: { detail: PactDetail; myId: string | null }) {
 								unitColor={c.heroTextSecondary}
 							/>
 							<Text variant="bodySm" style={{ color: c.heroTextSecondary }}>
-								left to check in today
+								{kept ? 'until tomorrow’s check-in' : 'left to check in today'}
 							</Text>
 						</View>
 					) : (
@@ -191,7 +209,11 @@ function Board({ detail, myId }: { detail: PactDetail; myId: string | null }) {
 				</Card>
 			</FadeSlideIn>
 
-			{today && today.held_count > 0 ? (
+			{kept ? (
+				<KeptCard dayNumber={progress.chain.length} streak={progress.current_streak} />
+			) : null}
+
+			{today && today.held_count > 0 && !kept ? (
 				<FadeSlideIn index={1}>
 					<Card padding="normal" style={[s.challenge, elevation.card]}>
 						<View style={[s.challengeIcon, { backgroundColor: c.brandDim }]}>
@@ -348,7 +370,11 @@ function BoardAction({ detail }: { detail: PactDetail }) {
 	)
 }
 
+/** A crew of one can't keep a day "together" (the server's crew-complete rule too). */
+const MIN_CREW = 2
+
 const s = StyleSheet.create({
+	root: { flex: 1 },
 	hero: { gap: 18 },
 	heroTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 16 },
 	heroTitle: { flex: 1, gap: 6 },

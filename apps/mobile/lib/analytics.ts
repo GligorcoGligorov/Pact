@@ -172,6 +172,9 @@ type EventName =
 	| 'check_in_reacted'
 	// A crew banner (a nudge, a kept day) was tapped and opened its pact. metadata: { pact_id }
 	| 'nudge_opened'
+	// The board's "day kept by the whole crew" celebration was seen, once per pact-day.
+	// metadata: { pact_id }
+	| 'crew_day_kept_viewed'
 	// Social pressure and the local 22:00 reminder. reminder_opened is the only
 	// way to tell whether a local notification brings anyone back.
 	| 'nudge_sent'

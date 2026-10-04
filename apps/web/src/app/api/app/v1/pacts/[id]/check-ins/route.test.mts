@@ -47,6 +47,9 @@ mock.timers.enable({ apis: ['Date'], now: NOW })
 
 beforeEach(() => {
 	reset()
+	// The crew-complete check reads the day's board; null here means "nothing to celebrate"
+	// (its own suite is src/server/pacts/crew-complete.test.mts).
+	fakeStore(pactStore, 'detail', () => null)
 	mock.timers.setTime(NOW.getTime())
 	uploaded = new Set([PHOTO])
 	tasks = []

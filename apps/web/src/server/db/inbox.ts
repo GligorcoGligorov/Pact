@@ -13,6 +13,15 @@ export type InboxMessage = {
 
 export function createInboxStore(client: PrismaClient) {
 	return {
+		/** Whether a message with this title about this pact was written since `since`. */
+		async sentSince(pactId: string, title: string, since: Date): Promise<boolean> {
+			const row = await client.notification.findFirst({
+				where: { pactId, title, createdAt: { gte: since } },
+				select: { id: true }
+			})
+			return row !== null
+		},
+
 		/** One `team` notification per message. */
 		async notify(messages: InboxMessage[]): Promise<void> {
 			if (messages.length === 0) return
