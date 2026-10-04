@@ -6,21 +6,26 @@ import { acceptableLine, fallbackNudge, writeNudge } from './nudge'
 
 test('a good line is kept, in JSON or plain text, without quotes', () => {
 	assert.equal(
-		acceptableLine('{"line": "Dan, the running shoes are asking about you."}', 'Dan Petrov'),
+		acceptableLine('{"line": "NAME, the running shoes are asking about you."}', 'Dan Petrov'),
 		'Dan, the running shoes are asking about you.'
 	)
 	assert.equal(
-		acceptableLine('"Dan, find a window? Shoes are restless."', 'Dan'),
+		acceptableLine('"NAME, find a window? Shoes are restless."', 'Dan'),
 		'Dan, find a window? Shoes are restless.'
 	)
 })
 
 test('a line is refused when it shames, talks about bodies, runs long or forgets the name', () => {
+	assert.equal(
+		acceptableLine('{"line": "Dan, the shoes miss you."}', 'Dan'),
+		null,
+		'the model never sees the name, so a line with a name instead of NAME is made up'
+	)
 	for (const bad of [
-		'{"line": "Dan, the scale says you need this run."}'.replace('scale says', 'weight says'),
-		'{"line": "Dan, stop being lazy and run."}',
-		'{"line": "Dan, your belly misses the run."}',
-		'{"line": "Dan, one two three four five six seven eight nine ten eleven twelve thirteen fourteen."}',
+		'{"line": "NAME, the scale says you need this run."}'.replace('scale says', 'weight says'),
+		'{"line": "NAME, stop being lazy and run."}',
+		'{"line": "NAME, your belly misses the run."}',
+		'{"line": "NAME, one two three four five six seven eight nine ten eleven twelve thirteen fourteen."}',
 		'{"line": "The running shoes are asking about you."}',
 		'{"line": ""}',
 		'not json and not a line about anyone'

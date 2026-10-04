@@ -32,8 +32,8 @@ Rules:
 - At most 12 words. One sentence.
 - Warm, playful, a little cheeky. Friendly pressure, never shaming or guilt.
 - About the habit or today's challenge, never about the person's looks, body, weight, health or worth. No insults.
-- Start with the friend's first name. No emoji, no hashtags, no quotes.
-Examples: "Dan, the running shoes are asking about you." "Mira, your book misses you. Five pages?"
+- Start with the word NAME, exactly as written: it stands for the friend's first name. No emoji, no hashtags, no quotes.
+Examples: "NAME, the running shoes are asking about you." "NAME, your book misses you. Five pages?"
 Answer only as JSON: {"line": "..."}`
 
 const firstName = (name: string) => name.trim().split(/\s+/)[0] || 'Hey'
@@ -62,15 +62,21 @@ function lineOf(raw: string): string {
 	return raw.split('\n')[0] ?? ''
 }
 
-/** The model's line, cleaned, or null when it breaks a rule. */
+/**
+ * The stand-in the model writes for the friend's name. The real name never leaves the server: a
+ * person's name is personal data, and the AI consent (R16) covers proof photos, not this.
+ */
+export const NAME_TOKEN = 'NAME'
+
+/** The model's line, cleaned and with the friend's first name in, or null when it breaks a rule. */
 export function acceptableLine(raw: string, toName: string): string | null {
 	const line = lineOf(raw)
 	const cleaned = line.replace(/["“”]/g, '').replace(/\s+/g, ' ').trim()
 	if (!cleaned || cleaned.length > NUDGE_MAX_CHARS) return null
 	if (cleaned.split(' ').length > NUDGE_MAX_WORDS) return null
 	if (NEVER.test(cleaned)) return null
-	if (!cleaned.toLowerCase().includes(firstName(toName).toLowerCase())) return null
-	return cleaned
+	if (!cleaned.includes(NAME_TOKEN)) return null
+	return cleaned.replaceAll(NAME_TOKEN, firstName(toName))
 }
 
 type GroqAnswer = {
@@ -109,7 +115,7 @@ export async function writeNudge(input: {
 					{ role: 'system', content: SYSTEM },
 					{
 						role: 'user',
-						content: `<name>${fence(firstName(input.toName))}</name>\n<habit>${fence(input.habit)}</habit>${
+						content: `<habit>${fence(input.habit)}</habit>${
 							input.challenge ? `\n<challenge>${fence(input.challenge)}</challenge>` : ''
 						}`
 					}
