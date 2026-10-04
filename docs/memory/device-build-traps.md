@@ -39,5 +39,11 @@ Found in Phase 0 (2026-09-30). Each one cost time once; don't rediscover them.
 - **Preparing the phone can make this Mac unusable** (Xcode copying symbols for a new iOS
   version). The developer unplugged it on 2026-09-30; the trial runs on the simulator.
 - A free-team install expires after 7 days: rebuild before a demo that's more than a week later.
+- **Simulator only, so the app talks to `127.0.0.1` (2026-10-04):** the LAN address in the
+  `.env.local` files (`EXPO_PUBLIC_SITE_URL`, `EXPO_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SITE_URL`)
+  broke the app every time the Mac changed network (192.168.1.215 → a hotspot's 172.20.10.4: every
+  request timed out). The simulator shares the Mac's network, so `127.0.0.1` always works. Back to
+  a real phone: switch those three to the Mac's LAN address again and start Metro with `--clear`
+  (Expo bakes `EXPO_PUBLIC_*` into the bundle, and Metro's cache keeps the old one).
 
 See [[trial-local-only]] and docs/ENV_SETUP.md, "Running Pact locally".

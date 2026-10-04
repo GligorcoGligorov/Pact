@@ -266,9 +266,9 @@ cd apps/mobile && npx expo start --dev-client      # terminal 2, then press i
 ```
 
 Pact must already be installed on the simulator. The first bundle takes about 40 s; if the app
-says "Error loading app", tap OK and reload. If `ipconfig getifaddr en0` is no longer
-`192.168.1.215`, update the three LAN URLs in the `.env.local` files and start Metro with
-`--clear`.
+says "Error loading app", tap OK and reload. The app reaches the API and Supabase at `127.0.0.1`
+(simulator only), so a network change can't break it; a real phone needs the Mac's LAN address
+instead (see [device-build-traps](memory/device-build-traps.md)).
 
 **A new app build**, only after a native change (a dependency with native code, `app.json`,
 `app.config.ts`):
