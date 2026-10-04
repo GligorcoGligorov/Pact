@@ -21,6 +21,7 @@ import {
 	blockBody,
 	blockParams,
 	leavePactBody,
+	listBlocksResponse,
 	memberParams,
 	okResponse,
 	reportCheckInBody
@@ -242,6 +243,13 @@ export const endpoints = {
 		params: checkInParams,
 		body: reportCheckInBody,
 		response: okResponse,
+		status: 200
+	},
+	listBlocks: {
+		method: 'GET',
+		path: '/api/app/v1/blocks',
+		auth: 'user',
+		response: listBlocksResponse,
 		status: 200
 	},
 	blockUser: {

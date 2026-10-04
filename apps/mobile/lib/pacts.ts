@@ -33,7 +33,8 @@ export const pactKeys = {
 	detail: (id: string) => ['pacts', id] as const,
 	invite: (code: string) => ['invites', code] as const,
 	checkIn: (id: string) => ['check-ins', id] as const,
-	feed: ['feed'] as const
+	feed: ['feed'] as const,
+	blocks: ['blocks'] as const
 }
 
 /** The caller's pacts, newest first, each with their own state today. */
@@ -137,7 +138,32 @@ export function useBlockUser() {
 	const queryClient = useQueryClient()
 	return useMutation({
 		mutationFn: (userId: string) => api('blockUser', { params: { user: userId }, body: {} }),
-		onSuccess: () => queryClient.invalidateQueries({ queryKey: pactKeys.feed })
+		onSuccess: () =>
+			Promise.all([
+				queryClient.invalidateQueries({ queryKey: pactKeys.feed }),
+				queryClient.invalidateQueries({ queryKey: pactKeys.blocks })
+			])
+	})
+}
+
+/** The people you've blocked, newest first (Settings). */
+export function useBlockedPeople() {
+	return useQuery({
+		queryKey: pactKeys.blocks,
+		queryFn: async ({ signal }) => (await api('listBlocks', { signal })).blocked
+	})
+}
+
+/** Unblock: their check-ins come back to your feed and nudges work again. */
+export function useUnblockUser() {
+	const queryClient = useQueryClient()
+	return useMutation({
+		mutationFn: (userId: string) => api('unblockUser', { params: { user: userId } }),
+		onSuccess: () =>
+			Promise.all([
+				queryClient.invalidateQueries({ queryKey: pactKeys.feed }),
+				queryClient.invalidateQueries({ queryKey: pactKeys.blocks })
+			])
 	})
 }
 

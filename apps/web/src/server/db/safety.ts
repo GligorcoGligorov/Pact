@@ -71,13 +71,14 @@ export function createSafetyStore(client: PrismaClient) {
 			return new Set(rows.map((row) => (row.blockerId === userId ? row.blockedId : row.blockerId)))
 		},
 
-		/** The people the person has blocked (for the app's Block / Unblock label). */
-		async blockedBy(userId: string): Promise<string[]> {
+		/** The people the person has blocked, newest first, with their names (for Settings). */
+		async blockedBy(userId: string): Promise<{ userId: string; displayName: string | null }[]> {
 			const rows = await client.userBlock.findMany({
 				where: { blockerId: userId },
-				select: { blockedId: true }
+				orderBy: { createdAt: 'desc' },
+				select: { blockedId: true, blocked: { select: { displayName: true } } }
 			})
-			return rows.map((row) => row.blockedId)
+			return rows.map((row) => ({ userId: row.blockedId, displayName: row.blocked.displayName }))
 		},
 
 		/**

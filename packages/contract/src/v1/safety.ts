@@ -28,4 +28,9 @@ export const memberParams = z.object({ id: uuid, member: uuid })
 
 export const okResponse = z.object({ ok: z.literal(true) })
 
+/** GET /api/app/v1/blocks: the people the caller has blocked, newest first, for Settings. */
+export const listBlocksResponse = z.object({
+	blocked: z.array(z.object({ user_id: uuid, display_name: z.string().nullable() }))
+})
+
 export type ReportReason = z.infer<typeof reportReasonSchema>
