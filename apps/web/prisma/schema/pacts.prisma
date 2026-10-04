@@ -69,26 +69,27 @@ model PactMember {
 // One per member per pact-day, enforced here (R11). Belongs to the membership, so it goes
 // with the account (R28) and can only exist for someone who is a member.
 model CheckIn {
-  id             String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  pactId         String          @map("pact_id") @db.Uuid
-  userId         String          @map("user_id") @db.Uuid
+  id             String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  pactId         String            @map("pact_id") @db.Uuid
+  userId         String            @map("user_id") @db.Uuid
   /// Server-computed, pact-local.
-  day            DateTime        @db.Date
+  day            DateTime          @db.Date
   kind           CheckInKind
   /// The challenge text it was taken against; null for a saver.
   challenge      String?
   /// `<user id>/proofs/...` in the user-uploads bucket; null for a saver, and once deleted.
-  photoPath      String?         @map("photo_path")
-  photoDeletedAt DateTime?       @map("photo_deleted_at") @db.Timestamptz(6)
+  photoPath      String?           @map("photo_path")
+  photoDeletedAt DateTime?         @map("photo_deleted_at") @db.Timestamptz(6)
   note           String?
   /// Advisory only: every verdict counts as a check-in (R15).
-  verdict        AiVerdict       @default(pending)
-  aiReason       String?         @map("ai_reason")
-  aiCaption      String?         @map("ai_caption")
-  judgedAt       DateTime?       @map("judged_at") @db.Timestamptz(6)
-  createdAt      DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
-  member         PactMember      @relation(fields: [pactId, userId], references: [pactId, userId], onDelete: Cascade, onUpdate: NoAction)
+  verdict        AiVerdict         @default(pending)
+  aiReason       String?           @map("ai_reason")
+  aiCaption      String?           @map("ai_caption")
+  judgedAt       DateTime?         @map("judged_at") @db.Timestamptz(6)
+  createdAt      DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  member         PactMember        @relation(fields: [pactId, userId], references: [pactId, userId], onDelete: Cascade, onUpdate: NoAction)
   reports        CheckInReport[]
+  reactions      CheckInReaction[]
   aiUsage        AiUsage[]
 
   @@unique([pactId, userId, day])
@@ -117,6 +118,29 @@ model Nudge {
 }
 
 // Stored for an admin; the reporter stops seeing the photo (R23).
+/// A quick reaction to a check-in in the feed: 🔥 👏 😂. One of each kind per person per
+/// check-in; taking it back deletes the row.
+model CheckInReaction {
+  checkInId String       @map("check_in_id") @db.Uuid
+  userId    String       @map("user_id") @db.Uuid
+  reaction  ReactionKind
+  createdAt DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  checkIn   CheckIn      @relation(fields: [checkInId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  profile   Profile      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([checkInId, userId, reaction])
+  @@index([userId])
+  @@map("check_in_reactions")
+}
+
+enum ReactionKind {
+  fire
+  clap
+  laugh
+
+  @@map("reaction_kind")
+}
+
 model CheckInReport {
   id         String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   checkInId  String       @map("check_in_id") @db.Uuid

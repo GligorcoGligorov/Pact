@@ -11,7 +11,7 @@ import { ApiError } from './app-errors'
 
 const VERSION = 1
 
-export type CursorList = 'items' | 'tasks' | 'activity' | 'notifications'
+export type CursorList = 'items' | 'tasks' | 'activity' | 'notifications' | 'feed'
 
 const cursorSchema = z.object({
 	v: z.literal(VERSION),

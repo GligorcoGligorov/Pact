@@ -168,6 +168,13 @@ export const PACT_EVENTS = {
 	/** A check-in was created. metadata: { pact_id, kind: 'photo' | 'saver' } */
 	checkInCreated: 'check_in_created',
 	/**
+	 * A crew member reacted to a check-in in the feed (🔥 👏 😂), recorded when a NEW reaction
+	 * row is written, never on a take-back. metadata: { pact_id, reaction }. Reactions are
+	 * the feed's whole point: they make it social, not a log. Bounded by the database's one
+	 * row per person, check-in and reaction.
+	 */
+	checkInReacted: 'check_in_reacted',
+	/**
 	 * The AI judge finished with a check-in. metadata: { pact_id, verdict }
 	 * A high `suspicious` share on real check-ins means the prompt is wrong,
 	 * not the people.

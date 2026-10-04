@@ -1,4 +1,10 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+	useInfiniteQuery,
+	useMutation,
+	useQuery,
+	useQueryClient,
+	type InfiniteData
+} from '@tanstack/react-query'
 import type * as ImagePicker from 'expo-image-picker'
 import {
 	checkInParams,
@@ -7,7 +13,9 @@ import {
 	PROOF_CONTENT_TYPES,
 	type CheckIn,
 	type CreatePactBody,
-	type JoinSource
+	type JoinSource,
+	type Reaction,
+	type ReactionState
 } from '@app/contract'
 import { api, ApiError, type ResponseOf } from './api'
 import { supabase } from './supabase'
@@ -23,7 +31,8 @@ export const pactKeys = {
 	all: ['pacts'] as const,
 	detail: (id: string) => ['pacts', id] as const,
 	invite: (code: string) => ['invites', code] as const,
-	checkIn: (id: string) => ['check-ins', id] as const
+	checkIn: (id: string) => ['check-ins', id] as const,
+	feed: ['feed'] as const
 }
 
 /** The caller's pacts, newest first, each with their own state today. */
@@ -97,6 +106,86 @@ export function useMyUserId() {
 		queryKey: ['session-user'],
 		queryFn: async () => (await supabase.auth.getSession()).data.session?.user.id ?? null,
 		staleTime: Infinity
+	})
+}
+
+// ─── The crew feed ────────────────────────────────────────────────────────────
+
+export const FEED_PAGE_SIZE = 15
+
+type FeedPages = InfiniteData<ResponseOf<'listFeed'>, string | undefined>
+
+/** The check-ins of every pact the caller is in, newest first; `data` is every page loaded. */
+export function useFeed() {
+	return useInfiniteQuery({
+		queryKey: pactKeys.feed,
+		queryFn: ({ pageParam, signal }) =>
+			api('listFeed', { query: { limit: FEED_PAGE_SIZE, cursor: pageParam }, signal }),
+		initialPageParam: undefined as string | undefined,
+		getNextPageParam: (last) => last.next_cursor ?? undefined
+	})
+}
+
+function withReactions(pages: FeedPages | undefined, checkInId: string, next: ReactionState) {
+	if (!pages) return pages
+	return {
+		...pages,
+		pages: pages.pages.map((page) => ({
+			...page,
+			entries: page.entries.map((entry) =>
+				entry.id === checkInId ? { ...entry, reactions: next } : entry
+			)
+		}))
+	}
+}
+
+/** The state after toggling `reaction`: what the screen shows before the server answers. */
+export function toggled(state: ReactionState, reaction: Reaction): ReactionState {
+	const on = !state.mine.includes(reaction)
+	return {
+		counts: { ...state.counts, [reaction]: Math.max(state.counts[reaction] + (on ? 1 : -1), 0) },
+		mine: on ? [...state.mine, reaction] : state.mine.filter((r) => r !== reaction)
+	}
+}
+
+/**
+ * A reaction, toggled at once on screen (optimistic) and then on the server; on failure the
+ * feed goes back to what it was and the error reaches the caller.
+ */
+export function useToggleReaction() {
+	const queryClient = useQueryClient()
+	return useMutation({
+		mutationFn: ({
+			checkInId,
+			reaction,
+			on
+		}: {
+			checkInId: string
+			reaction: Reaction
+			on: boolean
+		}) =>
+			on
+				? api('addReaction', { params: { id: checkInId, reaction }, body: {} })
+				: api('removeReaction', { params: { id: checkInId, reaction } }),
+		onMutate: async ({ checkInId, reaction }) => {
+			await queryClient.cancelQueries({ queryKey: pactKeys.feed })
+			const before = queryClient.getQueryData<FeedPages>(pactKeys.feed)
+			const entry = before?.pages.flatMap((p) => p.entries).find((e) => e.id === checkInId)
+			if (entry) {
+				queryClient.setQueryData<FeedPages>(pactKeys.feed, (pages) =>
+					withReactions(pages, checkInId, toggled(entry.reactions, reaction))
+				)
+			}
+			return { before }
+		},
+		onError: (_error, _vars, context) => {
+			if (context?.before) queryClient.setQueryData(pactKeys.feed, context.before)
+		},
+		onSuccess: ({ reactions }, { checkInId }) => {
+			queryClient.setQueryData<FeedPages>(pactKeys.feed, (pages) =>
+				withReactions(pages, checkInId, reactions)
+			)
+		}
 	})
 }
 

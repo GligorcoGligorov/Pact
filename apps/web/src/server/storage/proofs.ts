@@ -51,3 +51,20 @@ export async function downloadProof(path: string): Promise<{ bytes: Buffer; mime
 	if (error) throw error
 	return { bytes: Buffer.from(await data.arrayBuffer()), mimeType: data.type || 'image/jpeg' }
 }
+
+/** How long a feed photo's signed URL lasts (R22: short-lived, one hour). */
+const PHOTO_URL_VALID_S = 60 * 60
+
+/**
+ * Short-lived signed URLs for proof photos, by path, in one call. A path whose file is gone is
+ * left out (the feed then shows no photo). Throws when storage fails.
+ */
+export async function proofPhotoUrls(paths: string[]): Promise<Map<string, string>> {
+	const out = new Map<string, string>()
+	if (paths.length === 0) return out
+	const { data, error } = await bucket().createSignedUrls(paths, PHOTO_URL_VALID_S)
+	if (error) throw error
+	for (const row of data)
+		if (row.path && row.signedUrl && !row.error) out.set(row.path, row.signedUrl)
+	return out
+}

@@ -166,6 +166,10 @@ type EventName =
 	| 'check_in_submitted'
 	| 'check_in_failed'
 	| 'check_in_verdict_viewed'
+	// The crew feed (Activity tab): a quick reaction on someone's check-in, and the feed itself.
+	//   check_in_reacted  metadata: { pact_id, reaction: 'fire' | 'clap' | 'laugh' }; fired on
+	//                     add, not on take-back. The server records it first-party too.
+	| 'check_in_reacted'
 	// Social pressure and the local 22:00 reminder. reminder_opened is the only
 	// way to tell whether a local notification brings anyone back.
 	| 'nudge_sent'
