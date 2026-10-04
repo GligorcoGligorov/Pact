@@ -55,17 +55,19 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
 // Replace with your real domain. Falls back to NEXT_PUBLIC_SITE_URL in env.
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://example.com'
 
+const PITCH =
+	'Make a pact with your friends: one habit, a photo every day, and an AI judge. Miss a day and the whole crew sees it.'
+
 export const metadata: Metadata = {
 	metadataBase: new URL(SITE_URL),
 	title: {
-		default: `${SITE_NAME} — your one-line pitch goes here`,
+		default: `${SITE_NAME} — Nobody notices when you quit. Your friends will.`,
 		template: `%s · ${SITE_NAME}`
 	},
-	description:
-		'Replace this with your product description. This is the 8x monorepo template: an Expo mobile app + this Next.js marketing site, sharing one brand and one Supabase backend.',
+	description: PITCH,
 	openGraph: {
-		title: `${SITE_NAME} — your one-line pitch goes here`,
-		description: 'Replace this with your product description.',
+		title: `${SITE_NAME} — Nobody notices when you quit. Your friends will.`,
+		description: PITCH,
 		url: SITE_URL,
 		siteName: SITE_NAME,
 		locale: 'en_US',
@@ -74,7 +76,7 @@ export const metadata: Metadata = {
 	twitter: {
 		card: 'summary_large_image',
 		title: SITE_NAME,
-		description: 'Replace this with your product description.'
+		description: PITCH
 	}
 	// The favicon is app/icon.tsx, drawn from the brand — no need to declare it.
 }

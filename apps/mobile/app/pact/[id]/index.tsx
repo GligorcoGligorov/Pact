@@ -2,9 +2,11 @@ import { useState } from 'react'
 import { RefreshControl, StyleSheet, View } from 'react-native'
 import { router, useLocalSearchParams } from 'expo-router'
 import { useQueryClient } from '@tanstack/react-query'
-import { Camera, Check, Flame, ScanEye, SearchX, UserPlus } from 'lucide-react-native'
+import { Camera, Check, Flame, ScanEye, SearchX, Settings2, UserPlus } from 'lucide-react-native'
 import { Chain, chainTiles } from '@/components/pact/Chain'
+import { Confetti } from '@/components/pact/Confetti'
 import { Countdown } from '@/components/pact/Countdown'
+import { KeptCard, useFirstKeptView } from '@/components/pact/KeptCard'
 import { MemberRow } from '@/components/pact/MemberRow'
 import { Ring } from '@/components/pact/Ring'
 import { QueryErrorState } from '@/components/QueryError'
@@ -19,6 +21,9 @@ import { Screen } from '@/components/ui/Screen'
 import { CardSkeleton } from '@/components/ui/Skeleton'
 import { Text } from '@/components/ui/Text'
 import { useColors, useTheme } from '@/contexts/ThemeContext'
+import { useToast } from '@/contexts/ToastContext'
+import { track } from '@/lib/analytics'
+import { errorCode, errorMessage } from '@/lib/api'
 import { haptic } from '@/lib/haptics'
 import {
 	daysBetween,
@@ -26,6 +31,7 @@ import {
 	pactKeys,
 	shortDay,
 	useMyUserId,
+	useNudge,
 	usePact,
 	type PactDetail
 } from '@/lib/pacts'
@@ -52,56 +58,107 @@ export default function PactBoardScreen() {
 	}
 
 	const invite = (
-		<IconButton
-			icon={(color) => <UserPlus size={20} color={color} />}
-			onPress={() => router.push(`/pact/${id}/invite`)}
-			accessibilityLabel="Invite people"
-		/>
+		<View style={s.headerActions}>
+			<IconButton
+				icon={(color) => <UserPlus size={20} color={color} />}
+				onPress={() => router.push(`/pact/${id}/invite`)}
+				accessibilityLabel="Invite people"
+			/>
+			<IconButton
+				icon={(color) => <Settings2 size={20} color={color} />}
+				onPress={() => router.push(`/pact/${id}/settings`)}
+				accessibilityLabel="Pact settings"
+			/>
+		</View>
 	)
 
+	const today = detail?.today ?? null
+	const kept = !!today && today.held_count >= MIN_CREW && today.in_count === today.held_count
+	const celebrate = useFirstKeptView(id, today?.day ?? '', kept)
+
 	return (
-		<Screen
-			header={<PageHeader right={detail ? invite : undefined} />}
-			gap={16}
-			refreshControl={
-				<RefreshControl
-					refreshing={refreshing}
-					onRefresh={onRefresh}
-					tintColor={c.brandInk}
-					colors={[c.brandInk]}
-					progressBackgroundColor={c.surface}
-				/>
-			}
-			footer={detail ? <BoardAction detail={detail} /> : undefined}
-		>
-			{detail === undefined && query.isError ? (
-				<QueryErrorState
-					error={query.error}
-					title="Couldn't load this pact"
-					onRetry={() => query.refetch()}
-				/>
-			) : detail === undefined ? (
-				<>
-					<CardSkeleton height={190} />
-					<CardSkeleton height={120} />
-					<CardSkeleton height={160} />
-				</>
-			) : detail === null ? (
-				<EmptyState
-					icon={SearchX}
-					title="This pact is gone"
-					body="It may have been cancelled, or you're no longer in it."
-					action={{ label: 'Back home', onPress: () => router.replace('/') }}
-				/>
-			) : (
-				<Board detail={detail} myId={myId ?? null} />
-			)}
-		</Screen>
+		<View style={s.root}>
+			<Screen
+				header={<PageHeader right={detail ? invite : undefined} />}
+				gap={16}
+				refreshControl={
+					<RefreshControl
+						refreshing={refreshing}
+						onRefresh={onRefresh}
+						tintColor={c.brandInk}
+						colors={[c.brandInk]}
+						progressBackgroundColor={c.surface}
+					/>
+				}
+				footer={detail ? <BoardAction detail={detail} /> : undefined}
+			>
+				{detail === undefined && query.isError ? (
+					<QueryErrorState
+						error={query.error}
+						title="Couldn't load this pact"
+						onRetry={() => query.refetch()}
+					/>
+				) : detail === undefined ? (
+					<>
+						<CardSkeleton height={190} />
+						<CardSkeleton height={120} />
+						<CardSkeleton height={160} />
+					</>
+				) : detail === null ? (
+					<EmptyState
+						icon={SearchX}
+						title="This pact is gone"
+						body="It may have been cancelled, or you're no longer in it."
+						action={{ label: 'Back home', onPress: () => router.replace('/') }}
+					/>
+				) : (
+					<Board detail={detail} myId={myId ?? null} kept={kept} />
+				)}
+			</Screen>
+			{celebrate ? <Confetti /> : null}
+		</View>
 	)
 }
 
-function Board({ detail, myId }: { detail: PactDetail; myId: string | null }) {
+function Board({
+	detail,
+	myId,
+	kept
+}: {
+	detail: PactDetail
+	myId: string | null
+	/** Everyone held today is in: the board leads with the celebration. */
+	kept: boolean
+}) {
 	const { colors: c, elevation } = useTheme()
+	const { showToast } = useToast()
+	const nudge = useNudge(detail.pact.id)
+	// Marked at once on success, before the board's refetch says so.
+	const [sentTo, setSentTo] = useState<ReadonlySet<string>>(new Set())
+
+	function sendNudge(member: { user_id: string; display_name: string | null }) {
+		const first = member.display_name?.trim().split(/\s+/)[0] || 'them'
+		nudge.mutate(member.user_id, {
+			onSuccess: ({ text }) => {
+				haptic.success()
+				track('nudge_sent', { pact_id: detail.pact.id })
+				setSentTo((prev) => new Set(prev).add(member.user_id))
+				showToast(`Sent to ${first}: “${text}”`, 'success')
+			},
+			onError: (error) => {
+				const code = errorCode(error)
+				if (code === 'already_nudged') {
+					setSentTo((prev) => new Set(prev).add(member.user_id))
+					return showToast(`You already nudged ${first} today.`, 'info')
+				}
+				haptic.error()
+				showToast(
+					code === 'already_in' ? `${first} just checked in.` : errorMessage(error),
+					'error'
+				)
+			}
+		})
+	}
 	const { pact, today, progress, members } = detail
 	const tiles = chainTiles(progress.chain, pact.start_day, pact.end_day, pact.cadence)
 	const totalDays = tiles.length
@@ -148,7 +205,7 @@ function Board({ detail, myId }: { detail: PactDetail; myId: string | null }) {
 								unitColor={c.heroTextSecondary}
 							/>
 							<Text variant="bodySm" style={{ color: c.heroTextSecondary }}>
-								left to check in today
+								{kept ? 'until tomorrow’s check-in' : 'left to check in today'}
 							</Text>
 						</View>
 					) : (
@@ -159,7 +216,11 @@ function Board({ detail, myId }: { detail: PactDetail; myId: string | null }) {
 				</Card>
 			</FadeSlideIn>
 
-			{today && today.held_count > 0 ? (
+			{kept ? (
+				<KeptCard dayNumber={progress.chain.length} streak={progress.current_streak} />
+			) : null}
+
+			{today && today.held_count > 0 && !kept ? (
 				<FadeSlideIn index={1}>
 					<Card padding="normal" style={[s.challenge, elevation.card]}>
 						<View style={[s.challengeIcon, { backgroundColor: c.brandDim }]}>
@@ -183,7 +244,16 @@ function Board({ detail, myId }: { detail: PactDetail; myId: string | null }) {
 					<SectionHeader title="Today" />
 					<Card padding="compact">
 						{today.members.map((member) => (
-							<MemberRow key={member.user_id} member={member} isMe={member.user_id === myId} />
+							<MemberRow
+								key={member.user_id}
+								member={member}
+								isMe={member.user_id === myId}
+								nudge={{
+									sent: member.nudged_by_me || sentTo.has(member.user_id),
+									sending: nudge.isPending && nudge.variables === member.user_id,
+									onPress: () => sendNudge(member)
+								}}
+							/>
 						))}
 					</Card>
 				</FadeSlideIn>
@@ -307,7 +377,12 @@ function BoardAction({ detail }: { detail: PactDetail }) {
 	)
 }
 
+/** A crew of one can't keep a day "together" (the server's crew-complete rule too). */
+const MIN_CREW = 2
+
 const s = StyleSheet.create({
+	root: { flex: 1 },
+	headerActions: { flexDirection: 'row', gap: 8 },
 	hero: { gap: 18 },
 	heroTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 16 },
 	heroTitle: { flex: 1, gap: 6 },

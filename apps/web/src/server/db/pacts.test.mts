@@ -118,6 +118,11 @@ describe(
 			assert.equal(invite?.isMember, true)
 			assert.equal(invite?.members.length, 2)
 			assert.ok(invite?.members.some((m) => m.userId === winner))
+
+			const page = await pacts.publicPage(pact.inviteCode)
+			assert.equal(page?.members.length, 2)
+			assert.deepEqual(page?.marks, [], 'no check-ins yet')
+			assert.equal(await pacts.publicPage('ZZZZZZ'), null)
 		})
 
 		test('check-ins: one per member per day, even two at once', async () => {

@@ -11,29 +11,30 @@
 // nothing granted to the API roles.
 
 model Pact {
-  id            String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id            String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   /// Restrict, not Cascade: deleting an owner's account passes the pact to its earliest-joined
   /// remaining member first (R28), so a pact is never deleted out from under its members.
-  ownerId       String       @map("owner_id") @db.Uuid
+  ownerId       String         @map("owner_id") @db.Uuid
   name          String
   habit         String
-  cadence       PactCadence  @default(daily)
+  cadence       PactCadence    @default(daily)
   /// IANA name, validated on create; never changes.
   timezone      String
-  startDay      DateTime     @map("start_day") @db.Date
+  startDay      DateTime       @map("start_day") @db.Date
   /// Inclusive: start_day + days - 1, in calendar days for either cadence.
-  endDay        DateTime     @map("end_day") @db.Date
+  endDay        DateTime       @map("end_day") @db.Date
   /// Free text, never money.
   stake         String?
-  inviteCode    String       @unique @map("invite_code")
-  maxMembers    Int          @default(8) @map("max_members")
-  cancelledAt   DateTime?    @map("cancelled_at") @db.Timestamptz(6)
+  inviteCode    String         @unique @map("invite_code")
+  maxMembers    Int            @default(8) @map("max_members")
+  cancelledAt   DateTime?      @map("cancelled_at") @db.Timestamptz(6)
   /// The closer's bookkeeping only: the last pact-day whose notifications were written.
-  closedThrough DateTime?    @map("closed_through") @db.Date
-  createdAt     DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt     DateTime     @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  owner         Profile      @relation("pactOwner", fields: [ownerId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  closedThrough DateTime?      @map("closed_through") @db.Date
+  createdAt     DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime       @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  owner         Profile        @relation("pactOwner", fields: [ownerId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   members       PactMember[]
+  notifications Notification[]
   nudges        Nudge[]
 
   @@index([ownerId])
@@ -69,26 +70,27 @@ model PactMember {
 // One per member per pact-day, enforced here (R11). Belongs to the membership, so it goes
 // with the account (R28) and can only exist for someone who is a member.
 model CheckIn {
-  id             String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  pactId         String          @map("pact_id") @db.Uuid
-  userId         String          @map("user_id") @db.Uuid
+  id             String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  pactId         String            @map("pact_id") @db.Uuid
+  userId         String            @map("user_id") @db.Uuid
   /// Server-computed, pact-local.
-  day            DateTime        @db.Date
+  day            DateTime          @db.Date
   kind           CheckInKind
   /// The challenge text it was taken against; null for a saver.
   challenge      String?
   /// `<user id>/proofs/...` in the user-uploads bucket; null for a saver, and once deleted.
-  photoPath      String?         @map("photo_path")
-  photoDeletedAt DateTime?       @map("photo_deleted_at") @db.Timestamptz(6)
+  photoPath      String?           @map("photo_path")
+  photoDeletedAt DateTime?         @map("photo_deleted_at") @db.Timestamptz(6)
   note           String?
   /// Advisory only: every verdict counts as a check-in (R15).
-  verdict        AiVerdict       @default(pending)
-  aiReason       String?         @map("ai_reason")
-  aiCaption      String?         @map("ai_caption")
-  judgedAt       DateTime?       @map("judged_at") @db.Timestamptz(6)
-  createdAt      DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
-  member         PactMember      @relation(fields: [pactId, userId], references: [pactId, userId], onDelete: Cascade, onUpdate: NoAction)
+  verdict        AiVerdict         @default(pending)
+  aiReason       String?           @map("ai_reason")
+  aiCaption      String?           @map("ai_caption")
+  judgedAt       DateTime?         @map("judged_at") @db.Timestamptz(6)
+  createdAt      DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  member         PactMember        @relation(fields: [pactId, userId], references: [pactId, userId], onDelete: Cascade, onUpdate: NoAction)
   reports        CheckInReport[]
+  reactions      CheckInReaction[]
   aiUsage        AiUsage[]
 
   @@unique([pactId, userId, day])
@@ -117,6 +119,43 @@ model Nudge {
 }
 
 // Stored for an admin; the reporter stops seeing the photo (R23).
+/// A quick reaction to a check-in in the feed: 🔥 👏 😂. One of each kind per person per
+/// check-in; taking it back deletes the row.
+model CheckInReaction {
+  checkInId String       @map("check_in_id") @db.Uuid
+  userId    String       @map("user_id") @db.Uuid
+  reaction  ReactionKind
+  createdAt DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  checkIn   CheckIn      @relation(fields: [checkInId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  profile   Profile      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([checkInId, userId, reaction])
+  @@index([userId])
+  @@map("check_in_reactions")
+}
+
+enum ReactionKind {
+  fire
+  clap
+  laugh
+
+  @@map("reaction_kind")
+}
+
+/// A person blocked another (App Review 1.2): each stops seeing the other's check-ins in the
+/// feed, and nudges between them are refused. Shared pacts keep counting both.
+model UserBlock {
+  blockerId String   @map("blocker_id") @db.Uuid
+  blockedId String   @map("blocked_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  blocker   Profile  @relation("blocksMade", fields: [blockerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  blocked   Profile  @relation("blocksReceived", fields: [blockedId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([blockerId, blockedId])
+  @@index([blockedId])
+  @@map("user_blocks")
+}
+
 model CheckInReport {
   id         String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   checkInId  String       @map("check_in_id") @db.Uuid

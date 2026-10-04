@@ -9,17 +9,35 @@ import {
 	listItemsQuery,
 	listItemsResponse
 } from './items'
+import {
+	addReactionBody,
+	listFeedQuery,
+	listFeedResponse,
+	reactionParams,
+	reactionResponse
+} from './feed'
 import { listNotificationsQuery, listNotificationsResponse } from './notifications'
+import {
+	blockBody,
+	blockParams,
+	leavePactBody,
+	listBlocksResponse,
+	memberParams,
+	okResponse,
+	reportCheckInBody
+} from './safety'
 import {
 	checkInParams,
 	checkInResponse,
 	createCheckInBody,
 	createCheckInUploadBody,
+	createNudgeBody,
 	createPactBody,
 	inviteParams,
 	inviteResponse,
 	joinPactBody,
 	joinPactResponse,
+	nudgeResponse,
 	listPactsResponse,
 	pactDetailResponse,
 	pactParams,
@@ -207,6 +225,90 @@ export const endpoints = {
 		auth: 'user',
 		params: checkInParams,
 		response: checkInResponse,
+		status: 200
+	},
+	createNudge: {
+		method: 'POST',
+		path: '/api/app/v1/pacts/:id/nudges',
+		auth: 'user',
+		params: pactParams,
+		body: createNudgeBody,
+		response: nudgeResponse,
+		status: 201
+	},
+	reportCheckIn: {
+		method: 'POST',
+		path: '/api/app/v1/check-ins/:id/report',
+		auth: 'user',
+		params: checkInParams,
+		body: reportCheckInBody,
+		response: okResponse,
+		status: 200
+	},
+	listBlocks: {
+		method: 'GET',
+		path: '/api/app/v1/blocks',
+		auth: 'user',
+		response: listBlocksResponse,
+		status: 200
+	},
+	blockUser: {
+		method: 'POST',
+		path: '/api/app/v1/blocks/:user',
+		auth: 'user',
+		params: blockParams,
+		body: blockBody,
+		response: okResponse,
+		status: 200
+	},
+	unblockUser: {
+		method: 'DELETE',
+		path: '/api/app/v1/blocks/:user',
+		auth: 'user',
+		params: blockParams,
+		response: okResponse,
+		status: 200
+	},
+	leavePact: {
+		method: 'POST',
+		path: '/api/app/v1/pacts/:id/leave',
+		auth: 'user',
+		params: pactParams,
+		body: leavePactBody,
+		response: okResponse,
+		status: 200
+	},
+	removeMember: {
+		method: 'DELETE',
+		path: '/api/app/v1/pacts/:id/members/:member',
+		auth: 'user',
+		params: memberParams,
+		response: okResponse,
+		status: 200
+	},
+	listFeed: {
+		method: 'GET',
+		path: '/api/app/v1/feed',
+		auth: 'user',
+		query: listFeedQuery,
+		response: listFeedResponse,
+		status: 200
+	},
+	addReaction: {
+		method: 'POST',
+		path: '/api/app/v1/check-ins/:id/reactions/:reaction',
+		auth: 'user',
+		params: reactionParams,
+		body: addReactionBody,
+		response: reactionResponse,
+		status: 200
+	},
+	removeReaction: {
+		method: 'DELETE',
+		path: '/api/app/v1/check-ins/:id/reactions/:reaction',
+		auth: 'user',
+		params: reactionParams,
+		response: reactionResponse,
 		status: 200
 	}
 } as const satisfies Record<string, Endpoint>

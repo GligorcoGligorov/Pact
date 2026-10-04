@@ -10,6 +10,8 @@ const nextConfig = {
 	// root config, so it warns that the Next plugin is missing when it isn't.
 	// Next 16 drops build-time lint entirely.
 	eslint: { ignoreDuringBuilds: true },
+	// The dev-only "N" badge sits on every page in `next dev` and reads as a bug in demos.
+	devIndicators: false,
 	async redirects() {
 		return [
 			// www → apex. Replace example.com with your domain.

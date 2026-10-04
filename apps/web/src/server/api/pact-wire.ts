@@ -94,7 +94,9 @@ export function boardFor(
 	members: readonly MemberRecord[],
 	checkIns: readonly CheckInRecord[],
 	today: Day,
-	userId: string
+	userId: string,
+	/** The members the caller has nudged today (R20). */
+	nudgedByMe: ReadonlySet<string> = new Set()
 ): TodayBoard {
 	const calendar = calendarOf(pact)
 	const board = todayBoard({
@@ -132,7 +134,8 @@ export function boardFor(
 							ai_reason: checkIn.aiReason,
 							ai_caption: checkIn.aiCaption
 						}
-					: null
+					: null,
+				nudged_by_me: nudgedByMe.has(entry.userId)
 			}
 		}),
 		me: {

@@ -287,6 +287,33 @@ export function createPactStore(client: PrismaClient, codes: () => string = newI
 		},
 
 		/**
+		 * R27: what the public join page may show for a code, for anyone, signed in or not: the
+		 * pact, its members and every check-in's who, day and kind (the board and the streak are
+		 * computed from those). Never a photo, a verdict, a caption or a note.
+		 */
+		async publicPage(code: string) {
+			const pact = await client.pact.findUnique({
+				where: { inviteCode: code },
+				select: {
+					...PACT,
+					members: {
+						orderBy: [{ createdAt: 'asc' }, { userId: 'asc' }],
+						select: { ...MEMBER, checkIns: { select: { userId: true, day: true, kind: true } } }
+					}
+				}
+			})
+			if (!pact) return null
+			const { members: rows, ...rest } = pact
+			const members: MemberRecord[] = []
+			const marks: { userId: string; day: Date; kind: CheckInRecord['kind'] }[] = []
+			for (const { checkIns, ...row } of rows) {
+				members.push(toMember(row))
+				marks.push(...checkIns)
+			}
+			return { pact: rest, members, marks }
+		},
+
+		/**
 		 * What an invite code joins: the pact, its active members (id and display name, oldest
 		 * first), how many there are, and whether the caller is in.
 		 */
@@ -446,6 +473,36 @@ export function createPactStore(client: PrismaClient, codes: () => string = newI
 				data: { ...verdict, judgedAt }
 			})
 			return count === 1
+		},
+
+		/**
+		 * R20: one nudge from one member to another per pact-day. `exists` when this pair's is
+		 * already sent today (the unique constraint decides, so two taps at once send one).
+		 */
+		async createNudge(input: {
+			pactId: string
+			fromUserId: string
+			toUserId: string
+			day: Date
+		}): Promise<'created' | 'exists'> {
+			try {
+				await client.nudge.create({ data: input })
+				return 'created'
+			} catch (error) {
+				if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+					return 'exists'
+				}
+				throw error
+			}
+		},
+
+		/** The nudges a person sent on or after `sinceDay`, in the given pacts. */
+		async nudgesFrom(fromUserId: string, pactIds: string[], sinceDay: Date) {
+			if (pactIds.length === 0) return []
+			return client.nudge.findMany({
+				where: { fromUserId, pactId: { in: pactIds }, day: { gte: sinceDay } },
+				select: { pactId: true, toUserId: true, day: true }
+			})
 		},
 
 		/** Members who haven't left: two or more make it a group (the activation moment). */

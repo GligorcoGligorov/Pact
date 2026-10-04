@@ -86,6 +86,7 @@ export function toWireNotification(row: NotificationRecord): Notification {
 		body: row.body,
 		category: row.category,
 		read: row.read,
+		pact_id: row.pactId,
 		created_at: row.createdAt.toISOString()
 	}
 }

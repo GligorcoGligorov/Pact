@@ -166,12 +166,23 @@ type EventName =
 	| 'check_in_submitted'
 	| 'check_in_failed'
 	| 'check_in_verdict_viewed'
+	// The crew feed (Activity tab): a quick reaction on someone's check-in, and the feed itself.
+	//   check_in_reacted  metadata: { pact_id, reaction: 'fire' | 'clap' | 'laugh' }; fired on
+	//                     add, not on take-back. The server records it first-party too.
+	| 'check_in_reacted'
+	// A crew banner (a nudge, a kept day) was tapped and opened its pact. metadata: { pact_id }
+	| 'nudge_opened'
+	// The board's "day kept by the whole crew" celebration was seen, once per pact-day.
+	// metadata: { pact_id }
+	| 'crew_day_kept_viewed'
 	// Social pressure and the local 22:00 reminder. reminder_opened is the only
 	// way to tell whether a local notification brings anyone back.
 	| 'nudge_sent'
 	| 'reminder_opened'
 	// Safety. metadata: { reason: 'fake' | 'inappropriate' | 'other' }
 	| 'check_in_reported'
+	// Blocked someone from a feed card. No metadata: who is never sent.
+	| 'user_blocked'
 	// Churn inside a pact: a member left, or the owner removed one.
 	| 'pact_left'
 	| 'pact_member_removed'

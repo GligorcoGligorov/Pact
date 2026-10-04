@@ -4,6 +4,7 @@ import type { BottomTabBarProps } from '@react-navigation/bottom-tabs'
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { BlurView } from 'expo-blur'
+import { LinearGradient } from 'expo-linear-gradient'
 import { PressableScale } from '@/components/motion/PressableScale'
 import { Text } from '@/components/ui/Text'
 import { useTheme } from '@/contexts/ThemeContext'
@@ -25,8 +26,13 @@ function barBottom(insetBottom: number) {
  */
 export function useTabBarClearance(): number {
 	const insets = useSafeAreaInsets()
-	return barBottom(insets.bottom) + TAB_BAR_HEIGHT + 20
+	return barBottom(insets.bottom) + TAB_BAR_HEIGHT + CLEARANCE_GAP
 }
+
+/** Room between the last content and the bar once scrolled to the end. */
+const CLEARANCE_GAP = 32
+/** How far above the bar the page fades out, so nothing reads through the gap under it. */
+const FADE_ABOVE = 28
 
 /**
  * A floating glass pill above the home indicator. The active tab sits in a
@@ -64,77 +70,92 @@ export default function TabBar({ state, navigation, descriptors }: BottomTabBarP
 	const glass = Platform.OS !== 'android'
 
 	return (
-		<View
-			pointerEvents="box-none"
-			style={[s.wrap, { bottom: barBottom(insets.bottom), paddingHorizontal: layout.gutter }]}
-		>
+		<>
+			{/* Content scrolls under the floating bar; this fade, the page's own colour, keeps it
+		    from showing through below and around the pill. */}
+			<LinearGradient
+				pointerEvents="none"
+				colors={[c.bgFade, c.bg, c.bg]}
+				locations={[0, 0.45, 1]}
+				style={[s.fade, { height: barBottom(insets.bottom) + TAB_BAR_HEIGHT + FADE_ABOVE }]}
+			/>
 			<View
-				style={[
-					s.bar,
-					{
-						borderColor: isDark ? c.borderGlass : c.borderSoft,
-						backgroundColor: glass ? 'transparent' : c.glassFallback
-					},
-					elevation.raised
-				]}
-				onLayout={onLayout}
+				pointerEvents="box-none"
+				style={[s.wrap, { bottom: barBottom(insets.bottom), paddingHorizontal: layout.gutter }]}
 			>
-				{glass ? (
-					<>
-						<BlurView intensity={60} tint={c.blurTint} style={[StyleSheet.absoluteFill, s.round]} />
-						<View style={[StyleSheet.absoluteFill, s.round, { backgroundColor: c.glassTint }]} />
-					</>
-				) : null}
+				<View
+					style={[
+						s.bar,
+						{
+							borderColor: isDark ? c.borderGlass : c.borderSoft,
+							backgroundColor: glass ? 'transparent' : c.glassFallback
+						},
+						elevation.raised
+					]}
+					onLayout={onLayout}
+				>
+					{glass ? (
+						<>
+							<BlurView
+								intensity={60}
+								tint={c.blurTint}
+								style={[StyleSheet.absoluteFill, s.round]}
+							/>
+							<View style={[StyleSheet.absoluteFill, s.round, { backgroundColor: c.glassTint }]} />
+						</>
+					) : null}
 
-				{slot > 0 ? (
-					<Animated.View
-						pointerEvents="none"
-						style={[
-							s.lens,
-							{ width: slot - LENS_INSET * 2, backgroundColor: c.brandDim },
-							lensStyle
-						]}
-					/>
-				) : null}
+					{slot > 0 ? (
+						<Animated.View
+							pointerEvents="none"
+							style={[
+								s.lens,
+								{ width: slot - LENS_INSET * 2, backgroundColor: c.brandDim },
+								lensStyle
+							]}
+						/>
+					) : null}
 
-				{state.routes.map((route, i) => {
-					const { options } = descriptors[route.key]
-					const focused = state.index === i
-					const label =
-						typeof options.tabBarLabel === 'string'
-							? options.tabBarLabel
-							: (options.title ?? route.name)
-					const color = focused ? c.brandInk : c.textTertiary
-					return (
-						<PressableScale
-							key={route.key}
-							haptic={false}
-							scaleTo={0.9}
-							onPress={() => handlePress(route.name, route.key, focused)}
-							accessibilityRole="tab"
-							accessibilityLabel={label}
-							accessibilityState={{ selected: focused }}
-							style={s.item}
-						>
-							{options.tabBarIcon?.({ focused, color, size: ICON_SIZE })}
-							<Text
-								variant="caption"
-								numberOfLines={1}
-								maxFontSizeMultiplier={1.2}
-								style={[s.label, { color }, focused && s.labelActive]}
+					{state.routes.map((route, i) => {
+						const { options } = descriptors[route.key]
+						const focused = state.index === i
+						const label =
+							typeof options.tabBarLabel === 'string'
+								? options.tabBarLabel
+								: (options.title ?? route.name)
+						const color = focused ? c.brandInk : c.textTertiary
+						return (
+							<PressableScale
+								key={route.key}
+								haptic={false}
+								scaleTo={0.9}
+								onPress={() => handlePress(route.name, route.key, focused)}
+								accessibilityRole="tab"
+								accessibilityLabel={label}
+								accessibilityState={{ selected: focused }}
+								style={s.item}
 							>
-								{label}
-							</Text>
-						</PressableScale>
-					)
-				})}
+								{options.tabBarIcon?.({ focused, color, size: ICON_SIZE })}
+								<Text
+									variant="caption"
+									numberOfLines={1}
+									maxFontSizeMultiplier={1.2}
+									style={[s.label, { color }, focused && s.labelActive]}
+								>
+									{label}
+								</Text>
+							</PressableScale>
+						)
+					})}
+				</View>
 			</View>
-		</View>
+		</>
 	)
 }
 
 const s = StyleSheet.create({
 	wrap: { position: 'absolute', left: 0, right: 0 },
+	fade: { position: 'absolute', left: 0, right: 0, bottom: 0 },
 	bar: {
 		height: TAB_BAR_HEIGHT,
 		borderRadius: TAB_BAR_HEIGHT / 2,

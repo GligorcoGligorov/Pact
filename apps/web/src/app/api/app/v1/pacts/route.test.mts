@@ -38,6 +38,7 @@ mock.timers.enable({ apis: ['Date'], now: NOW })
 
 beforeEach(() => {
 	reset()
+	fakeStore(pactStore, 'nudgesFrom', () => [])
 	mock.timers.setTime(NOW.getTime())
 	fakeStore(profileStore, 'regionOf', () => null)
 	fakeStore(analyticsStore, 'hasDuplicate', () => false)

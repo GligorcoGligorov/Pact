@@ -12,6 +12,7 @@ import {
 	Trash2,
 	Vibrate
 } from 'lucide-react-native'
+import { BlockedPeople } from '@/components/pact/BlockedPeople'
 import { AlertModal } from '@/components/ui/AppModal'
 import { ListRow, Section } from '@/components/ui/List'
 import { PageHeader, ScreenTitle } from '@/components/ui/PageHeader'
@@ -158,6 +159,8 @@ export default function SettingsScreen() {
 					onPress={() => Linking.openURL(MANAGE_SUBSCRIPTIONS_URL)}
 				/>
 			</Section>
+
+			<BlockedPeople />
 
 			<Section title="Legal">
 				<ListRow icon={FileText} title="Privacy Policy" onPress={() => router.push('/privacy')} />

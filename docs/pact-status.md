@@ -3,7 +3,7 @@
 The one "where are we" file. Read it first; update it at the end of every phase.
 Spec: [pact-requirements.md](pact-requirements.md) (R-numbers). Plan: [pact-plan.md](pact-plan.md).
 
-**Last updated:** 2026-10-03, end of Phase 3, on branch `feat/phase-3-mobile-slice` (no CI in
+**Last updated:** 2026-10-04, end of Phase 4, on branch `feat/phase-4-web-social` (no CI in
 this trial, see [trial-local-only](memory/trial-local-only.md)). Build traps:
 [device-build-traps](memory/device-build-traps.md).
 
@@ -15,8 +15,8 @@ this trial, see [trial-local-only](memory/trial-local-only.md)). Build traps:
 | 1 — Events, schema, day math, seed | done     | `AiUsage` and the AI keys moved to Phase 2, and done there.                        |
 | 2 — API for the slice              | done     | All but the eval's 12 real photos (see open items).                                |
 | 3 — Mobile slice                   | done     | Built and committed 2026-10-03; a hand tap-through on the simulator is still owed. |
-| 4 — Social loop                    | **next** | The call slot moved; no feedback yet.                                              |
-| 5 — Closer, results, onboarding    | –        |                                                                                    |
+| 4 — Social loop                    | done     | Join page, landing, feed, nudges, crew complete, reminder, safety. 2026-10-04.     |
+| 5 — Closer, results, onboarding    | **next** |                                                                                    |
 | 6 — Dogfood and gates              | –        |                                                                                    |
 
 ## What exists and where
@@ -90,6 +90,23 @@ this trial, see [trial-local-only](memory/trial-local-only.md)). Build traps:
   `Countdown`, `MemberRow`, `StateChip`, `WeekStrip`, `VerdictView`, `Confetti`.
 - API, additive: `GET pacts` and `GET pacts/:id` both carry `progress` (chain, current and best
   streak); `GET pacts` also carries each pact's `today` board, for home's crew, ring and streak.
+
+**The social loop (Phase 4)**:
+
+- Web: `/join/[code]` (`app/join/[code]/`: the page, its Open Graph image, a friendly 404),
+  `components/join/` (crew faces, ring, live countdown, the email-code join panel, the code box),
+  `server/pacts/join-page.ts` (R27's public data only, from `pactStore.publicPage`). The landing at
+  `/` is `components/pact-landing/PactLanding.tsx`, with real screens in `public/screens/`.
+- Feed and reactions: `GET /feed`, `POST/DELETE /check-ins/:id/reactions/:reaction`,
+  `server/db/crew-feed.ts`, table `check_in_reactions`; the Activity tab and `FeedCard`.
+- Nudges: `POST /pacts/:id/nudges`, `server/ai/nudge.ts` (Groq line, safety filter, fixed
+  fallback, `ai_usage` feature `nudge`), `server/db/inbox.ts`; notifications carry `pact_id`.
+  The app: `lib/inbox.ts` (banners from the inbox), the Nudge pill in `MemberRow`.
+- Crew complete: `server/pacts/crew-complete.ts` (after each check-in), `KeptCard` on the board.
+- Reminder: `lib/reminders.ts` (22:00 pact-local, local notifications).
+- Safety: `POST check-ins/:id/report`, `POST/DELETE blocks/:user`, `POST pacts/:id/leave`,
+  `DELETE pacts/:id/members/:member`, `server/db/safety.ts`, table `user_blocks`; the feed's ⋯
+  menu and `pact/[id]/settings`.
 
 ## Decisions made in code
 
@@ -203,6 +220,19 @@ checks, the ring and the streak; New pact and Join sit behind a "+".
 
 ## Open items
 
+- **Reports have no admin screen:** they're stored in `check_in_reports` for an admin to read.
+  Unblocking is in Settings → Blocked people.
+- **The banner icon is Expo's placeholder:** crew banners and reminders show the dev client's
+  icon. Pact's own app icon arrives with the next native build (`app.json`), not over the air.
+- **Nudge lines** come from Groq with a word filter (bodies, weight, insults) and a fixed
+  fallback; read a sample of real lines in `notifications` before a public launch.
+- **Link previews** render at `/join/<code>/opengraph-image`; WhatsApp and iMessage only unfurl
+  them from a public URL (the trial is localhost only).
+- **The seed's photos** come from `apps/web/eval-photos/real/` (gitignored, local only); on another
+  machine the demo check-ins fall back to flat placeholders.
+- **Push is in-app, by design (decided 2026-10-04):** nudges and crew messages arrive as real iOS
+  banners while the app is open or reopened (it reads its inbox every 15 s). Closed-app push
+  needs a paid Apple Developer account and a new build; a known, deliberate limit of the trial.
 - **Deep link by hand:** `pact://join/STREAK` from Safari on the simulator wasn't checked (iOS
   asks "Open in Pact?" and simctl can't tap). The rest of the slice was checked on 2026-10-03:
   a real app check-in (Ana), the real verdict screen as a modal (Cleo), the last check-in
@@ -236,9 +266,9 @@ cd apps/mobile && npx expo start --dev-client      # terminal 2, then press i
 ```
 
 Pact must already be installed on the simulator. The first bundle takes about 40 s; if the app
-says "Error loading app", tap OK and reload. If `ipconfig getifaddr en0` is no longer
-`192.168.1.215`, update the three LAN URLs in the `.env.local` files and start Metro with
-`--clear`.
+says "Error loading app", tap OK and reload. The app reaches the API and Supabase at `127.0.0.1`
+(simulator only), so a network change can't break it; a real phone needs the Mac's LAN address
+instead (see [device-build-traps](memory/device-build-traps.md)).
 
 **A new app build**, only after a native change (a dependency with native code, `app.json`,
 `app.config.ts`):

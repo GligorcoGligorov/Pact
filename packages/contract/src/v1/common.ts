@@ -27,6 +27,8 @@ export const isoDate = z.iso.date()
 export const ERROR_CODES = {
 	invalid_request: 400,
 	unauthorized: 401,
+	/** Signed in, but not allowed: a member doing what only the pact's owner may. */
+	forbidden: 403,
 	not_found: 404,
 	conflict: 409,
 	internal: 500,
@@ -42,7 +44,11 @@ export const ERROR_CODES = {
 	/** R11: one check-in per member per pact-day. */
 	already_checked_in: 409,
 	/** R17: the member's one saver in this pact is used. */
-	saver_used: 409
+	saver_used: 409,
+	/** R20: the member being nudged has already checked in today. */
+	already_in: 409,
+	/** R20: one nudge per pair per day; this pair's is sent. */
+	already_nudged: 409
 } as const
 
 export type ErrorCode = keyof typeof ERROR_CODES

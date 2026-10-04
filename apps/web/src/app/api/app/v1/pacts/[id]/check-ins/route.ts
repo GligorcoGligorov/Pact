@@ -14,6 +14,7 @@ import type { AppUser } from '@/server/auth/require-user'
 import { analyticsStore } from '@/server/db/analytics'
 import { pactStore } from '@/server/db/pacts'
 import { profileStore } from '@/server/db/profiles'
+import { celebrateIfKept } from '@/server/pacts/crew-complete'
 import { isOwnProofPath, proofExists } from '@/server/storage/proofs'
 
 export const runtime = 'nodejs'
@@ -76,6 +77,7 @@ export const POST = createAppRoute(endpoints.createCheckIn, async ({ user, param
 			dedupeDaily: false
 		})
 		await activateOnce(user, pact.id)
+		await celebrateIfKept(pact, today, user.id)
 	}
 	return {
 		body: { check_in: toWireCheckIn(checkIn) },

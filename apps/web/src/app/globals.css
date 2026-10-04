@@ -424,6 +424,11 @@
 		animation-name: enter-dissolve;
 	}
 
+	/* A success mark that lands: a quick overshoot, then rest (the join page's "You're in"). */
+	.pop {
+		animation: pop var(--dur-slow) var(--ease-out) both;
+	}
+
 	/* Scroll reveal: hidden only when a script will reveal it, so a page whose
 	   JS fails still shows everything. */
 	.reveal {
@@ -480,6 +485,16 @@
 	from {
 		transform: translateY(130%);
 		filter: blur(8px);
+	}
+}
+@keyframes pop {
+	0% {
+		opacity: 0;
+		transform: scale(0.4);
+	}
+	60% {
+		opacity: 1;
+		transform: scale(1.12);
 	}
 }
 @keyframes enter {

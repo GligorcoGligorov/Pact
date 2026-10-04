@@ -61,6 +61,9 @@ model Profile {
   nudgesSent         Nudge[]             @relation("nudgesSent")
   nudgesReceived     Nudge[]             @relation("nudgesReceived")
   checkInReports     CheckInReport[]
+  checkInReactions   CheckInReaction[]
+  blocksMade         UserBlock[]         @relation("blocksMade")
+  blocksReceived     UserBlock[]         @relation("blocksReceived")
   aiUsage            AiUsage[]
 
   @@index([createdAt])

@@ -37,6 +37,7 @@ beforeEach(() => {
 				body: 'Hi',
 				category: 'system',
 				read: false,
+				pactId: null,
 				createdAt: CREATED
 			}
 		],
@@ -91,6 +92,7 @@ test("GET notifications: the verified person's latest 50 unless asked, last page
 				body: 'Hi',
 				category: 'system',
 				read: false,
+				pact_id: null,
 				created_at: '2026-09-23T12:00:00.000Z'
 			}
 		],

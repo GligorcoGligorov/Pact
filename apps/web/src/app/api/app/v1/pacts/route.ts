@@ -13,7 +13,14 @@ import { fromIsoDate } from '@/server/api/wire'
 import { pactStore } from '@/server/db/pacts'
 import { PACT_EVENTS } from '@/lib/analytics/events'
 import { recordUserEvent } from '@/lib/analytics/record'
-import { canonicalTimeZone, dayFromDate, endDayFor, isHeldOn, todayIn } from '@/lib/pacts/day'
+import {
+	addDays,
+	canonicalTimeZone,
+	dayFromDate,
+	endDayFor,
+	isHeldOn,
+	todayIn
+} from '@/lib/pacts/day'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -26,6 +33,12 @@ export const dynamic = 'force-dynamic'
 export const GET = createAppRoute(endpoints.listPacts, async ({ user }) => {
 	const now = new Date()
 	const rows = await pactStore.listForUser(user.id)
+	// Every timezone's today is within a day of UTC's, so this covers each pact's today.
+	const nudges = await pactStore.nudgesFrom(
+		user.id,
+		rows.map((row) => row.pact.id),
+		fromIsoDate(addDays(todayIn('UTC', now), -1))
+	)
 	return {
 		body: {
 			pacts: rows.map(({ pact, me, members, checkIns }) => {
@@ -45,7 +58,18 @@ export const GET = createAppRoute(endpoints.listPacts, async ({ user }) => {
 					my_state_today: state,
 					today:
 						statusOf(pact, today) === 'active'
-							? boardFor(pact, members, todays, today, user.id)
+							? boardFor(
+									pact,
+									members,
+									todays,
+									today,
+									user.id,
+									new Set(
+										nudges
+											.filter((n) => n.pactId === pact.id && dayFromDate(n.day) === today)
+											.map((n) => n.toUserId)
+									)
+								)
 							: null,
 					progress: progressFor(pact, members, checkIns, today)
 				}
