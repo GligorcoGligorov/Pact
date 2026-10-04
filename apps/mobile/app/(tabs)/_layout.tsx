@@ -9,12 +9,15 @@ import { Bell, CircleUser, House } from 'lucide-react-native'
 import TabBar from '@/components/TabBar'
 import { useColors } from '@/contexts/ThemeContext'
 import { useInboxBanners } from '@/lib/inbox'
+import { usePacts } from '@/lib/pacts'
+import { useReminders } from '@/lib/reminders'
 
 const STROKE = 1.9
 
 export default function TabsLayout() {
 	const c = useColors()
 	useInboxBanners()
+	useReminders(usePacts().data)
 	return (
 		<Tabs
 			tabBar={(props) => <TabBar {...props} />}
