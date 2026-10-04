@@ -23,6 +23,7 @@ const { pactStore } = await import('@/server/db/pacts')
 const { inboxStore } = await import('@/server/db/inbox')
 const { analyticsStore } = await import('@/server/db/analytics')
 const { profileStore } = await import('@/server/db/profiles')
+const { safetyStore } = await import('@/server/db/safety')
 
 const path = `/api/app/v1/pacts/${PACT_ID}/nudges`
 const nudge = (to: string) =>
@@ -45,6 +46,8 @@ beforeEach(() => {
 	fakeStore(profileStore, 'regionOf', () => null)
 	fakeStore(analyticsStore, 'hasDuplicate', () => false)
 	fakeStore(analyticsStore, 'insertEvent', () => undefined)
+	fakeStore(safetyStore, 'blockedEitherWay', () => new Set())
+	fakeStore(safetyStore, 'reportedBy', () => new Set())
 })
 
 test('a nudge to a member still out: 201, their inbox gets a kind line, nudge_sent recorded', async () => {

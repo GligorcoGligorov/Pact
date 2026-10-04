@@ -27,6 +27,8 @@ export const isoDate = z.iso.date()
 export const ERROR_CODES = {
 	invalid_request: 400,
 	unauthorized: 401,
+	/** Signed in, but not allowed: a member doing what only the pact's owner may. */
+	forbidden: 403,
 	not_found: 404,
 	conflict: 409,
 	internal: 500,

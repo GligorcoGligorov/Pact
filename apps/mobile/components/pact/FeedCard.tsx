@@ -8,7 +8,7 @@ import Animated, {
 	withSpring,
 	withTiming
 } from 'react-native-reanimated'
-import { ShieldCheck, TriangleAlert } from 'lucide-react-native'
+import { EyeOff, MoreHorizontal, ShieldCheck, TriangleAlert } from 'lucide-react-native'
 import { REACTIONS, type FeedEntry, type Reaction } from '@app/contract'
 import { PressableScale } from '@/components/motion/PressableScale'
 import { Text } from '@/components/ui/Text'
@@ -43,11 +43,14 @@ export function timeAgo(iso: string, now = Date.now()): string {
 export function FeedCard({
 	entry,
 	myId,
-	onReact
+	onReact,
+	onMore
 }: {
 	entry: FeedEntry
 	myId: string | null
 	onReact: (reaction: Reaction) => void
+	/** Report or block, for someone else's check-in. */
+	onMore?: () => void
 }) {
 	const { colors: c, elevation } = useTheme()
 	const name = displayName(entry)
@@ -79,9 +82,29 @@ export function FeedCard({
 						{entry.pact_name} · {timeAgo(entry.created_at)}
 					</Text>
 				</View>
+				{!mine && onMore ? (
+					<PressableScale
+						scaleTo="button"
+						haptic="select"
+						onPress={onMore}
+						hitSlop={10}
+						accessibilityRole="button"
+						accessibilityLabel={`More for ${name}'s check-in`}
+						style={s.more}
+					>
+						<MoreHorizontal size={22} color={c.textTertiary} />
+					</PressableScale>
+				) : null}
 			</PressableScale>
 
-			{entry.photo_url ? (
+			{entry.reported_by_me ? (
+				<View style={[s.saver, { backgroundColor: c.surface2 }]}>
+					<EyeOff size={20} color={c.textTertiary} />
+					<Text variant="bodySm" tone="secondary" style={s.flagText}>
+						You reported this photo, so it’s hidden for you. Thanks for keeping the crew honest.
+					</Text>
+				</View>
+			) : entry.photo_url ? (
 				<Image
 					source={{ uri: entry.photo_url }}
 					style={[s.photo, { backgroundColor: c.well }]}
@@ -181,6 +204,7 @@ const s = StyleSheet.create({
 	card: { borderRadius: 26, borderWidth: StyleSheet.hairlineWidth, padding: 14, gap: 12 },
 	header: { flexDirection: 'row', alignItems: 'center', gap: 10 },
 	who: { flex: 1, gap: 1 },
+	more: { padding: 6 },
 	photo: { width: '100%', aspectRatio: 4 / 5, borderRadius: 18 },
 	saver: {
 		flexDirection: 'row',

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { RefreshControl, StyleSheet, View } from 'react-native'
 import { router, useLocalSearchParams } from 'expo-router'
 import { useQueryClient } from '@tanstack/react-query'
-import { Camera, Check, Flame, ScanEye, SearchX, UserPlus } from 'lucide-react-native'
+import { Camera, Check, Flame, ScanEye, SearchX, Settings2, UserPlus } from 'lucide-react-native'
 import { Chain, chainTiles } from '@/components/pact/Chain'
 import { Confetti } from '@/components/pact/Confetti'
 import { Countdown } from '@/components/pact/Countdown'
@@ -58,11 +58,18 @@ export default function PactBoardScreen() {
 	}
 
 	const invite = (
-		<IconButton
-			icon={(color) => <UserPlus size={20} color={color} />}
-			onPress={() => router.push(`/pact/${id}/invite`)}
-			accessibilityLabel="Invite people"
-		/>
+		<View style={s.headerActions}>
+			<IconButton
+				icon={(color) => <UserPlus size={20} color={color} />}
+				onPress={() => router.push(`/pact/${id}/invite`)}
+				accessibilityLabel="Invite people"
+			/>
+			<IconButton
+				icon={(color) => <Settings2 size={20} color={color} />}
+				onPress={() => router.push(`/pact/${id}/settings`)}
+				accessibilityLabel="Pact settings"
+			/>
+		</View>
 	)
 
 	const today = detail?.today ?? null
@@ -375,6 +382,7 @@ const MIN_CREW = 2
 
 const s = StyleSheet.create({
 	root: { flex: 1 },
+	headerActions: { flexDirection: 'row', gap: 8 },
 	hero: { gap: 18 },
 	heroTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 16 },
 	heroTitle: { flex: 1, gap: 6 },

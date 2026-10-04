@@ -75,12 +75,15 @@ export function createCrewFeedStore(client: PrismaClient) {
 	}
 
 	return {
-		/** One page of the person's feed, newest first, with each check-in's reactions. */
-		async page(userId: string, request: PageRequest) {
+		/**
+		 * One page of the person's feed, newest first, with each check-in's reactions. `hidden`
+		 * are people never shown (blocked either way).
+		 */
+		async page(userId: string, request: PageRequest, hidden: ReadonlySet<string> = new Set()) {
 			const pactIds = await myPactIds(userId)
 			if (pactIds.length === 0) return { rows: [], nextAfter: null, tallies: new Map() }
 			const rows = await client.checkIn.findMany({
-				where: { pactId: { in: pactIds } },
+				where: { pactId: { in: pactIds }, userId: { notIn: [...hidden] } },
 				orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
 				select: FEED_ROW,
 				...pageArgs(request)

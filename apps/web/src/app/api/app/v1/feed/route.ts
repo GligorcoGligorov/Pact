@@ -3,6 +3,7 @@ import { createAppRoute } from '@/server/api/app-route'
 import { decodeCursor, nextCursor } from '@/server/api/cursor'
 import { dayFromDate } from '@/lib/pacts/day'
 import { crewFeedStore } from '@/server/db/crew-feed'
+import { safetyStore } from '@/server/db/safety'
 import { proofPhotoUrls } from '@/server/storage/proofs'
 
 export const runtime = 'nodejs'
@@ -16,12 +17,18 @@ const DEFAULT_LIMIT = 20
  * crew's reactions.
  */
 export const GET = createAppRoute(endpoints.listFeed, async ({ user, query }) => {
-	const page = await crewFeedStore.page(user.id, {
-		limit: query.limit ?? DEFAULT_LIMIT,
-		after: decodeCursor('feed', query.cursor)
-	})
+	const page = await crewFeedStore.page(
+		user.id,
+		{ limit: query.limit ?? DEFAULT_LIMIT, after: decodeCursor('feed', query.cursor) },
+		await safetyStore.blockedEitherWay(user.id)
+	)
+	// R23: a photo the caller reported is never shown to them again.
+	const reported = await safetyStore.reportedBy(
+		user.id,
+		page.rows.map((row) => row.id)
+	)
 	const urls = await proofPhotoUrls(
-		page.rows.flatMap((row) => (row.photoPath ? [row.photoPath] : []))
+		page.rows.flatMap((row) => (row.photoPath && !reported.has(row.id) ? [row.photoPath] : []))
 	)
 	return {
 		body: {
@@ -36,6 +43,7 @@ export const GET = createAppRoute(endpoints.listFeed, async ({ user, query }) =>
 				kind: row.kind,
 				challenge: row.challenge,
 				photo_url: row.photoPath ? (urls.get(row.photoPath) ?? null) : null,
+				reported_by_me: reported.has(row.id),
 				note: row.note,
 				verdict: row.verdict,
 				ai_reason: row.aiReason,

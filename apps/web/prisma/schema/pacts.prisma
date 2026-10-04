@@ -142,6 +142,20 @@ enum ReactionKind {
   @@map("reaction_kind")
 }
 
+/// A person blocked another (App Review 1.2): each stops seeing the other's check-ins in the
+/// feed, and nudges between them are refused. Shared pacts keep counting both.
+model UserBlock {
+  blockerId String   @map("blocker_id") @db.Uuid
+  blockedId String   @map("blocked_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  blocker   Profile  @relation("blocksMade", fields: [blockerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  blocked   Profile  @relation("blocksReceived", fields: [blockedId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([blockerId, blockedId])
+  @@index([blockedId])
+  @@map("user_blocks")
+}
+
 model CheckInReport {
   id         String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   checkInId  String       @map("check_in_id") @db.Uuid

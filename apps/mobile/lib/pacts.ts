@@ -15,6 +15,7 @@ import {
 	type CreatePactBody,
 	type JoinSource,
 	type Reaction,
+	type ReportReason,
 	type ReactionState
 } from '@app/contract'
 import { api, ApiError, type ResponseOf } from './api'
@@ -116,6 +117,50 @@ export function useNudge(pactId: string) {
 		mutationFn: async (toUserId: string) =>
 			(await api('createNudge', { params: { id: pactId }, body: { to_user_id: toUserId } })).nudge,
 		onSettled: () => queryClient.invalidateQueries({ queryKey: pactKeys.detail(pactId) })
+	})
+}
+
+// ─── Safety: report, block, leave, remove (App Review 1.2, R7, R23) ─────────
+
+/** R23: report a check-in; the feed then hides its photo for you. */
+export function useReportCheckIn() {
+	const queryClient = useQueryClient()
+	return useMutation({
+		mutationFn: ({ checkInId, reason }: { checkInId: string; reason: ReportReason }) =>
+			api('reportCheckIn', { params: { id: checkInId }, body: { reason } }),
+		onSuccess: () => queryClient.invalidateQueries({ queryKey: pactKeys.feed })
+	})
+}
+
+/** Block someone you share a pact with: their check-ins leave your feed, nudges stop. */
+export function useBlockUser() {
+	const queryClient = useQueryClient()
+	return useMutation({
+		mutationFn: (userId: string) => api('blockUser', { params: { user: userId }, body: {} }),
+		onSuccess: () => queryClient.invalidateQueries({ queryKey: pactKeys.feed })
+	})
+}
+
+/** R7: leave a pact; your past days still count. */
+export function useLeavePact(pactId: string) {
+	const queryClient = useQueryClient()
+	return useMutation({
+		mutationFn: () => api('leavePact', { params: { id: pactId }, body: {} }),
+		onSuccess: () =>
+			Promise.all([
+				queryClient.invalidateQueries({ queryKey: pactKeys.all }),
+				queryClient.invalidateQueries({ queryKey: pactKeys.feed })
+			])
+	})
+}
+
+/** R7: as the owner, remove a member from today. */
+export function useRemoveMember(pactId: string) {
+	const queryClient = useQueryClient()
+	return useMutation({
+		mutationFn: (memberId: string) =>
+			api('removeMember', { params: { id: pactId, member: memberId } }),
+		onSuccess: () => queryClient.invalidateQueries({ queryKey: pactKeys.all })
 	})
 }
 

@@ -2,11 +2,13 @@ import { useMemo, useState } from 'react'
 import { RefreshControl, StyleSheet } from 'react-native'
 import { router } from 'expo-router'
 import { useQueryClient } from '@tanstack/react-query'
-import { Camera } from 'lucide-react-native'
-import type { FeedEntry, Reaction } from '@app/contract'
+import { Ban, Camera, Flag } from 'lucide-react-native'
+import type { FeedEntry, Reaction, ReportReason } from '@app/contract'
+import { displayName } from '@/components/pact/Avatars'
 import { FeedCard } from '@/components/pact/FeedCard'
 import { LoadMore, QueryErrorState } from '@/components/QueryError'
 import { FadeSlideIn } from '@/components/motion/FadeSlideIn'
+import { ActionSheet, AlertModal } from '@/components/ui/AppModal'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { SectionHeader } from '@/components/ui/List'
 import { ScreenTitle } from '@/components/ui/PageHeader'
@@ -16,12 +18,15 @@ import { useColors } from '@/contexts/ThemeContext'
 import { useToast } from '@/contexts/ToastContext'
 import { track } from '@/lib/analytics'
 import { haptic } from '@/lib/haptics'
+import { errorMessage } from '@/lib/api'
 import {
 	addIsoDays,
 	localIsoDate,
 	pactKeys,
+	useBlockUser,
 	useFeed,
 	useMyUserId,
+	useReportCheckIn,
 	useToggleReaction
 } from '@/lib/pacts'
 
@@ -60,6 +65,45 @@ export default function ActivityScreen() {
 	const toggle = useToggleReaction()
 	const { data: myId } = useMyUserId()
 	const [refreshing, setRefreshing] = useState(false)
+	const report = useReportCheckIn()
+	const block = useBlockUser()
+	// The card whose "⋯" was tapped, and which step of its menu is open.
+	const [menu, setMenu] = useState<{
+		entry: FeedEntry
+		step: 'actions' | 'report' | 'block'
+	} | null>(null)
+	const first = menu ? displayName(menu.entry).split(' ')[0] : ''
+
+	function sendReport(reason: ReportReason) {
+		if (!menu) return
+		const { entry } = menu
+		setMenu(null)
+		track('check_in_reported', { pact_id: entry.pact_id, reason })
+		report.mutate(
+			{ checkInId: entry.id, reason },
+			{
+				onSuccess: () => {
+					haptic.success()
+					showToast('Reported. The photo is hidden for you, and we’ll take a look.', 'success')
+				},
+				onError: (error) => showToast(errorMessage(error), 'error')
+			}
+		)
+	}
+
+	function confirmBlock() {
+		if (!menu) return
+		const { entry } = menu
+		setMenu(null)
+		track('user_blocked')
+		block.mutate(entry.user_id, {
+			onSuccess: () => {
+				haptic.success()
+				showToast(`${displayName(entry).split(' ')[0]} is blocked.`, 'success')
+			},
+			onError: (error) => showToast(errorMessage(error), 'error')
+		})
+	}
 
 	const entries = useMemo(() => feed.data?.pages.flatMap((page) => page.entries) ?? [], [feed.data])
 	const groups = useMemo(() => byDay(entries), [entries])
@@ -130,6 +174,7 @@ export default function ActivityScreen() {
 									entry={entry}
 									myId={myId ?? null}
 									onReact={(reaction) => react(entry, reaction)}
+									onMore={() => setMenu({ entry, step: 'actions' })}
 								/>
 							))}
 						</FadeSlideIn>
@@ -143,6 +188,44 @@ export default function ActivityScreen() {
 					/>
 				</>
 			)}
+			<ActionSheet
+				visible={menu?.step === 'actions'}
+				title={`${first}’s check-in`}
+				options={[
+					{
+						text: 'Report check-in',
+						icon: Flag,
+						onPress: () => menu && setMenu({ ...menu, step: 'report' })
+					},
+					{
+						text: `Block ${first}`,
+						icon: Ban,
+						style: 'destructive',
+						onPress: () => menu && setMenu({ ...menu, step: 'block' })
+					}
+				]}
+				onDismiss={() => setMenu(null)}
+			/>
+			<ActionSheet
+				visible={menu?.step === 'report'}
+				title="What’s wrong with it?"
+				options={[
+					{ text: 'It’s fake or an old photo', onPress: () => sendReport('fake') },
+					{ text: 'It’s inappropriate', onPress: () => sendReport('inappropriate') },
+					{ text: 'Something else', onPress: () => sendReport('other') }
+				]}
+				onDismiss={() => setMenu(null)}
+			/>
+			<AlertModal
+				visible={menu?.step === 'block'}
+				title={`Block ${first}?`}
+				message="You won’t see each other’s check-ins, and nudges between you stop. You both stay in your pacts."
+				buttons={[
+					{ text: 'Cancel', style: 'cancel', onPress: () => setMenu(null) },
+					{ text: 'Block', style: 'destructive', onPress: confirmBlock }
+				]}
+				onDismiss={() => setMenu(null)}
+			/>
 		</Screen>
 	)
 }

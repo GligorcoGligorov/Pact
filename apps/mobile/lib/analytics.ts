@@ -181,6 +181,8 @@ type EventName =
 	| 'reminder_opened'
 	// Safety. metadata: { reason: 'fake' | 'inappropriate' | 'other' }
 	| 'check_in_reported'
+	// Blocked someone from a feed card. No metadata: who is never sent.
+	| 'user_blocked'
 	// Churn inside a pact: a member left, or the owner removed one.
 	| 'pact_left'
 	| 'pact_member_removed'

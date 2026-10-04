@@ -11,6 +11,7 @@ const reactions = await import('../check-ins/[id]/reactions/[reaction]/route')
 const { crewFeedStore } = await import('@/server/db/crew-feed')
 const { analyticsStore } = await import('@/server/db/analytics')
 const { profileStore } = await import('@/server/db/profiles')
+const { safetyStore } = await import('@/server/db/safety')
 
 const CHECK_IN = '44444444-4444-4444-8444-444444444444'
 const SAVER = '55555555-5555-4555-8555-555555555555'
@@ -42,6 +43,8 @@ beforeEach(() => {
 	fakeStore(profileStore, 'regionOf', () => null)
 	fakeStore(analyticsStore, 'hasDuplicate', () => false)
 	fakeStore(analyticsStore, 'insertEvent', () => undefined)
+	fakeStore(safetyStore, 'blockedEitherWay', () => new Set())
+	fakeStore(safetyStore, 'reportedBy', () => new Set())
 })
 
 test('the feed: each check-in with its signed photo, verdict and reactions, and the next page', async () => {
@@ -79,7 +82,8 @@ test('the feed: each check-in with its signed photo, verdict and reactions, and 
 	assert.ok(res.body.next_cursor)
 	assert.deepEqual(fake.storeCalls.find((c) => c.method === 'page')?.args, [
 		USER,
-		{ limit: 2, after: undefined }
+		{ limit: 2, after: undefined },
+		new Set()
 	])
 })
 

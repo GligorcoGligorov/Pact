@@ -40,7 +40,9 @@ export const feedEntrySchema = z.object({
 	ai_reason: z.string().nullable(),
 	ai_caption: z.string().nullable(),
 	created_at: isoDateTime,
-	reactions: reactionStateSchema
+	reactions: reactionStateSchema,
+	/** R23: the caller reported it; the app shows no photo (photo_url is null) and says so. */
+	reported_by_me: z.boolean()
 })
 
 export const listFeedQuery = pageQuery

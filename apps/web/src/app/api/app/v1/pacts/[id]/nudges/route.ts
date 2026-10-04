@@ -6,6 +6,7 @@ import { fromIsoDate } from '@/server/api/wire'
 import { writeNudge } from '@/server/ai/nudge'
 import { inboxStore } from '@/server/db/inbox'
 import { pactStore } from '@/server/db/pacts'
+import { safetyStore } from '@/server/db/safety'
 import { PACT_EVENTS } from '@/lib/analytics/events'
 import { recordUserEvent } from '@/lib/analytics/record'
 import { challengeFor } from '@/lib/pacts/challenges'
@@ -49,6 +50,10 @@ export const POST = createAppRoute(endpoints.createNudge, async ({ user, params,
 	const target = board.find((entry) => entry.userId === body.to_user_id)
 	if (!target) throw new ApiError('not_held', "They aren't held to today.")
 	if (target.state !== 'out') throw new ApiError('already_in', 'They’re already in today.')
+
+	if ((await safetyStore.blockedEitherWay(user.id)).has(body.to_user_id)) {
+		throw new ApiError('conflict', "You can't nudge them.")
+	}
 
 	const created = await pactStore.createNudge({
 		pactId: pact.id,
