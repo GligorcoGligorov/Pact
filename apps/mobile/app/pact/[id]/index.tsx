@@ -10,6 +10,7 @@ import { KeptCard, useFirstKeptView, useFirstMilestoneView } from '@/components/
 import { CrewBadge } from '@/components/pact/CrewTheme'
 import { MemberRow } from '@/components/pact/MemberRow'
 import { Ring } from '@/components/pact/Ring'
+import { SaverCard } from '@/components/pact/SaverCard'
 import { StreakFlame } from '@/components/pact/StreakFlame'
 import { QueryErrorState } from '@/components/QueryError'
 import { FadeSlideIn } from '@/components/motion/FadeSlideIn'
@@ -264,6 +265,16 @@ function Board({
 							</Text>
 						</View>
 					</Card>
+				</FadeSlideIn>
+			) : null}
+
+			{today && today.me.held && today.me.state === 'out' ? (
+				<FadeSlideIn index={1}>
+					<SaverCard
+						pactId={pact.id}
+						closesAt={today.closes_at}
+						available={today.me.saver_available}
+					/>
 				</FadeSlideIn>
 			) : null}
 

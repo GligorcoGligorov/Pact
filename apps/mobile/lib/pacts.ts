@@ -324,6 +324,19 @@ export async function submitPhotoCheckIn(
 	return check_in
 }
 
+/**
+ * R17: the streak saver, a check-in with no photo that keeps today. One per member per pact:
+ * the server refuses a second (`saver_used`), even from two taps at once.
+ */
+export function useSaver(pactId: string) {
+	const queryClient = useQueryClient()
+	return useMutation({
+		mutationFn: async () =>
+			(await api('createCheckIn', { params: { id: pactId }, body: { kind: 'saver' } })).check_in,
+		onSettled: () => queryClient.invalidateQueries({ queryKey: pactKeys.all })
+	})
+}
+
 /** How often the verdict is polled while it is pending: the judge usually answers in ~1 s. */
 const VERDICT_POLL_MS = 1_000
 
