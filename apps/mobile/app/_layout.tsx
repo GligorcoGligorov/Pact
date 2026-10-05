@@ -8,6 +8,7 @@ import { queryClient } from '@/lib/queryClient'
 import { presetFonts } from '@/lib/fonts'
 import { loadThemePref } from '@/lib/themePref'
 import { loadHapticsPref } from '@/lib/haptics'
+import { loadIntroSeen, useIntro } from '@/lib/intro'
 import { makeStyles } from '@/lib/themedStyles'
 import { ThemeProvider, useTheme } from '@/contexts/ThemeContext'
 import * as Sentry from '@sentry/react-native'
@@ -32,6 +33,7 @@ import { SubscriptionProvider } from '@/contexts/SubscriptionContext'
 import { ToastProvider, useToast } from '@/contexts/ToastContext'
 import { onSessionExpired } from '@/lib/api'
 import i18n, { initI18n } from '@/lib/i18n'
+import { Intro } from '@/components/intro/Intro'
 import OfflineBanner from '@/components/OfflineBanner'
 import OfflineOverlay from '@/components/OfflineOverlay'
 import UpdateRequiredGate from '@/components/UpdateRequiredGate'
@@ -200,7 +202,9 @@ function RootLayout() {
 	// Read the stored light/dark choice (and the haptics switch) before first
 	// paint, so the first frame is already in the right scheme.
 	useEffect(() => {
-		Promise.all([loadThemePref(), loadHapticsPref()]).finally(() => setThemeReady(true))
+		Promise.all([loadThemePref(), loadHapticsPref(), loadIntroSeen()]).finally(() =>
+			setThemeReady(true)
+		)
 	}, [])
 
 	useEffect(() => {
@@ -393,6 +397,7 @@ function AppTree({
 												<OfflineBanner />
 												<OfflineOverlay />
 												<UpdateRequiredGate />
+												<IntroGate />
 											</View>
 										</NavigationThemeProvider>
 									</ToastProvider>
@@ -404,6 +409,12 @@ function AppTree({
 			</ErrorBoundary>
 		</SafeAreaProvider>
 	)
+}
+
+/** The first-launch intro, over everything, once per device (lib/intro.ts). */
+function IntroGate() {
+	const { visible, finish } = useIntro()
+	return visible ? <Intro onDone={finish} /> : null
 }
 
 export default Sentry.wrap(RootLayout)

@@ -1,7 +1,8 @@
-import { BellRing, Camera } from 'lucide-react-native'
+import { BellRing, Camera, Sparkles } from 'lucide-react-native'
 
 import { ListRow, Section } from '@/components/ui/List'
 import { useToast } from '@/contexts/ToastContext'
+import { showIntroAgain } from '@/lib/intro'
 import { log } from '@/lib/logger'
 import { ensureNotificationPermission, scheduleLocalNotification } from '@/lib/notifications'
 import { takeProofPhoto, USES_SIMULATOR_LIBRARY_FALLBACK } from '@/lib/proofPhoto'
@@ -48,6 +49,12 @@ export function DevToolsSection() {
 
 	return (
 		<Section title="Developer" footnote="Development builds only.">
+			<ListRow
+				icon={Sparkles}
+				title="Show the intro again"
+				subtitle="The three first-launch screens, as a new person sees them"
+				onPress={showIntroAgain}
+			/>
 			<ListRow
 				icon={BellRing}
 				title="Test notification"
