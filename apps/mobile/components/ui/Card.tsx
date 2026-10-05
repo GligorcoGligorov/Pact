@@ -17,7 +17,7 @@ const PADDING = { none: 0, compact: 12, normal: 18, spacious: 24 } as const
 interface CardProps extends Omit<ViewProps, 'style'> {
 	tier?: CardTier
 	padding?: keyof typeof PADDING
-	/** Makes the whole card a tappable (springs to .98). */
+	/** Makes the whole card a tappable (springs to the card press scale and lifts). */
 	onPress?: () => void
 	accessibilityLabel?: string
 	style?: StyleProp<ViewStyle>
@@ -52,6 +52,12 @@ export function Card({
 			: { backgroundColor: c.hero, borderColor: c.heroBorder, ...elevation.raised }
 	}[tier]
 
+	// A pressed card rises one step up the elevation ladder from where it rests.
+	const lift = {
+		from: tier === 'raised' ? elevation.card : tier === 'hero' ? elevation.raised : elevation.flat,
+		to: tier === 'raised' ? elevation.raised : tier === 'hero' ? elevation.overlay : elevation.card
+	}
+
 	const cardStyle = [s.card, { borderRadius: radii.card, padding: pad }, look, style]
 
 	if (onPress) {
@@ -59,6 +65,7 @@ export function Card({
 			<PressableScale
 				scaleTo="card"
 				haptic="press"
+				lift={lift}
 				onPress={onPress}
 				accessibilityLabel={accessibilityLabel}
 				style={cardStyle}

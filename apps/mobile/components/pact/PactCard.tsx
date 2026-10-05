@@ -2,6 +2,7 @@ import { StyleSheet, View } from 'react-native'
 import { router } from 'expo-router'
 import { Camera, Check, Flame } from 'lucide-react-native'
 import type { PactListItem } from '@app/contract'
+import { Pop } from '@/components/motion/Pop'
 import { PressableScale } from '@/components/motion/PressableScale'
 import { Button } from '@/components/ui/Button'
 import { Text } from '@/components/ui/Text'
@@ -49,6 +50,7 @@ export function PactCard({ pact, myId }: { pact: PactListItem; myId: string | nu
 	return (
 		<PressableScale
 			scaleTo="card"
+			lift={{ from: elevation.card, to: elevation.raised }}
 			onPress={() => router.push(`/pact/${pact.id}`)}
 			accessibilityRole="button"
 			accessibilityLabel={`${pact.name}: ${pact.habit}.${board ? ` ${crewLine(board.members, myId)}.` : ''}`}
@@ -79,7 +81,10 @@ export function PactCard({ pact, myId }: { pact: PactListItem; myId: string | nu
 						track={c.tintTrack}
 					>
 						{board.in_count === board.held_count ? (
-							<Check size={24} color={c.brandInk} strokeWidth={3} />
+							// Lands once the ring has filled.
+							<Pop delay={RING_FILL_MS}>
+								<Check size={24} color={c.brandInk} strokeWidth={3} />
+							</Pop>
 						) : (
 							<Text variant="label" tabular>
 								{board.in_count}/{board.held_count}
@@ -122,7 +127,9 @@ export function PactCard({ pact, myId }: { pact: PactListItem; myId: string | nu
 				/>
 			) : done ? (
 				<View style={[s.doneBar, { backgroundColor: c.successSoft }]}>
-					<Check size={16} color={c.successText} strokeWidth={3} />
+					<Pop>
+						<Check size={16} color={c.successText} strokeWidth={3} />
+					</Pop>
 					<Text variant="label" tone="success">
 						{pact.my_state_today === 'saver' ? 'Saver used today' : "You're in today"}
 					</Text>
@@ -131,6 +138,9 @@ export function PactCard({ pact, myId }: { pact: PactListItem; myId: string | nu
 		</PressableScale>
 	)
 }
+
+/** About when Ring's gentle spring has nearly filled the arc. */
+const RING_FILL_MS = 250
 
 const s = StyleSheet.create({
 	card: {

@@ -304,6 +304,6 @@ export const daylight: Preset = {
 			modalOut: 160
 		},
 		stagger: { step: 60, cap: 6, distance: 14 },
-		press: { button: 0.96, card: 0.98 }
+		press: { button: 0.94, card: 0.975 }
 	}
 }

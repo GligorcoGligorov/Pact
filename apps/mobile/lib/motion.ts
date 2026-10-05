@@ -42,7 +42,10 @@ export const Springs = {
 	snappy: spring(m.springs.snappy),
 	smooth: spring(m.springs.smooth),
 	gentle: spring(m.springs.gentle),
-	settle: spring(m.springs.settle)
+	settle: spring(m.springs.settle),
+	// The one spring meant to bounce: a ✓ or a badge landing overshoots ~15% and settles
+	// inside 400ms. Celebrations only, never a press or a sheet.
+	pop: spring({ damping: 11, stiffness: 320, mass: 0.7 })
 } satisfies Record<string, WithSpringConfig>
 
 /** Decisive curves — never linear. */
