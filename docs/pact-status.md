@@ -3,7 +3,8 @@
 The one "where are we" file. Read it first; update it at the end of every phase.
 Spec: [pact-requirements.md](pact-requirements.md) (R-numbers). Plan: [pact-plan.md](pact-plan.md).
 
-**Last updated:** 2026-10-05, fun pass steps 0–7 done on branch `feat/fun-pass`. Earlier:
+**Last updated:** 2026-10-06, Phase 5 done on branch `feat/phase-5-finale` (five commits, gates
+green). Earlier: 2026-10-05, fun pass steps 0–7 merged (PR #8). Earlier:
 2026-10-04, end of Phase 4, on branch `feat/phase-4-web-social` (no CI in
 this trial, see [trial-local-only](memory/trial-local-only.md)). Build traps:
 [device-build-traps](memory/device-build-traps.md).
@@ -17,8 +18,8 @@ this trial, see [trial-local-only](memory/trial-local-only.md)). Build traps:
 | 2 — API for the slice              | done     | All but the eval's 12 real photos (see open items).                                |
 | 3 — Mobile slice                   | done     | Built and committed 2026-10-03; a hand tap-through on the simulator is still owed. |
 | 4 — Social loop                    | done     | Join page, landing, feed, nudges, crew complete, reminder, safety. 2026-10-04.     |
-| 5 — Closer, results, onboarding    | **next** |                                                                                    |
-| 6 — Dogfood and gates              | –        |                                                                                    |
+| 5 — Closer, results, onboarding    | done     | Closer, results reveal, share card, saver, intro. 2026-10-06. See "The finale".    |
+| 6 — Dogfood and gates              | **next** |                                                                                    |
 
 ## Fun pass
 
@@ -34,6 +35,42 @@ replaces the confetti; 3/7/14 milestones in `KeptCard`, `streak_milestone_viewed
 (`CrewWall` on the verdict: your print flies onto the crew's wall). Celebration timing is
 `CELEBRATION` in `lib/streaks.ts`, held to ≤400ms / 700ms by a test. Owed: a hand pass on the
 simulator.
+
+## The finale (Phase 5)
+
+Five commits on `feat/phase-5-finale`, each with typecheck and tests green:
+
+1. **Closer** (R26): `src/server/pacts/closer.ts` runs `src/lib/pacts/closing.ts`'s pure plan.
+   `POST /api/cron/pacts` (CRON_SECRET, `?now=` refused in production) and `npm run pacts:close
+[-- --now=YYYY-MM-DD]`, which runs the same code straight against the local database (no server,
+   no secret). `src/server/db/results.ts` (`resultStore`) moves `closed_through` with a conditional
+   update in the same transaction as the inbox lines, so racing runs write once (real-DB suite).
+   Photos go 30 days after the end day (`deleteProofs`), in batches.
+2. **Final results**: `src/lib/pacts/results.ts` (`finalResult`): records, personal best runs,
+   savers, awards (iron streak, never missed, comeback kid, clutch save, early bird, night owl;
+   ties share), the loser(s). `GET /api/app/v1/pacts/:id/result` (409 `not_finished`). The app's
+   `pact/[id]/result`: the chain in the crew colour, the awards, the drumroll reveal
+   (`components/results/LoserReveal.tsx`, timing in `lib/reveal.ts`, held to budget by a test),
+   the scoreboard, "Same crew, new pact". Opens from the board's footer, the home card
+   ("Results are in 🏆") and the 🏁 banner.
+3. **Round 2**: `POST /api/app/v1/pacts/:id/rematch`; migration `20261005221047_rematch_of`
+   (`pacts.rematch_of`, unique): one round 2 per finished pact, same habit/theme/stake/length,
+   from tomorrow, whole crew in (minus blocks either way), banner to the others.
+4. **Share card** (R25): `/results/[pact]` (public by link, noindex, no photos or verdicts),
+   its `opengraph-image` (1200×630) and `/results/[pact]/card` (1080×1350 PNG), all from
+   `src/server/pacts/result-card.tsx` + `result-page.ts`. The app downloads the card and passes it
+   to React Native's own `Share` as a data URI (`lib/shareResult.ts`): an image in the share
+   sheet with no native module. Falls back to the link.
+5. **Streak saver** on the board (`components/pact/SaverCard.tsx`): a quiet line all day, the
+   "day's about to break" card in the last 3 hours, a confirm, `saver_offered`.
+6. **Intro**: `components/intro/Intro.tsx`, three screens over the app on first launch, once
+   per device (`lib/intro.ts`, loaded before the splash hides), skippable; Settings › Developer
+   › "Show the intro again".
+
+Seed: `npm run seed:demo -- --finished` adds **Sunrise Yoga** (code `ZENDAY`, violet 🧘, 14 days,
+ended yesterday): Dan loses 12/14, Ana never missed + early bird, Ben and Dan comeback, Cleo's
+clutch save + night owl. Its `closed_through` is empty, so `npm run pacts:close` sends the
+"🏁 Sunrise Yoga is over!" banner. Re-seeding deletes its round 2.
 
 ## What exists and where
 
@@ -125,6 +162,28 @@ simulator.
   menu and `pact/[id]/settings`.
 
 ## Decisions made in code
+
+**Phase 5 (decided 2026-10-06):**
+
+- **Ties: "Nobody pays, everybody wins"** replaces R24's "everyone tied at the lowest loses":
+  when every rated member ties, at any rate, nobody pays. A partial tie at the bottom still
+  splits the stake. A crew of one never loses.
+- **The closer announces little:** only the latest newly closed day, only if it broke (kept days
+  are celebrated by crew-complete as they happen), and one "results are in" replaces the end
+  day's message. A catch-up after a week sends one banner, not seven.
+- **`--now` runs the closer in-process**, not through the route: the demo needs no web server and
+  no CRON_SECRET copied anywhere. The route exists for a real cron.
+- **Share without a native module:** the server draws the card (next/og); the app shares the PNG
+  as a data URI through `Share.share`. No `react-native-view-shot`, no rebuild (the plan's
+  view-shot idea is dropped).
+- **The results page is public by link** (UUID, finished pacts only, noindex): names, records,
+  awards and the stake, never photos, verdicts or captions, like R27's join page.
+- **Round 2 holds the crew without asking:** they're the same crew; each gets a banner and can
+  leave as usual. Blocked pairs are left out.
+- **Saver urgency** is the last 3 hours before the day closes (the 22:00 reminder's window too);
+  all day it's a quiet line so it's always findable.
+- **The intro is an overlay**, not a route: it works signed in or out and leaves the auth stack
+  alone. Once per device, not per account.
 
 - **R6, late join (decided 2026-09-30):** a lobby join is held from the start day; a join to an
   active pact is held from the **next** pact day, so a join never breaks a day in progress. A join
@@ -236,6 +295,22 @@ checks, the ring and the streak; New pact and Join sit behind a "+".
 
 ## Open items
 
+- **Phase 5, checked on the simulator (2026-10-06):** the results screen (hero, chain, awards,
+  idle and revealed states), the board's saver line and urgent card, the share sheet with the
+  card attached (Save Image offered), intro pages 1–3, and the web card and preview images.
+  Not tapped through by hand (no UI driver here): the drumroll itself, a real saver use, a real
+  rematch tap. Those are covered by route and real-DB tests; a hand pass is owed.
+- **The 🏁 banner, round 2 banners and the results link** depend on the app being open (in-app
+  inbox, see "Push is in-app"). The results link preview unfurls only from a public URL.
+- **`--now` past 30 days deletes photos for real**, on every pact it reaches (the hand-made
+  Hydration Squad and Page Turners included). Not run live against the demo stack for that
+  reason; the batch deletion is unit-tested.
+- **The intro flag was once found set without a tap** while screenshots were being taken with
+  temporary code edits; it did not reproduce on clean launches (checked twice). Watch for the
+  intro not appearing on a fresh install.
+- **A dev-only LogBox warning** ("two children with the same key") shows on home/board; it
+  predates Phase 5 (seen before the new bundle loaded). Not chased.
+
 - **Reports have no admin screen:** they're stored in `check_in_reports` for an admin to read.
   Unblocking is in Settings → Blocked people.
 - **The banner icon is Expo's placeholder:** crew banners and reminders show the dev client's
@@ -294,6 +369,12 @@ cd apps/mobile && npx eas-cli@latest build --profile simulator --platform ios
 # download the .app from the build page, then:
 xcrun simctl install booted Pact.app
 ```
+
+**The finale** (stack, web and Metro running): `npm run seed:demo -- --finished`, then
+`npm run pacts:close` (twice: the second does nothing). Sign in as any demo account: the 🏁 banner
+opens Sunrise Yoga's results; home shows it as "Results are in 🏆". `npm run pacts:close --
+--now=2026-10-20` closes everything up to the 19th (and deletes photos of pacts that ended over
+30 days before that date, for real).
 
 **Demo seed** (local stack running, its database migrated). Once `apps/web/.env.local` exists,
 `npm run seed:demo` reads it. Until then, pass the stack's values:

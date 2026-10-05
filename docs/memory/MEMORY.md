@@ -8,6 +8,8 @@ Durable notes for this play. One line per note. See `AGENTS.md` ("Project memory
 - [local-replay-on-supabase](local-replay-on-supabase.md) — migration replay runs on the stack's Postgres as supabase_admin, in a throwaway DB
 - [device-build-traps](device-build-traps.md) — free-team entitlements, OTP email template, Xcode 16.2 on macOS 14, CocoaPods
 - [ai-judge-models](ai-judge-models.md) — which vision models the free Gemini/Groq keys can use; how to check safely
+- [restart-web-after-migration](restart-web-after-migration.md) — after a schema change restart web:dev (cached Prisma client); never build while dev runs
+- [simulator-without-taps](simulator-without-taps.md) — agents can screenshot and deep-link the simulator, not tap it; temp-edit to see states
 
 Worth writing early, once each is decided:
 
