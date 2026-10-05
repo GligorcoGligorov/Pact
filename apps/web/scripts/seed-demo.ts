@@ -15,7 +15,13 @@
  * the same. Anyone else who joined the pact (the developer) keeps their membership and their
  * check-ins.
  *
- * Refuses any database that is not on this machine. Options: --timezone=<IANA name>.
+ * `--finished` also seeds a pact that ENDED yesterday, "Sunrise Yoga" (invite code ZENDAY), for
+ * the results screen: 14 days, two broken, Dan the loser (12 of 14), Ana never missed and up
+ * early, Ben's comeback after a miss, Cleo's saver on a kept day and her late nights. Its
+ * `closed_through` is left empty, so `npm run pacts:close` then sends "results are in". Each
+ * run also deletes any round 2 started from it.
+ *
+ * Refuses any database that is not on this machine. Options: --timezone=<IANA name>, --finished.
  */
 
 import { PrismaClient } from '@prisma/client'
@@ -335,8 +341,109 @@ async function main() {
 	)
 }
 
+// ── --finished: a pact that ended yesterday ────────────────────────────────────
+
+const FINISHED_CODE = 'ZENDAY'
+const FINISHED_DAYS = 14
+/** Day offsets (0..13) each member missed. Day 3 and day 10 break; Dan misses both. */
+const FINISHED_MISSES: Record<DemoMember['key'], number[]> = {
+	ana: [],
+	ben: [3],
+	cleo: [],
+	dan: [3, 10]
+}
+const FINISHED_SAVER = { key: 'cleo' as const, offset: 8 }
+/** The pact-local hour each member checks in at: Ana early, Cleo late. */
+const FINISHED_HOUR: Record<DemoMember['key'], number> = { ana: 7, ben: 13, cleo: 22, dan: 18 }
+
+async function seedFinished(ids: Map<DemoMember['key'], string>) {
+	const idOf = (key: DemoMember['key']) => ids.get(key)!
+	const today = todayIn(timezone!, new Date())
+	const startDay: Day = addDays(today, -FINISHED_DAYS)
+	const endDay = endDayFor(startDay, FINISHED_DAYS)
+	const fields = {
+		ownerId: idOf('ana'),
+		name: 'Sunrise Yoga',
+		habit: 'Ten minutes of yoga',
+		color: 'violet' as const,
+		emoji: '🧘',
+		cadence: 'daily' as const,
+		timezone: timezone!,
+		startDay: dateFromDay(startDay),
+		endDay: dateFromDay(endDay),
+		stake: 'Loser buys the coffees ☕',
+		cancelledAt: null,
+		closedThrough: null
+	}
+	const pact = await db.pact.upsert({
+		where: { inviteCode: FINISHED_CODE },
+		create: { ...fields, inviteCode: FINISHED_CODE },
+		update: fields
+	})
+
+	const checkIns = MEMBERS.flatMap((m) =>
+		Array.from({ length: FINISHED_DAYS }, (_, offset) => offset)
+			.filter((offset) => !FINISHED_MISSES[m.key].includes(offset))
+			.map((offset) => {
+				const day = addDays(startDay, offset)
+				const saver = m.key === FINISHED_SAVER.key && offset === FINISHED_SAVER.offset
+				const minutes = (offset * 7) % 40
+				const createdAt = new Date(
+					closesAt(timezone!, day).getTime() -
+						(24 - FINISHED_HOUR[m.key]) * HOUR_MS +
+						minutes * 60_000
+				)
+				return {
+					pactId: pact.id,
+					userId: idOf(m.key),
+					day: dateFromDay(day),
+					kind: saver ? ('saver' as const) : ('photo' as const),
+					challenge: saver ? null : challengeFor(pact.id, day),
+					// The photos of a finished pact aren't shown; none are stored.
+					photoPath: null,
+					verdict: saver ? ('skipped' as const) : ('pass' as const),
+					aiReason: saver ? null : 'The pose and the challenge are both clearly visible.',
+					aiCaption: saver ? null : CAPTIONS[(offset + m.key.length) % CAPTIONS.length],
+					judgedAt: saver ? null : new Date(createdAt.getTime() + JUDGE_DELAY_MS),
+					createdAt
+				}
+			})
+	)
+
+	const demoIds = [...ids.values()]
+	await db.$transaction([
+		db.notification.deleteMany({ where: { pactId: pact.id } }),
+		db.checkIn.deleteMany({ where: { pactId: pact.id, userId: { in: demoIds } } }),
+		...MEMBERS.map((m) => {
+			const saverUsedDay =
+				m.key === FINISHED_SAVER.key ? dateFromDay(addDays(startDay, FINISHED_SAVER.offset)) : null
+			const membership = {
+				role: m.key === 'ana' ? ('owner' as const) : ('member' as const),
+				joinedDay: dateFromDay(startDay),
+				leftAt: null,
+				leftDay: null,
+				saverUsedDay
+			}
+			return db.pactMember.upsert({
+				where: { pactId_userId: { pactId: pact.id, userId: idOf(m.key) } },
+				create: { pactId: pact.id, userId: idOf(m.key), ...membership },
+				update: membership
+			})
+		}),
+		db.checkIn.createMany({ data: checkIns })
+	])
+	process.stdout.write(
+		[
+			`Finished pact "${pact.name}", ${startDay} → ${endDay} (ended yesterday), code ${FINISHED_CODE}.`,
+			`  Rows: check-ins ${checkIns.length}. Run \`npm run pacts:close\` to send "results are in".`,
+			''
+		].join('\n')
+	)
+}
+
 try {
 	await main()
+	if (process.argv.includes('--finished')) await seedFinished(await ensureUsers())
 } finally {
 	await db.$disconnect()
 }

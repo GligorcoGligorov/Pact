@@ -195,9 +195,29 @@ type EventName =
 	// Churn inside a pact: a member left, or the owner removed one.
 	| 'pact_left'
 	| 'pact_member_removed'
-	// End of the loop, and the growth it feeds.
+	// End of the loop, and the growth it feeds. The finale's funnel, in order:
+	//   pact_result_viewed    the results screen opened. metadata: { pact_id }
+	//   pact_result_revealed  the drumroll ended on who pays. metadata: { pact_id,
+	//                         outcome: 'loser' | 'nobody_pays' }; a viewer who never
+	//                         taps the reveal shows as the gap after viewed.
+	//   pact_result_shared    the share sheet was opened with the card.
+	//                         metadata: { pact_id, method: 'image' | 'link' }; `link` is
+	//                         the fallback when the card image couldn't load.
+	//   pact_rematch_started  "Same crew, new pact" was tapped. metadata: { pact_id }
+	//                         The server records the rematch itself (pact_rematched).
 	| 'pact_result_viewed'
+	| 'pact_result_revealed'
 	| 'pact_result_shared'
+	| 'pact_rematch_started'
+	// The streak saver (R17). saver_offered: the board showed "Use your saver" because the
+	// day is close to breaking. metadata: { pact_id }. Its use is check_in_submitted with
+	// kind 'saver'; offered → submitted says whether the offer saves streaks.
+	| 'saver_offered'
+	// The first-launch intro (three screens, before sign-in, once per device).
+	//   intro_step_viewed  metadata: { step: 1 | 2 | 3 }, the discriminator
+	//   intro_completed    metadata: { skipped: boolean }
+	| 'intro_step_viewed'
+	| 'intro_completed'
 
 /** Track an event. No-ops silently when PostHog is unconfigured. */
 export function track(event: EventName, properties?: TrackProperties) {

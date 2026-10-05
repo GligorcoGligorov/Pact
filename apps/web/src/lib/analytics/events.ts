@@ -187,7 +187,25 @@ export const PACT_EVENTS = {
 	 */
 	checkInJudged: 'check_in_judged',
 	/** A member nudged a held member who was still out. metadata: { pact_id } */
-	nudgeSent: 'nudge_sent'
+	nudgeSent: 'nudge_sent',
+	/**
+	 * The closer closed a pact's end day: the pact is over and its results are in. Recorded
+	 * once per pact (the closer's `closed_through` makes it once), for the owner.
+	 * metadata: { pact_id, outcome: 'loser' | 'nobody_pays', kept_days, total_days }
+	 * kept_days / total_days across pacts is how well crews actually hold together.
+	 */
+	pactCompleted: 'pact_completed',
+	/**
+	 * A member opened a finished pact's results, recorded by GET pacts/:id/result once per
+	 * person, pact and day. metadata: { pact_id }. Over pact_completed: did the finale land.
+	 */
+	pactResultViewed: 'pact_result_viewed',
+	/**
+	 * Round 2: a member started a new pact with the same crew from the results. THE retention
+	 * metric of the finale: pacts that end in a rematch over pact_completed. Recorded once per
+	 * new pact. metadata: { pact_id (the new one), from_pact_id, crew_size }
+	 */
+	pactRematched: 'pact_rematched'
 } as const
 
 export const PACT_EVENT_NAMES = Object.values(PACT_EVENTS)
@@ -226,6 +244,24 @@ export const JOIN_PAGE_EVENTS = {
 export const JOIN_PAGE_EVENT_NAMES = Object.values(JOIN_PAGE_EVENTS)
 
 /**
+ * The public results page (/results/[pact]): what a friend in the group chat sees when a crew
+ * shares how their pact ended. Mostly GUESTS, through the beacon. THE metric is
+ * result_cta_clicked with target `start` over result_page_view: whether a shared result
+ * recruits a new crew.
+ */
+export const RESULT_PAGE_EVENTS = {
+	/** /results/[pact] was viewed, for a finished pact. */
+	resultPageView: 'result_page_view',
+	/**
+	 * A call to action on the page was tapped. metadata: { target: 'app' | 'start' }
+	 * `app` opens the pact in the app (a member); `start` goes to the landing to make one.
+	 */
+	resultCtaClicked: 'result_cta_clicked'
+} as const
+
+export const RESULT_PAGE_EVENT_NAMES = Object.values(RESULT_PAGE_EVENTS)
+
+/**
  * Every registered web event, flat. This is what the whitelist and the CI check
  * read; adding a group above without spreading it here is the one mistake
  * `npm run check:events` is built to catch.
@@ -235,7 +271,8 @@ export const ALL_EVENT_NAMES = [
 	...LIFECYCLE_EVENT_NAMES,
 	...CHECKOUT_EVENT_NAMES,
 	...PACT_EVENT_NAMES,
-	...JOIN_PAGE_EVENT_NAMES
+	...JOIN_PAGE_EVENT_NAMES,
+	...RESULT_PAGE_EVENT_NAMES
 ] as const
 
 export type AppEvent = (typeof ALL_EVENT_NAMES)[number]

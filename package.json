@@ -34,7 +34,8 @@
 		"db:migrate": "npm run db:migrate --workspace=@app/web",
 		"db:reset": "supabase db reset && npm run db:migrate",
 		"db:run-once": "node scripts/run-once-sql.mjs",
-		"seed:demo": "npm run seed:demo --workspace=@app/web",
+		"seed:demo": "npm run seed:demo --workspace=@app/web --",
+		"pacts:close": "npm run pacts:close --workspace=@app/web --",
 		"prepare": "git config core.hooksPath .githooks || true"
 	},
 	"engines": {

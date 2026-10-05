@@ -253,8 +253,10 @@ test('if everyone is at 100%, nobody loses', () => {
 	assert.deepEqual(losers(input('2026-10-12', withSaver)), [])
 })
 
-test('if everyone missed the same share, everyone loses', () => {
-	assert.deepEqual(losers(input('2026-10-12', all([ana, ben], DAYS.slice(0, 5)))), ['ana', 'ben'])
+test('if everyone missed the same share, nobody pays: a tie across the crew has no loser', () => {
+	assert.deepEqual(losers(input('2026-10-12', all([ana, ben], DAYS.slice(0, 5)))), [])
+	// A crew of one is a tie with itself.
+	assert.deepEqual(losers(input('2026-10-12', all([ana], DAYS.slice(0, 2)), [ana])), [])
 })
 
 test('rates are compared exactly: a late joiner at 4/6 ties a member at 2/3', () => {

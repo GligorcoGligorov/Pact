@@ -52,6 +52,13 @@ export async function downloadProof(path: string): Promise<{ bytes: Buffer; mime
 	return { bytes: Buffer.from(await data.arrayBuffer()), mimeType: data.type || 'image/jpeg' }
 }
 
+/** R26: removes proof photos from storage. A path already gone is fine. Throws when storage fails. */
+export async function deleteProofs(paths: string[]): Promise<void> {
+	if (paths.length === 0) return
+	const { error } = await bucket().remove(paths)
+	if (error) throw error
+}
+
 /** How long a feed photo's signed URL lasts (R22: short-lived, one hour). */
 const PHOTO_URL_VALID_S = 60 * 60
 

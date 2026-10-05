@@ -521,6 +521,9 @@ export function createPactStore(client: PrismaClient, codes: () => string = newI
 	}
 }
 
+/** The row shapes, for the stores beside this one (results.ts). */
+export { PACT as PACT_FIELDS, MEMBER as MEMBER_FIELDS, toMember }
+
 export type PactStore = ReturnType<typeof createPactStore>
 
 export const pactStore = createPactStore(db)

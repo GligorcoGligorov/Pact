@@ -140,8 +140,8 @@ export function memberRecords(input: PactProgressInput): MemberRecord[] {
 
 /**
  * R24, once the pact has completed (null before, and for a cancelled pact). The loser is
- * whoever has the lowest completion rate; everyone tied at it loses together; if everyone is
- * at 100%, nobody loses. A member who was never held to a day (they left in the lobby) has
+ * whoever has the lowest completion rate; everyone tied at it loses together; if everyone ties
+ * (at 100% or not), nobody loses. A member who was never held to a day (they left in the lobby) has
  * no rate and never loses. Leaving does not erase a record: the days before still count.
  */
 export function pactResult(input: PactProgressInput): ResultMember[] | null {
@@ -153,9 +153,12 @@ export function pactResult(input: PactProgressInput): ResultMember[] | null {
 		null
 	)
 	const someoneMissed = lowest !== null && lowest.daysDone < lowest.daysHeld
+	// "Nobody pays, everybody wins" (decided 2026-10-05): when every rated member ties, there is
+	// nobody to pay, whatever the rate. A stake needs someone who did better.
+	const allTied = lowest !== null && rated.every((r) => compareRate(r, lowest) === 0)
 	return records.map((r) => ({
 		...r,
-		isLoser: someoneMissed && r.daysHeld > 0 && compareRate(r, lowest) === 0
+		isLoser: someoneMissed && !allTied && r.daysHeld > 0 && compareRate(r, lowest) === 0
 	}))
 }
 
