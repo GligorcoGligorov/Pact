@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 import { router, useLocalSearchParams } from 'expo-router'
-import { Hourglass, Repeat, SearchX } from 'lucide-react-native'
+import { Hourglass, Repeat, SearchX, Share } from 'lucide-react-native'
 import { Pop } from '@/components/motion/Pop'
 import { FadeSlideIn } from '@/components/motion/FadeSlideIn'
 import { CrewBadge } from '@/components/pact/CrewTheme'
@@ -27,6 +27,7 @@ import { crewEmoji, crewTone } from '@/lib/crew'
 import { haptic } from '@/lib/haptics'
 import { useMyUserId } from '@/lib/pacts'
 import { usePactResult, useRematch, type PactResultDetail } from '@/lib/results'
+import { shareResult } from '@/lib/shareResult'
 
 /** Pacts whose reveal this person has already seen in this app session: no second drumroll. */
 const revealed = new Set<string>()
@@ -170,15 +171,46 @@ function Results({
 			{phase === 'revealed' ? (
 				<>
 					<FadeSlideIn index={1}>
+						<ShareResult pactId={pact.id} name={pact.name} />
+					</FadeSlideIn>
+					<FadeSlideIn index={2}>
 						<SectionHeader title="Final scores" />
 						<Scoreboard result={result} myId={myId ?? null} />
 					</FadeSlideIn>
-					<FadeSlideIn index={2}>
+					<FadeSlideIn index={3}>
 						<RoundTwo detail={detail} />
 					</FadeSlideIn>
 				</>
 			) : null}
 		</>
+	)
+}
+
+/** R25: the card, through the share sheet: the moment the group chat sees. */
+function ShareResult({ pactId, name }: { pactId: string; name: string }) {
+	const { showToast } = useToast()
+	const [sharing, setSharing] = useState(false)
+	return (
+		<Button
+			label="Share the results"
+			variant="secondary"
+			size="lg"
+			fullWidth
+			loading={sharing}
+			icon={(color) => <Share size={18} color={color} strokeWidth={2.4} />}
+			onPress={async () => {
+				setSharing(true)
+				try {
+					const method = await shareResult(pactId, name)
+					if (method) track('pact_result_shared', { pact_id: pactId, method })
+				} catch (error) {
+					haptic.error()
+					showToast(errorMessage(error), 'error')
+				} finally {
+					setSharing(false)
+				}
+			}}
+		/>
 	)
 }
 
