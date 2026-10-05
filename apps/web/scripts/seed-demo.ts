@@ -264,7 +264,13 @@ async function main() {
 		// evening hasn't happened yet, so today's check-ins land in the past few hours instead:
 		// the feed is newest first and must never show a check-in from the future.
 		const evening = closesAt(timezone!, day).getTime() - (2 + (i % 8)) * HOUR_MS
-		const createdAt = new Date(Math.min(evening, Date.now() - (1 + (i % 5)) * TODAY_SPREAD_MS))
+		const recent = Math.min(evening, Date.now() - (1 + (i % 5)) * TODAY_SPREAD_MS)
+		// Never before the day itself began: a seed run just after midnight would otherwise date
+		// today's check-ins to yesterday evening, out of order with yesterday's in the feed.
+		const dayStart = closesAt(timezone!, addDays(day, -1)).getTime()
+		const createdAt = new Date(
+			recent > dayStart ? recent : dayStart + ((Date.now() - dayStart) * (1 + (i % 5))) / 7
+		)
 		const suspicious = p.key === 'ben' && p.offset === BEN_SUSPICIOUS_OFFSET
 		const isPhoto = p.kind === 'photo'
 		return {

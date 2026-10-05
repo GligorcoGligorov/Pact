@@ -17,6 +17,7 @@ import { CardSkeleton } from '@/components/ui/Skeleton'
 import { useColors } from '@/contexts/ThemeContext'
 import { useToast } from '@/contexts/ToastContext'
 import { track } from '@/lib/analytics'
+import { groupByDay } from '@/lib/feedDays'
 import { haptic } from '@/lib/haptics'
 import { errorMessage } from '@/lib/api'
 import {
@@ -40,17 +41,6 @@ function dayLabel(iso: string, today: string): string {
 		month: 'long',
 		timeZone: 'UTC'
 	})
-}
-
-/** The feed's entries, grouped by the day they were checked in on, newest first. */
-function byDay(entries: FeedEntry[]): { day: string; entries: FeedEntry[] }[] {
-	const groups: { day: string; entries: FeedEntry[] }[] = []
-	for (const entry of entries) {
-		const last = groups[groups.length - 1]
-		if (last && last.day === entry.day) last.entries.push(entry)
-		else groups.push({ day: entry.day, entries: [entry] })
-	}
-	return groups
 }
 
 /**
@@ -106,7 +96,7 @@ export default function ActivityScreen() {
 	}
 
 	const entries = useMemo(() => feed.data?.pages.flatMap((page) => page.entries) ?? [], [feed.data])
-	const groups = useMemo(() => byDay(entries), [entries])
+	const groups = useMemo(() => groupByDay(entries), [entries])
 	const today = localIsoDate()
 
 	async function onRefresh() {
