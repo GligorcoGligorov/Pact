@@ -5,9 +5,9 @@ import { useQueryClient } from '@tanstack/react-query'
 import { composite } from '@app/brand'
 import { Camera, Check, ScanEye, SearchX, Settings2, UserPlus } from 'lucide-react-native'
 import { Chain, chainTiles } from '@/components/pact/Chain'
-import { Confetti } from '@/components/pact/Confetti'
 import { Countdown } from '@/components/pact/Countdown'
-import { KeptCard, useFirstKeptView } from '@/components/pact/KeptCard'
+import { EmojiBurst } from '@/components/pact/EmojiBurst'
+import { KeptCard, useFirstKeptView, useFirstMilestoneView } from '@/components/pact/KeptCard'
 import { CrewBadge } from '@/components/pact/CrewTheme'
 import { MemberRow } from '@/components/pact/MemberRow'
 import { Ring } from '@/components/pact/Ring'
@@ -27,7 +27,8 @@ import { useColors, useTheme } from '@/contexts/ThemeContext'
 import { useToast } from '@/contexts/ToastContext'
 import { track } from '@/lib/analytics'
 import { errorCode, errorMessage } from '@/lib/api'
-import { crewTone } from '@/lib/crew'
+import { crewEmoji, crewTone } from '@/lib/crew'
+import { milestoneFor } from '@/lib/streaks'
 import { haptic } from '@/lib/haptics'
 import {
 	daysBetween,
@@ -79,6 +80,8 @@ export default function PactBoardScreen() {
 	const today = detail?.today ?? null
 	const kept = !!today && today.held_count >= MIN_CREW && today.in_count === today.held_count
 	const celebrate = useFirstKeptView(id, today?.day ?? '', kept)
+	const milestone = kept && detail ? milestoneFor(detail.progress.current_streak) : null
+	const milestoneFirst = useFirstMilestoneView(id, milestone)
 
 	return (
 		<View style={s.root}>
@@ -119,7 +122,12 @@ export default function PactBoardScreen() {
 					<Board detail={detail} myId={myId ?? null} kept={kept} />
 				)}
 			</Screen>
-			{celebrate ? <Confetti /> : null}
+			{(celebrate || milestoneFirst) && detail ? (
+				// The crew's own emoji leads; a milestone adds the trophy.
+				<EmojiBurst
+					emoji={[crewEmoji(detail.pact.emoji), '🎉', '🔥', ...(milestoneFirst ? ['🏆'] : [])]}
+				/>
+			) : null}
 		</View>
 	)
 }
@@ -234,7 +242,11 @@ function Board({
 			</FadeSlideIn>
 
 			{kept ? (
-				<KeptCard dayNumber={progress.chain.length} streak={progress.current_streak} />
+				<KeptCard
+					dayNumber={progress.chain.length}
+					streak={progress.current_streak}
+					milestone={milestoneFor(progress.current_streak)}
+				/>
 			) : null}
 
 			{today && today.held_count > 0 && !kept ? (

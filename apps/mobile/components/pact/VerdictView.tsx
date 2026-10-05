@@ -12,7 +12,7 @@ import { Text } from '@/components/ui/Text'
 import { useTheme } from '@/contexts/ThemeContext'
 import { haptic } from '@/lib/haptics'
 import { AvatarStack, crewLine } from './Avatars'
-import { Confetti } from './Confetti'
+import { EmojiBurst } from './EmojiBurst'
 import { StreakFlame } from './StreakFlame'
 
 /** What shows in the caption's place when the AI has no caption (R14, R16). */
@@ -24,6 +24,9 @@ const FALLBACK: Record<Exclude<Verdict, 'pass' | 'suspicious'>, string> = {
 }
 
 /** How long the streak waits before it ticks up, so the eye lands on it first. */
+/** A passed check-in's cheer. */
+const PASS_BURST = ['🎉', '🔥', '👏'] as const
+
 const STREAK_TICK_DELAY_MS = 700
 
 export interface VerdictProgress {
@@ -154,7 +157,7 @@ export function VerdictView({
 				<Button label="Done" size="lg" fullWidth onPress={onDone} disabled={judging} />
 			</Animated.View>
 
-			{isPass ? <Confetti /> : null}
+			{isPass ? <EmojiBurst emoji={PASS_BURST} /> : null}
 		</View>
 	)
 }
