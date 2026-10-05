@@ -11,7 +11,8 @@ import { Card } from '@/components/ui/Card'
 import { Text } from '@/components/ui/Text'
 import { useTheme } from '@/contexts/ThemeContext'
 import { haptic } from '@/lib/haptics'
-import { AvatarStack, crewLine } from './Avatars'
+import { crewLine } from './Avatars'
+import { CrewWall } from './CrewWall'
 import { EmojiBurst } from './EmojiBurst'
 import { StreakFlame } from './StreakFlame'
 
@@ -24,6 +25,9 @@ const FALLBACK: Record<Exclude<Verdict, 'pass' | 'suspicious'>, string> = {
 }
 
 /** How long the streak waits before it ticks up, so the eye lands on it first. */
+/** The payoff card fades in at 380ms; the print flies once it's there. */
+const WALL_FLIGHT_DELAY_MS = 480
+
 /** A passed check-in's cheer. */
 const PASS_BURST = ['🎉', '🔥', '👏'] as const
 
@@ -43,8 +47,8 @@ export interface VerdictProgress {
 /**
  * The verdict, in ref 01's style: a light page, the proof photo as a tilted polaroid (never
  * text over it), the day's result, the AI's caption, then the payoff: the streak ticking up and
- * the crew, with who is still to come. A pass gets confetti and a success haptic; a suspicious
- * one is amber, with no confetti, and still counts (R15).
+ * the crew wall, where your print flies to land beside whoever is in. A pass gets an emoji burst
+ * and a success haptic; a suspicious one is amber, with no burst, and still counts (R15).
  */
 export function VerdictView({
 	photoUri,
@@ -137,12 +141,20 @@ export function VerdictView({
 					<Animated.View entering={FadeInDown.delay(380).duration(400)}>
 						<Card padding="normal" style={s.payoff}>
 							<Streak before={progress.streakBefore} after={progress.streakAfter} />
-							{progress.board && progress.board.members.length > 1 ? (
+							{progress.board && progress.board.members.length > 0 ? (
 								<View style={[s.crew, { borderTopColor: c.borderHairline }]}>
-									<AvatarStack members={progress.board.members} size={34} />
-									<Text variant="bodySm" tone="secondary" style={s.crewText} numberOfLines={2}>
-										{crewLine(progress.board.members, progress.myId)}
-									</Text>
+									<CrewWall
+										members={progress.board.members}
+										myId={progress.myId}
+										photoUri={photoUri}
+										land={!judging}
+										delayMs={WALL_FLIGHT_DELAY_MS}
+									/>
+									{progress.board.members.length > 1 ? (
+										<Text variant="bodySm" tone="secondary" style={s.crewText} numberOfLines={2}>
+											{crewLine(progress.board.members, progress.myId)}
+										</Text>
+									) : null}
 								</View>
 							) : null}
 						</Card>
@@ -233,13 +245,7 @@ const s = StyleSheet.create({
 	streak: { flexDirection: 'row', alignItems: 'center', gap: 10 },
 	streakNumbers: { flexDirection: 'row', alignItems: 'baseline', gap: 8 },
 	streakLabel: { flex: 1, gap: 2 },
-	crew: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		gap: 12,
-		paddingTop: 14,
-		borderTopWidth: StyleSheet.hairlineWidth
-	},
-	crewText: { flex: 1 },
+	crew: { gap: 12, paddingTop: 14, borderTopWidth: StyleSheet.hairlineWidth },
+	crewText: { textAlign: 'center' },
 	footer: { paddingTop: 12 }
 })
