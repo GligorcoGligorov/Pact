@@ -118,14 +118,7 @@ function checks(p: Palette): Check[] {
 	// Crew colours: identity tones, held to the same bar as the accent.
 	for (const [k, tone] of Object.entries(p.crew)) {
 		need(`crew.${k}.onFill on fill`, tone.onFill, tone.fill)
-		need(`crew.${k}.heroInk on hero`, tone.heroInk, p.hero)
-		need(`crew.${k}.heroInk on heroWash`, tone.heroInk, composite(tone.heroWash, p.hero))
-		need(`heroText on crew.${k}.heroWash`, p.heroText, composite(tone.heroWash, p.hero))
-		need(
-			`heroTextSecondary on crew.${k}.heroWash`,
-			p.heroTextSecondary,
-			composite(tone.heroWash, p.hero)
-		)
+		need(`crew.${k}.onFillMuted on fill`, tone.onFillMuted, tone.fill)
 		for (const [g, bg] of Object.entries(grounds)) {
 			need(`crew.${k}.ink on ${g}`, tone.ink, bg)
 			need(`crew.${k}.ink on dim over ${g}`, tone.ink, composite(tone.dim, bg))

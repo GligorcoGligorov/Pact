@@ -11,11 +11,14 @@ import { CREW_COLOR_LABELS, crewEmoji, crewTone } from '@/lib/crew'
 export function CrewBadge({
 	color,
 	emoji,
-	size = 44
+	size = 44,
+	onFill = false
 }: {
 	color: string
 	emoji: string
 	size?: number
+	/** On the crew's own colour (its hero): the badge sits on the surface instead. */
+	onFill?: boolean
 }) {
 	const c = useColors()
 	const tone = crewTone(c, color)
@@ -23,7 +26,12 @@ export function CrewBadge({
 		<View
 			style={[
 				s.badge,
-				{ width: size, height: size, borderRadius: size / 2, backgroundColor: tone.fill }
+				{
+					width: size,
+					height: size,
+					borderRadius: size / 2,
+					backgroundColor: onFill ? c.surface : tone.fill
+				}
 			]}
 			accessibilityElementsHidden
 			importantForAccessibility="no-hide-descendants"

@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { RefreshControl, StyleSheet, View } from 'react-native'
 import { router, useLocalSearchParams } from 'expo-router'
 import { useQueryClient } from '@tanstack/react-query'
-import { composite } from '@app/brand'
 import { Camera, Check, ScanEye, SearchX, Settings2, UserPlus } from 'lucide-react-native'
 import { Chain, chainTiles } from '@/components/pact/Chain'
 import { Countdown } from '@/components/pact/Countdown'
@@ -175,31 +174,31 @@ function Board({
 	const tiles = chainTiles(progress.chain, pact.start_day, pact.end_day, pact.cadence)
 	const totalDays = tiles.length
 	const doneDays = tiles.filter((t) => t.status !== 'future').length
-	// The hero is the crew's own: washed in its colour, its mark by the name, its ring.
+	// The hero is the crew's own: its bright colour, its mark by the name, its ring.
 	const tone = crewTone(c, pact.color)
 
 	return (
 		<>
 			<FadeSlideIn index={0}>
-				{/* The screen's one dark card: ref 03's countdown and the crew's ring. */}
+				{/* The crew's own card, in its bright colour (ref 01): the countdown and the crew's ring. */}
 				<Card
 					tier="hero"
 					padding="spacious"
-					style={[s.hero, { backgroundColor: composite(tone.heroWash, c.hero) }]}
+					style={[s.hero, { backgroundColor: tone.fill, borderColor: tone.fill }]}
 				>
 					<View style={s.heroTop}>
 						<View style={s.heroTitle}>
 							<View style={s.heroEyebrow}>
-								<CrewBadge color={pact.color} emoji={pact.emoji} size={28} />
+								<CrewBadge color={pact.color} emoji={pact.emoji} size={30} onFill />
 								<Text
 									variant="eyebrow"
-									style={[s.heroEyebrowText, { color: tone.heroInk }]}
+									style={[s.heroEyebrowText, { color: tone.onFillMuted }]}
 									numberOfLines={1}
 								>
 									{pact.name}
 								</Text>
 							</View>
-							<Text variant="h1" style={{ color: c.heroText }}>
+							<Text variant="h1" style={{ color: tone.onFill }}>
 								{pact.habit}
 							</Text>
 						</View>
@@ -209,13 +208,13 @@ function Board({
 								max={today.held_count}
 								size={80}
 								stroke={9}
-								color={tone.fill}
-								track={c.heroBorder}
+								color={tone.onFill}
+								track={tone.onFillTrack}
 							>
-								<Text variant="h3" tabular style={{ color: c.heroText }}>
+								<Text variant="h3" tabular style={{ color: tone.onFill }}>
 									{today.in_count}/{today.held_count}
 								</Text>
-								<Text variant="caption" style={{ color: c.heroTextSecondary }}>
+								<Text variant="caption" style={{ color: tone.onFillMuted }}>
 									in
 								</Text>
 							</Ring>
@@ -226,15 +225,15 @@ function Board({
 						<View>
 							<Countdown
 								closesAt={today.closes_at}
-								color={c.heroText}
-								unitColor={c.heroTextSecondary}
+								color={tone.onFill}
+								unitColor={tone.onFillMuted}
 							/>
-							<Text variant="bodySm" style={{ color: c.heroTextSecondary }}>
+							<Text variant="bodySm" style={{ color: tone.onFillMuted }}>
 								{kept ? 'until tomorrow’s check-in' : 'left to check in today'}
 							</Text>
 						</View>
 					) : (
-						<Text variant="lead" style={{ color: c.heroTextSecondary }}>
+						<Text variant="lead" style={{ color: tone.onFillMuted }}>
 							{heroLine(detail)}
 						</Text>
 					)}

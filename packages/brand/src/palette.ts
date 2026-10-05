@@ -13,6 +13,7 @@ import {
 	contrast,
 	ensureContrast,
 	luminance,
+	mix,
 	mostContrasting,
 	shiftLightness,
 	toHex,
@@ -172,9 +173,6 @@ export function buildPalette(
 	}
 }
 
-/** How strongly a crew colour washes over the hero: enough to own it, never enough to shout. */
-const CREW_HERO_WASH = 0.2
-
 /** A crew seed as a full tone, derived like the accent so every text pair clears AA. */
 function crewTone(
 	seed: string,
@@ -185,10 +183,14 @@ function crewTone(
 	const A = spec.alpha
 	const fill = toHex(seed)
 	const dim = withAlpha(fill, A.brandDim)
-	const heroWash = withAlpha(fill, CREW_HERO_WASH)
+	const onFill = onColor(fill, spec.onFill)
+	// Muted text leans toward the fill, but never below AA: if the lean would cost that, it doesn't.
+	const leaned = mix(onFill, fill, 0.22)
 	return {
 		fill,
-		onFill: onColor(fill, spec.onFill),
+		onFill,
+		onFillMuted: contrast(leaned, fill) >= DERIVE_TARGET ? leaned : onFill,
+		onFillTrack: withAlpha(onFill, 0.2),
 		ink: ensureContrast(
 			fill,
 			[...grounds, ...grounds.map((g) => composite(dim, g))],
@@ -196,13 +198,6 @@ function crewTone(
 			away
 		),
 		dim,
-		track: withAlpha(fill, A.track + 0.08),
-		heroInk: ensureContrast(
-			fill,
-			[spec.hero.bg, composite(heroWash, spec.hero.bg)],
-			DERIVE_TARGET,
-			'lighten'
-		),
-		heroWash
+		track: withAlpha(fill, A.track + 0.08)
 	}
 }

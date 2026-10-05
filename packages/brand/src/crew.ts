@@ -28,14 +28,14 @@ export interface CrewTone {
 	fill: string
 	/** Text and icons on `fill`. */
 	onFill: string
+	/** Secondary text on `fill`: a step softer than `onFill`, still AA. */
+	onFillMuted: string
+	/** An empty ring track on `fill`. */
+	onFillTrack: string
 	/** The colour as text or a thin line on any ground. */
 	ink: string
 	/** A low-alpha wash: card accents, the feed stripe's chip. */
 	dim: string
 	/** The ring's empty track, tinted toward the crew. */
 	track: string
-	/** The colour as text on the always-dark hero. */
-	heroInk: string
-	/** A wash over the hero, so each crew's hero reads as its own. */
-	heroWash: string
 }

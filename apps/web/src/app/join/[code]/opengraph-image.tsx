@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { ImageResponse } from 'next/og'
 import { crewThemeOf, inviteCodeSchema } from '@app/contract'
-import { composite, theme } from '@app/brand'
+import { theme } from '@app/brand'
 import { getJoinPage } from '@/server/pacts/join-page'
 
 export const runtime = 'nodejs'
@@ -220,7 +220,7 @@ export default async function Image({ params }: { params: Promise<{ code: string
 					flexDirection: 'column',
 					width: 360,
 					borderRadius: 40,
-					background: composite(tone.heroWash, c.hero),
+					background: tone.fill,
 					alignItems: 'center',
 					justifyContent: 'center',
 					gap: 22
@@ -246,7 +246,7 @@ export default async function Image({ params }: { params: Promise<{ code: string
 							cy={RING / 2}
 							r={r}
 							fill="none"
-							stroke={c.heroBorder}
+							stroke={tone.onFillTrack}
 							strokeWidth={RING_STROKE}
 						/>
 						{share > 0 ? (
@@ -255,7 +255,7 @@ export default async function Image({ params }: { params: Promise<{ code: string
 								cy={RING / 2}
 								r={r}
 								fill="none"
-								stroke={tone.fill}
+								stroke={tone.onFill}
 								strokeWidth={RING_STROKE}
 								strokeLinecap="round"
 								strokeDasharray={`${circumference}`}
@@ -264,15 +264,15 @@ export default async function Image({ params }: { params: Promise<{ code: string
 						) : null}
 					</svg>
 					<div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-						<div style={{ fontFamily: 'Bricolage', fontSize: 64, color: c.heroText }}>
+						<div style={{ fontFamily: 'Bricolage', fontSize: 64, color: tone.onFill }}>
 							{active ? `${page.inCount}/${page.heldCount}` : page.members.length}
 						</div>
-						<div style={{ fontSize: 24, fontWeight: 500, color: c.heroTextSecondary }}>
+						<div style={{ fontSize: 24, fontWeight: 500, color: tone.onFillMuted }}>
 							{active ? 'in today' : 'members'}
 						</div>
 					</div>
 				</div>
-				<div style={{ fontSize: 26, fontWeight: 700, color: tone.heroInk }}>
+				<div style={{ fontSize: 26, fontWeight: 700, color: tone.onFill }}>
 					{page.dayNumber ? `Day ${page.dayNumber} of ${page.totalDays}` : `${page.totalDays} days`}
 				</div>
 			</div>

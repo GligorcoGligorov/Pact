@@ -11,7 +11,7 @@ import { Countdown } from '@/components/join/Countdown'
 import { CrewGrid, crewLine, Ring } from '@/components/join/Crew'
 import { JoinPanel } from '@/components/join/JoinPanel'
 import { JOIN_PAGE_EVENTS } from '@/lib/analytics/events'
-import { crewStyle } from '@/lib/pacts/crew'
+import { crewHeroStyle, crewStyle } from '@/lib/pacts/crew'
 import { getJoinPage, type JoinPage } from '@/server/pacts/join-page'
 
 export const dynamic = 'force-dynamic'
@@ -121,16 +121,11 @@ export default async function JoinPage({ params }: Props) {
 
 				<section
 					className="enter rounded-card bg-hero p-6 shadow-raised"
-					style={
-						{
-							'--enter-delay': '80ms',
-							backgroundImage: 'linear-gradient(var(--crew-hero-wash), var(--crew-hero-wash))'
-						} as React.CSSProperties
-					}
+					style={{ '--enter-delay': '80ms', ...crewHeroStyle(page.color) } as React.CSSProperties}
 				>
 					<div className="flex items-start justify-between gap-4">
 						<div className="min-w-0 space-y-1">
-							<p className="text-xs font-semibold uppercase tracking-[0.14em] text-[color:var(--crew-hero-ink)]">
+							<p className="text-xs font-semibold uppercase tracking-[0.14em] text-hero-text-secondary">
 								{active
 									? `Day ${page.dayNumber} of ${page.totalDays}`
 									: page.status === 'lobby'
@@ -157,7 +152,7 @@ export default async function JoinPage({ params }: Props) {
 								size={76}
 								stroke={9}
 								className="shrink-0"
-								arcClassName="stroke-[var(--crew-fill)]"
+								arcClassName="stroke-hero-text"
 							>
 								<span className="block font-display text-xl font-bold leading-none text-hero-text">
 									{page.inCount}/{page.heldCount}
