@@ -1,10 +1,18 @@
 import type { CheckInKind, PrismaClient } from '@prisma/client'
+import { randomUUID } from 'node:crypto'
 import { Prisma, db } from './client'
-import { MEMBER_FIELDS, PACT_FIELDS, toMember, type MemberRecord, type PactRecord } from './pacts'
+import {
+	MEMBER_FIELDS,
+	PACT_FIELDS,
+	newInviteCode,
+	toMember,
+	type MemberRecord,
+	type PactRecord
+} from './pacts'
 
 // The end of a pact: what its results are computed from, and the closer's bookkeeping (R24,
 // R26). Results are computed on read (src/lib/pacts/results.ts); the closer only writes
-// `closed_through`, the inbox, and the photo cleanup.
+// `closed_through`, the inbox, and the photo cleanup. Round 2 (`rematch_of`) starts here too.
 
 /** A check-in as results read it: who, which day, what kind, and when it was made. */
 export type TimedMark = { userId: string; day: Date; kind: CheckInKind; createdAt: Date }
@@ -13,13 +21,31 @@ export type PactForResults = {
 	pact: PactRecord & { closedThrough: Date | null }
 	members: MemberRecord[]
 	marks: TimedMark[]
+	/** Round 2, once started. */
+	rematchId: string | null
 }
+
+/** Round 2 of a finished pact: the new pact's fields, and who is in it. */
+export type NewRematch = {
+	id?: string
+	fromPactId: string
+	ownerId: string
+	pact: Pick<
+		PactRecord,
+		'name' | 'habit' | 'color' | 'emoji' | 'cadence' | 'timezone' | 'stake' | 'startDay' | 'endDay'
+	>
+	/** The rest of the crew, held from the start day like a lobby join. */
+	memberIds: string[]
+}
+
+const REMATCH_ATTEMPTS = 5
 
 export type InboxLine = { userId: string; title: string; body: string | null; pactId: string }
 
 const WITH_MARKS = {
 	...PACT_FIELDS,
 	closedThrough: true,
+	rematch: { select: { id: true } },
 	members: {
 		orderBy: [{ createdAt: 'asc' }, { userId: 'asc' }],
 		select: {
@@ -30,14 +56,14 @@ const WITH_MARKS = {
 } as const satisfies Prisma.PactSelect
 
 function flatten(row: Prisma.PactGetPayload<{ select: typeof WITH_MARKS }>): PactForResults {
-	const { members: rows, ...pact } = row
+	const { members: rows, rematch, ...pact } = row
 	const members: MemberRecord[] = []
 	const marks: TimedMark[] = []
 	for (const { checkIns, ...member } of rows) {
 		members.push(toMember(member))
 		marks.push(...checkIns)
 	}
-	return { pact, members, marks }
+	return { pact, members, marks, rematchId: rematch?.id ?? null }
 }
 
 export function createResultStore(client: PrismaClient) {
@@ -100,6 +126,56 @@ export function createResultStore(client: PrismaClient) {
 				}
 				return true
 			})
+		},
+
+		/**
+		 * Round 2 (R24's "same crew, new pact"): the pact, its owner and the crew, held from the
+		 * start day, in one transaction. One per finished pact: when someone else's round 2 got
+		 * there first (the unique `rematch_of`), that one is returned instead.
+		 */
+		async createRematch(
+			input: NewRematch
+		): Promise<{ outcome: 'created' | 'existing'; pact: PactRecord }> {
+			const existing = await client.pact.findUnique({
+				where: { rematchOf: input.fromPactId },
+				select: PACT_FIELDS
+			})
+			if (existing) return { outcome: 'existing', pact: existing }
+			const id = input.id ?? randomUUID()
+			for (let attempt = 1; ; attempt++) {
+				try {
+					const pact = await client.$transaction(async (tx) => {
+						const created = await tx.pact.create({
+							data: {
+								id,
+								...input.pact,
+								ownerId: input.ownerId,
+								rematchOf: input.fromPactId,
+								inviteCode: newInviteCode()
+							},
+							select: PACT_FIELDS
+						})
+						await tx.pactMember.createMany({
+							data: [
+								{ userId: input.ownerId, role: 'owner' as const },
+								...input.memberIds.map((userId) => ({ userId, role: 'member' as const }))
+							].map((m) => ({ ...m, pactId: id, joinedDay: input.pact.startDay }))
+						})
+						return created
+					})
+					return { outcome: 'created', pact }
+				} catch (err) {
+					const unique = err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002'
+					if (!unique) throw err
+					const raced = await client.pact.findUnique({
+						where: { rematchOf: input.fromPactId },
+						select: PACT_FIELDS
+					})
+					if (raced) return { outcome: 'existing', pact: raced }
+					// An invite code collision: try another.
+					if (attempt >= REMATCH_ATTEMPTS) throw err
+				}
+			}
 		},
 
 		/** Proof photos still stored for pacts that ended before `endedBefore`, a batch at a time. */

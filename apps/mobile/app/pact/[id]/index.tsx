@@ -344,7 +344,7 @@ function heroLine({ pact, today }: PactDetail): string {
 				: `Starts in ${days} days, on ${shortDay(pact.start_day)}. Get everyone in before then.`
 		}
 		case 'completed':
-			return "This pact is over. Here's how the chain ended."
+			return "That's a wrap! The results are in."
 		case 'cancelled':
 			return 'This pact was cancelled.'
 		case 'active':
@@ -365,6 +365,18 @@ function BoardAction({ detail }: { detail: PactDetail }) {
 				fullWidth
 				icon={(color) => <UserPlus size={18} color={color} />}
 				onPress={() => router.push(`/pact/${pact.id}/invite`)}
+			/>
+		)
+	}
+	if (pact.status === 'completed') {
+		return (
+			<Button
+				label="See the results 🏆"
+				size="lg"
+				fullWidth
+				withArrow
+				haptic="snap"
+				onPress={() => router.push(`/pact/${pact.id}/result`)}
 			/>
 		)
 	}

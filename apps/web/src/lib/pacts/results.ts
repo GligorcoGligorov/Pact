@@ -15,18 +15,9 @@
  *  - night_owl 🦉: the most photo check-ins from 21:00 pact-local (at least 2).
  */
 
+import { AWARD_KINDS, type AwardKind } from '@app/contract'
 import { addDays, isHeldOn, pactDaysThrough, type Day } from './day'
 import { chain, pactResult, streaks, type CheckInMark, type PactProgressInput } from './progress'
-
-export const AWARD_KINDS = [
-	'iron_streak',
-	'never_missed',
-	'comeback_kid',
-	'clutch_save',
-	'early_bird',
-	'night_owl'
-] as const
-export type AwardKind = (typeof AWARD_KINDS)[number]
 
 /** A check-in as results read it: when it was made decides the early bird and the night owl. */
 export interface TimedCheckIn extends CheckInMark {

@@ -21,7 +21,7 @@ function statusChip(pact: PactListItem): { label: string; tone: ChipTone } | nul
 		case 'lobby':
 			return { label: `Starts ${shortDay(pact.start_day)}`, tone: 'info' }
 		case 'completed':
-			return { label: 'Finished', tone: 'neutral' }
+			return { label: 'Results are in 🏆', tone: 'info' }
 		case 'cancelled':
 			return { label: 'Cancelled', tone: 'neutral' }
 		case 'active':
@@ -56,7 +56,9 @@ export function PactCard({ pact, myId }: { pact: PactListItem; myId: string | nu
 		<PressableScale
 			scaleTo="card"
 			lift={{ from: elevation.card, to: elevation.raised }}
-			onPress={() => router.push(`/pact/${pact.id}`)}
+			onPress={() =>
+				router.push(pact.status === 'completed' ? `/pact/${pact.id}/result` : `/pact/${pact.id}`)
+			}
 			accessibilityRole="button"
 			accessibilityLabel={`${pact.name}: ${pact.habit}.${board ? ` ${crewLine(board.members, myId)}.` : ''}`}
 			style={[

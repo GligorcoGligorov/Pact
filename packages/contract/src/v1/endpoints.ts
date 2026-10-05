@@ -44,6 +44,7 @@ import {
 	pactResponse
 } from './pacts'
 import { profileResponse, updateProfileBody } from './profile'
+import { pactResultResponse, rematchPactBody, rematchPactResponse } from './results'
 import { createTaskBody, listTasksQuery, listTasksResponse, taskResponse } from './tasks'
 import { createUploadBody, createUploadResponse } from './uploads'
 
@@ -183,6 +184,23 @@ export const endpoints = {
 		params: pactParams,
 		response: pactDetailResponse,
 		status: 200
+	},
+	getPactResult: {
+		method: 'GET',
+		path: '/api/app/v1/pacts/:id/result',
+		auth: 'user',
+		params: pactParams,
+		response: pactResultResponse,
+		status: 200
+	},
+	rematchPact: {
+		method: 'POST',
+		path: '/api/app/v1/pacts/:id/rematch',
+		auth: 'user',
+		params: pactParams,
+		body: rematchPactBody,
+		response: rematchPactResponse,
+		status: 201
 	},
 	getInvite: {
 		method: 'GET',

@@ -34,9 +34,14 @@ model Pact {
   cancelledAt   DateTime?      @map("cancelled_at") @db.Timestamptz(6)
   /// The closer's bookkeeping only: the last pact-day whose notifications were written.
   closedThrough DateTime?      @map("closed_through") @db.Date
+  /// Round 2: the finished pact this one restarts with the same crew. Unique, so however many
+  /// members tap "same crew, new pact" at once, a pact has one rematch.
+  rematchOf     String?        @unique @map("rematch_of") @db.Uuid
   createdAt     DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt     DateTime       @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   owner         Profile        @relation("pactOwner", fields: [ownerId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  previous      Pact?          @relation("rematch", fields: [rematchOf], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  rematch       Pact?          @relation("rematch")
   members       PactMember[]
   notifications Notification[]
   nudges        Nudge[]

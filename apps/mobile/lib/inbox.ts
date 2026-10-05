@@ -69,7 +69,11 @@ export function useInboxBanners() {
 						content: {
 							title: row.title,
 							body: row.body ?? undefined,
-							data: { pactId: row.pact_id, kind: 'crew' }
+							// "🏁 … is over!" (the closer's results message) opens the results.
+							data: {
+								pactId: row.pact_id,
+								kind: row.title.startsWith('🏁') ? 'results' : 'crew'
+							}
 						},
 						trigger: null
 					})
@@ -90,7 +94,9 @@ export function useInboxBanners() {
 				pactId?: unknown
 				kind?: unknown
 			}
-			if (data?.kind !== 'crew' || typeof data.pactId !== 'string') return
+			if (typeof data?.pactId !== 'string') return
+			if (data.kind === 'results') return router.push(`/pact/${data.pactId}/result`)
+			if (data.kind !== 'crew') return
 			track('nudge_opened', { pact_id: data.pactId })
 			router.push(`/pact/${data.pactId}`)
 		})

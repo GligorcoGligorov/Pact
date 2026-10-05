@@ -412,6 +412,7 @@ async function seedFinished(ids: Map<DemoMember['key'], string>) {
 
 	const demoIds = [...ids.values()]
 	await db.$transaction([
+		db.pact.deleteMany({ where: { rematchOf: pact.id } }),
 		db.notification.deleteMany({ where: { pactId: pact.id } }),
 		db.checkIn.deleteMany({ where: { pactId: pact.id, userId: { in: demoIds } } }),
 		...MEMBERS.map((m) => {
