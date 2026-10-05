@@ -66,9 +66,10 @@ export function PactCard({ pact, myId }: { pact: PactListItem; myId: string | nu
 			]}
 		>
 			<View style={s.top}>
+				{/* The crew's identity, big enough to find the pact by. */}
+				<CrewBadge color={pact.color} emoji={pact.emoji} size={CARD_BADGE} />
 				<View style={s.title}>
 					<View style={s.eyebrow}>
-						<CrewBadge color={pact.color} emoji={pact.emoji} size={24} />
 						<Text variant="eyebrow" numberOfLines={1} style={[s.eyebrowText, { color: tone.ink }]}>
 							{pact.name}
 							{pact.status === 'active' ? ` · Day ${day}/${total}` : ''}
@@ -143,6 +144,8 @@ export function PactCard({ pact, myId }: { pact: PactListItem; myId: string | nu
 	)
 }
 
+const CARD_BADGE = 52
+
 /** About when Ring's gentle spring has nearly filled the arc. */
 const RING_FILL_MS = 250
 
@@ -153,7 +156,7 @@ const s = StyleSheet.create({
 		padding: 20,
 		gap: 18
 	},
-	top: { flexDirection: 'row', alignItems: 'flex-start', gap: 16 },
+	top: { flexDirection: 'row', alignItems: 'flex-start', gap: 14 },
 	title: { flex: 1, gap: 6 },
 	eyebrow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
 	eyebrowText: { flex: 1 },

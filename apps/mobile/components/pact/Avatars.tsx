@@ -81,12 +81,15 @@ export function Avatar({
 	userId,
 	name,
 	state,
-	size = 36
+	size = 36,
+	breathe = true
 }: {
 	userId: string
 	name: string
 	state?: MemberState
 	size?: number
+	/** The breathing "not yet" ring. Off where faces overlap (a stack), which only dims them. */
+	breathe?: boolean
 }) {
 	const c = useColors()
 	const palette = [
@@ -113,7 +116,7 @@ export function Avatar({
 				}
 			]}
 		>
-			{state === 'out' ? <WaitingRing size={size} /> : null}
+			{state === 'out' && breathe ? <WaitingRing size={size} /> : null}
 			<Text style={{ color: look.fg, fontSize: size * 0.36, fontWeight: '700' }}>
 				{getInitials(name)}
 			</Text>
@@ -159,7 +162,13 @@ export function AvatarStack({
 		<View style={s.stack} accessibilityLabel={`${members.length} members`}>
 			{shown.map((m, i) => (
 				<View key={m.user_id} style={{ marginLeft: i === 0 ? 0 : -size * 0.3, zIndex: max - i }}>
-					<Avatar userId={m.user_id} name={displayName(m)} state={m.state} size={size} />
+					<Avatar
+						userId={m.user_id}
+						name={displayName(m)}
+						state={m.state}
+						size={size}
+						breathe={false}
+					/>
 				</View>
 			))}
 			{extra > 0 ? (

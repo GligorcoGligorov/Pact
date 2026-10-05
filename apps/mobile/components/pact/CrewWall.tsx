@@ -1,11 +1,10 @@
-import { useEffect } from 'react'
+import { useEffect, useRef, type RefObject } from 'react'
 import { StyleSheet, View } from 'react-native'
 import { Image } from 'expo-image'
 import Animated, {
 	Easing,
 	useAnimatedStyle,
 	useSharedValue,
-	withDelay,
 	withSequence,
 	withSpring,
 	withTiming
@@ -24,8 +23,19 @@ const TILE_W = 54
 const PHOTO_H = 56
 /** Each polaroid sits a little crooked, the same way every time for the same slot. */
 const TILTS = [-4, 3, -2, 5, -5, 2, -3, 4]
-/** Where the flying polaroid starts, relative to its slot: up where the big photo is, and bigger. */
-const FLY_FROM = { y: -320, scale: 3.2, rotate: -10 }
+/** Where the flight starts if the big print can't be measured: above the slot, and bigger. */
+const FLY_FALLBACK = { x: 0, y: -320, scale: 3.2 }
+
+type Box = { x: number; y: number; width: number; height: number }
+
+function measure(view: View | null): Promise<Box | null> {
+	return new Promise((resolve) => {
+		if (!view) return resolve(null)
+		view.measureInWindow((x, y, width, height) =>
+			resolve(width > 0 ? { x, y, width, height } : null)
+		)
+	})
+}
 
 /**
  * Today's crew wall: a polaroid per member held today. Your photo flies off the big print and
@@ -38,11 +48,17 @@ export function CrewWall({
 	myId,
 	photoUri,
 	land,
-	delayMs = 0
+	delayMs = 0,
+	from,
+	fromTilt = 0
 }: {
 	members: BoardMember[]
 	myId: string | null
 	photoUri: string
+	/** The big print your photo flies off: measured on screen when the flight starts. */
+	from?: RefObject<View | null>
+	/** The big print's tilt, in degrees, so the flight starts at its angle. */
+	fromTilt?: number
 	/** True once the verdict is in: the moment your print flies. */
 	land: boolean
 	/** Waits out the entrance of whatever holds the wall, so the flight is seen. */
@@ -65,6 +81,8 @@ export function CrewWall({
 					photoUri={photoUri}
 					land={land}
 					delayMs={delayMs}
+					from={from}
+					fromTilt={fromTilt}
 				/>
 			))}
 		</View>
@@ -77,7 +95,9 @@ function Slot({
 	mine,
 	photoUri,
 	land,
-	delayMs
+	delayMs,
+	from,
+	fromTilt
 }: {
 	member: BoardMember
 	tilt: number
@@ -85,6 +105,8 @@ function Slot({
 	photoUri: string
 	land: boolean
 	delayMs: number
+	from?: RefObject<View | null>
+	fromTilt: number
 }) {
 	const { colors: c, elevation } = useTheme()
 	const name = displayName(member)
@@ -92,7 +114,14 @@ function Slot({
 	return (
 		<View style={s.slot}>
 			{mine ? (
-				<FlyingPrint uri={photoUri} tilt={tilt} land={land} delayMs={delayMs} />
+				<FlyingPrint
+					uri={photoUri}
+					tilt={tilt}
+					land={land}
+					delayMs={delayMs}
+					from={from}
+					fromTilt={fromTilt}
+				/>
 			) : (
 				<View
 					style={[
@@ -103,7 +132,13 @@ function Slot({
 					]}
 				>
 					<View style={[s.photo, s.face, { backgroundColor: inToday ? c.surface2 : c.well }]}>
-						<Avatar userId={member.user_id} name={name} state={member.state} size={34} />
+						<Avatar
+							userId={member.user_id}
+							name={name}
+							state={member.state}
+							size={34}
+							breathe={false}
+						/>
 					</View>
 				</View>
 			)}
@@ -118,47 +153,77 @@ function FlyingPrint({
 	uri,
 	tilt,
 	land,
-	delayMs
+	delayMs,
+	from,
+	fromTilt
 }: {
 	uri: string
 	tilt: number
 	land: boolean
 	delayMs: number
+	from?: RefObject<View | null>
+	fromTilt: number
 }) {
 	const { colors: c, elevation } = useTheme()
 	const reduced = useReducedMotion()
 	const t = useSharedValue(reduced ? 1 : 0)
 	const shown = useSharedValue(reduced ? 1 : 0)
+	// The start, relative to the slot: the big print's centre offset and its size.
+	const start = useSharedValue(FLY_FALLBACK)
+	const slot = useRef<View>(null)
 
 	useEffect(() => {
 		if (!land || reduced) return
-		shown.value = withDelay(delayMs, withTiming(1, { duration: 1 }))
-		// Flies in on an ease-out, then the pop spring settles it into the slot.
-		t.value = withDelay(
-			delayMs,
-			withSequence(
-				withTiming(0.92, { duration: CELEBRATION.landMs - 80, easing: Easing.out(Easing.cubic) }),
-				withSpring(1, Springs.pop)
+		let cancelled = false
+		let snap: ReturnType<typeof setTimeout> | undefined
+		// Measure at take-off, not at mount: by then the big print has finished zooming in.
+		const launch = setTimeout(() => {
+			void Promise.all([measure(from?.current ?? null), measure(slot.current)]).then(
+				([src, dst]) => {
+					if (cancelled) return
+					if (src && dst) {
+						start.value = {
+							x: src.x + src.width / 2 - (dst.x + dst.width / 2),
+							y: src.y + src.height / 2 - (dst.y + dst.height / 2),
+							scale: src.width / dst.width
+						}
+					}
+					shown.value = 1
+					// Flies in on an ease-out, then the pop spring settles it into the slot.
+					t.value = withSequence(
+						withTiming(0.92, {
+							duration: CELEBRATION.landMs - 80,
+							easing: Easing.out(Easing.cubic)
+						}),
+						withSpring(1, Springs.pop)
+					)
+					snap = setTimeout(() => haptic.snap(), CELEBRATION.landMs - 80)
+				}
 			)
-		)
-		const timer = setTimeout(() => haptic.snap(), delayMs + CELEBRATION.landMs - 80)
-		return () => clearTimeout(timer)
-	}, [delayMs, land, reduced, shown, t])
+		}, delayMs)
+		return () => {
+			cancelled = true
+			clearTimeout(launch)
+			if (snap) clearTimeout(snap)
+		}
+	}, [delayMs, from, land, reduced, shown, start, t])
 
 	const fly = useAnimatedStyle(() => {
 		const k = 1 - t.value
+		const { x, y, scale } = start.value
 		return {
 			opacity: shown.value,
 			transform: [
-				{ translateY: FLY_FROM.y * k },
-				{ scale: 1 + (FLY_FROM.scale - 1) * k },
-				{ rotate: `${tilt + (FLY_FROM.rotate - tilt) * k}deg` }
+				{ translateX: x * k },
+				{ translateY: y * k },
+				{ scale: 1 + (scale - 1) * k },
+				{ rotate: `${tilt + (fromTilt - tilt) * k}deg` }
 			]
 		}
 	})
 
 	return (
-		<View>
+		<View ref={slot} collapsable={false}>
 			{/* The empty slot your print lands in. */}
 			<View style={[s.print, s.empty, { borderColor: c.borderSoft, borderWidth: 1 }]}>
 				<View style={[s.photo, { backgroundColor: c.well }]} />

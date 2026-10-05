@@ -25,6 +25,9 @@ const FALLBACK: Record<Exclude<Verdict, 'pass' | 'suspicious'>, string> = {
 }
 
 /** How long the streak waits before it ticks up, so the eye lands on it first. */
+/** The big print's tilt; the flight to the wall starts at it. */
+const PRINT_TILT = -3
+
 /** The payoff card fades in at 380ms; the print flies once it's there. */
 const WALL_FLIGHT_DELAY_MS = 480
 
@@ -73,6 +76,7 @@ export function VerdictView({
 	const insets = useSafeAreaInsets()
 	const judging = verdict === undefined
 	const viewed = useRef(false)
+	const print = useRef<View>(null)
 
 	useEffect(() => {
 		if (!verdict || viewed.current) return
@@ -99,7 +103,11 @@ export function VerdictView({
 		<View style={[s.root, { backgroundColor: c.bg, paddingTop: insets.top + 28 }]}>
 			{/* The entering animation owns the outer transform, so the tilt lives on the inner card. */}
 			<Animated.View entering={ZoomIn.springify().damping(13)} style={s.polaroidSlot}>
-				<View style={[s.polaroid, { backgroundColor: c.surface }, elevation.raised]}>
+				<View
+					ref={print}
+					collapsable={false}
+					style={[s.polaroid, { backgroundColor: c.surface }, elevation.raised]}
+				>
 					<Image source={{ uri: photoUri }} style={s.photo} contentFit="cover" />
 				</View>
 			</Animated.View>
@@ -149,6 +157,8 @@ export function VerdictView({
 										photoUri={photoUri}
 										land={!judging}
 										delayMs={WALL_FLIGHT_DELAY_MS}
+										from={print}
+										fromTilt={PRINT_TILT}
 									/>
 									{progress.board.members.length > 1 ? (
 										<Text variant="bodySm" tone="secondary" style={s.crewText} numberOfLines={2}>
@@ -222,7 +232,7 @@ const s = StyleSheet.create({
 		padding: 10,
 		paddingBottom: 32,
 		borderRadius: 6,
-		transform: [{ rotate: '-3deg' }]
+		transform: [{ rotate: `${PRINT_TILT}deg` }]
 	},
 	photo: { width: '100%', aspectRatio: 4 / 5, borderRadius: 3 },
 	judging: { flex: 1, alignItems: 'center', justifyContent: 'center' },
