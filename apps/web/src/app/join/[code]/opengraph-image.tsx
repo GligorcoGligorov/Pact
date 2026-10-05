@@ -1,8 +1,8 @@
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { ImageResponse } from 'next/og'
-import { inviteCodeSchema } from '@app/contract'
-import { theme } from '@app/brand'
+import { crewThemeOf, inviteCodeSchema } from '@app/contract'
+import { composite, theme } from '@app/brand'
 import { getJoinPage } from '@/server/pacts/join-page'
 
 export const runtime = 'nodejs'
@@ -81,6 +81,9 @@ export default async function Image({ params }: { params: Promise<{ code: string
 	const circumference = 2 * Math.PI * r
 	const share = active ? page.inCount / page.heldCount : 0
 	const faces = page.members.slice(0, MAX_FACES)
+	// The crew's colour and emoji, as on the page: the mark, the habit, the hero and its ring.
+	const crew = crewThemeOf(page.color, page.emoji)
+	const tone = c.crew[crew.color]
 
 	return new ImageResponse(
 		<div
@@ -107,16 +110,14 @@ export default async function Image({ params }: { params: Promise<{ code: string
 							display: 'flex',
 							width: 56,
 							height: 56,
-							borderRadius: 16,
-							background: c.brandFill,
-							color: c.onBrand,
+							borderRadius: 28,
+							background: tone.fill,
 							alignItems: 'center',
 							justifyContent: 'center',
-							fontFamily: 'Bricolage',
-							fontSize: 34
+							fontSize: 32
 						}}
 					>
-						P
+						{crew.emoji}
 					</div>
 					<div style={{ fontFamily: 'Bricolage', fontSize: 36, color: c.textPrimary }}>Pact</div>
 				</div>
@@ -144,7 +145,7 @@ export default async function Image({ params }: { params: Promise<{ code: string
 					>
 						{page.name}
 					</div>
-					<div style={{ fontSize: 36, fontWeight: 500, color: c.brandInk }}>{page.habit}</div>
+					<div style={{ fontSize: 36, fontWeight: 500, color: tone.ink }}>{page.habit}</div>
 				</div>
 
 				<div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
@@ -219,7 +220,7 @@ export default async function Image({ params }: { params: Promise<{ code: string
 					flexDirection: 'column',
 					width: 360,
 					borderRadius: 40,
-					background: c.hero,
+					background: composite(tone.heroWash, c.hero),
 					alignItems: 'center',
 					justifyContent: 'center',
 					gap: 22
@@ -254,7 +255,7 @@ export default async function Image({ params }: { params: Promise<{ code: string
 								cy={RING / 2}
 								r={r}
 								fill="none"
-								stroke={c.brandFill}
+								stroke={tone.fill}
 								strokeWidth={RING_STROKE}
 								strokeLinecap="round"
 								strokeDasharray={`${circumference}`}
@@ -271,11 +272,12 @@ export default async function Image({ params }: { params: Promise<{ code: string
 						</div>
 					</div>
 				</div>
-				<div style={{ fontSize: 26, fontWeight: 700, color: c.heroText }}>
+				<div style={{ fontSize: 26, fontWeight: 700, color: tone.heroInk }}>
 					{page.dayNumber ? `Day ${page.dayNumber} of ${page.totalDays}` : `${page.totalDays} days`}
 				</div>
 			</div>
 		</div>,
-		{ ...size, fonts }
+		// The fonts carry no emoji: Twemoji draws the crew's.
+		{ ...size, fonts, emoji: 'twemoji' }
 	)
 }

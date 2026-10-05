@@ -6,20 +6,16 @@
  * accent and success colours.
  */
 import type { CrewTone, Palette } from '@app/brand'
-import { CREW_COLORS } from '@app/brand'
-import { DEFAULT_CREW_THEME, PACT_EMOJIS, type PactColor } from '@app/contract'
-
-const isCrewColor = (value: string): value is PactColor =>
-	(CREW_COLORS as readonly string[]).includes(value)
+import { crewThemeOf, type PactColor } from '@app/contract'
 
 /** The pact's crew tone in this palette; a colour this app doesn't know reads as the default. */
 export function crewTone(colors: Palette, color: string): CrewTone {
-	return colors.crew[isCrewColor(color) ? color : DEFAULT_CREW_THEME.color]
+	return colors.crew[crewThemeOf(color, '').color]
 }
 
 /** The pact's emoji, or the default for one this app doesn't know. */
 export function crewEmoji(emoji: string): string {
-	return (PACT_EMOJIS as readonly string[]).includes(emoji) ? emoji : DEFAULT_CREW_THEME.emoji
+	return crewThemeOf('', emoji).emoji
 }
 
 /** Spoken names for the swatches, so VoiceOver says "Coral", not a key. */

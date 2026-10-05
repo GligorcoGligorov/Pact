@@ -81,6 +81,21 @@ const THEME_MATCHES: readonly [RegExp, PactEmoji, PactColor][] = [
 	[/\b(sun|outside|outdoor)/i, '☀️', 'sun']
 ]
 
+/**
+ * A pact's theme as this client knows it: a colour or emoji added after this build reads as the
+ * default, so a newer server never breaks an older app.
+ */
+export function crewThemeOf(color: string, emoji: string): { color: PactColor; emoji: PactEmoji } {
+	return {
+		color: (PACT_COLORS as readonly string[]).includes(color)
+			? (color as PactColor)
+			: DEFAULT_CREW_THEME.color,
+		emoji: (PACT_EMOJIS as readonly string[]).includes(emoji)
+			? (emoji as PactEmoji)
+			: DEFAULT_CREW_THEME.emoji
+	}
+}
+
 /** The colour and emoji suggested for a habit; the create screen starts from it. */
 export function suggestCrewTheme(habit: string): { color: PactColor; emoji: PactEmoji } {
 	for (const [re, emoji, color] of THEME_MATCHES) if (re.test(habit)) return { color, emoji }

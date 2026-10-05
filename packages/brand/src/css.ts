@@ -46,6 +46,16 @@ function colorVars(p: Palette): string[] {
 	return lines
 }
 
+/**
+ * Every crew tone, as whole colours: --crew-<key>-<part>. A page wearing one crew points the
+ * generic --crew-<part> names at its key (crewStyle in the web app), so the scheme still decides.
+ */
+function crewVars(p: Palette): string[] {
+	return Object.entries(p.crew).flatMap(([key, tone]) =>
+		Object.entries(tone).map(([part, value]) => `--crew-${key}-${kebab(part)}:${value};`)
+	)
+}
+
 const bezier = (b: readonly number[]) => `cubic-bezier(${b.join(',')})`
 
 /** Web font CSS variables set by next/font in the root layout. */
@@ -86,7 +96,7 @@ function schemeBlock(t: Theme, scheme: Scheme): string {
 	const p = t.palettes[scheme]
 	const sel = `[data-preset="${t.preset}"][data-scheme="${scheme}"],[data-preset="${t.preset}"] [data-scheme="${scheme}"]`
 	const shadows = Object.entries(t.shadowCss[scheme]).map(([k, v]) => `--shadow-${k}:${v};`)
-	return `${sel}{color-scheme:${scheme};${[...colorVars(p), ...shadows].join('')}}`
+	return `${sel}{color-scheme:${scheme};${[...colorVars(p), ...crewVars(p), ...shadows].join('')}}`
 }
 
 /** The CSS text for a theme: preset-level variables plus one block per scheme. */
