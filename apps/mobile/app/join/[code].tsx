@@ -135,8 +135,9 @@ export default function JoinPreviewScreen() {
 				<EmptyState
 					icon={SearchX}
 					tone="error"
-					title="No pact with that code"
-					body={`Check the code${code ? ` ${code}` : ''} with whoever sent it.`}
+					emoji={['🕵️', '❓']}
+					title="That code's a mystery"
+					body={`No pact answers to${code ? ` ${code}` : ' it'}. Double-check with whoever sent it.`}
 					action={{ label: 'Try another code', onPress: () => router.replace('/join') }}
 				/>
 			) : reason ? (

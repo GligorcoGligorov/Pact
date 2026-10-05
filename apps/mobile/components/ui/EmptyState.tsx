@@ -4,8 +4,10 @@ import Animated, {
 	useAnimatedStyle,
 	useReducedMotion,
 	useSharedValue,
+	withDelay,
 	withRepeat,
-	withTiming
+	withTiming,
+	type SharedValue
 } from 'react-native-reanimated'
 import { FadeSlideIn } from '@/components/motion/FadeSlideIn'
 import { useTheme } from '@/contexts/ThemeContext'
@@ -18,6 +20,12 @@ const TILE = 64
 const HALO = 132
 /** One breath: in and out, ms. Slow enough to read as calm, not as loading. */
 const BREATH = 2400
+/** Where up to three emoji float around the halo, and how far each bobs. */
+const FLOATERS = [
+	{ top: 2, left: -6, rotate: '-12deg', bob: 5 },
+	{ top: 10, right: -10, rotate: '10deg', bob: 4 },
+	{ bottom: 0, right: 4, rotate: '-6deg', bob: 6 }
+] as const
 
 /**
  * What a screen shows when there is nothing yet (or nothing matches): an icon
@@ -29,7 +37,8 @@ export function EmptyState({
 	title,
 	body,
 	action,
-	tone = 'brand'
+	tone = 'brand',
+	emoji
 }: {
 	icon: IconComponent
 	title: string
@@ -37,6 +46,8 @@ export function EmptyState({
 	action?: { label: string; onPress: () => void }
 	/** error for a failed load. */
 	tone?: 'brand' | 'error'
+	/** Up to three emoji that float around the icon, for the empty states meant to feel warm. */
+	emoji?: readonly string[]
 }) {
 	const { colors: c } = useTheme()
 	const reduceMotion = useReducedMotion()
@@ -59,6 +70,9 @@ export function EmptyState({
 		<View style={s.wrap} accessibilityRole="summary">
 			<FadeSlideIn index={0} style={s.art}>
 				<Animated.View style={[s.halo, { backgroundColor: tint }, halo]} />
+				{emoji?.slice(0, FLOATERS.length).map((e, i) => (
+					<Floater key={e + i} emoji={e} index={i} breath={breath} />
+				))}
 				<View style={[s.tile, { backgroundColor: c.surface, borderColor: c.borderSoft }]}>
 					<Icon size={26} color={ink} strokeWidth={1.8} />
 				</View>
@@ -82,7 +96,45 @@ export function EmptyState({
 	)
 }
 
+/** One emoji around the halo, bobbing on the halo's breath, a third of a breath apart. */
+function Floater({
+	emoji,
+	index,
+	breath
+}: {
+	emoji: string
+	index: number
+	breath: SharedValue<number>
+}) {
+	const spot = FLOATERS[index]!
+	const phase = useSharedValue(0)
+	const reduceMotion = useReducedMotion()
+	useEffect(() => {
+		if (reduceMotion) return
+		phase.value = withDelay(
+			(BREATH / 3) * index,
+			withRepeat(withTiming(1, { duration: BREATH, easing: Easings.inOut }), -1, true)
+		)
+	}, [index, phase, reduceMotion])
+	const bob = useAnimatedStyle(() => ({
+		transform: [{ translateY: -spot.bob * phase.value }, { rotate: spot.rotate }],
+		opacity: 0.85 + 0.15 * breath.value
+	}))
+	const { rotate: _rotate, bob: _bob, ...position } = spot
+	return (
+		<Animated.View
+			style={[s.floater, position, bob]}
+			accessibilityElementsHidden
+			importantForAccessibility="no-hide-descendants"
+		>
+			<Text style={s.floaterText}>{emoji}</Text>
+		</Animated.View>
+	)
+}
+
 const s = StyleSheet.create({
+	floater: { position: 'absolute' },
+	floaterText: { fontSize: 26, lineHeight: 32 },
 	wrap: { alignItems: 'center', paddingVertical: 32, paddingHorizontal: 12, gap: 18 },
 	art: { width: HALO, height: HALO, alignItems: 'center', justifyContent: 'center' },
 	halo: { position: 'absolute', width: HALO, height: HALO, borderRadius: HALO / 2 },
