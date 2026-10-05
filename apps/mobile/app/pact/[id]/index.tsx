@@ -3,7 +3,7 @@ import { RefreshControl, StyleSheet, View } from 'react-native'
 import { router, useLocalSearchParams } from 'expo-router'
 import { useQueryClient } from '@tanstack/react-query'
 import { composite } from '@app/brand'
-import { Camera, Check, Flame, ScanEye, SearchX, Settings2, UserPlus } from 'lucide-react-native'
+import { Camera, Check, ScanEye, SearchX, Settings2, UserPlus } from 'lucide-react-native'
 import { Chain, chainTiles } from '@/components/pact/Chain'
 import { Confetti } from '@/components/pact/Confetti'
 import { Countdown } from '@/components/pact/Countdown'
@@ -11,6 +11,7 @@ import { KeptCard, useFirstKeptView } from '@/components/pact/KeptCard'
 import { CrewBadge } from '@/components/pact/CrewTheme'
 import { MemberRow } from '@/components/pact/MemberRow'
 import { Ring } from '@/components/pact/Ring'
+import { StreakFlame } from '@/components/pact/StreakFlame'
 import { QueryErrorState } from '@/components/QueryError'
 import { FadeSlideIn } from '@/components/motion/FadeSlideIn'
 import { Button } from '@/components/ui/Button'
@@ -293,12 +294,7 @@ function Board({
 				<Card padding="spacious" style={s.streakCard}>
 					<View style={s.streakTop}>
 						<View style={s.streak}>
-							<Flame
-								size={34}
-								color={progress.current_streak > 0 ? c.warning : c.textDisabled}
-								fill={progress.current_streak > 0 ? c.warningSoft : 'none'}
-								strokeWidth={2}
-							/>
+							<StreakFlame streak={progress.current_streak} size={34} />
 							<View>
 								<Text variant="display" tabular>
 									{progress.current_streak}

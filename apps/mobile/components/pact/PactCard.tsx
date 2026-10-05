@@ -1,6 +1,6 @@
 import { StyleSheet, View } from 'react-native'
 import { router } from 'expo-router'
-import { Camera, Check, Flame } from 'lucide-react-native'
+import { Camera, Check } from 'lucide-react-native'
 import type { PactListItem } from '@app/contract'
 import { Pop } from '@/components/motion/Pop'
 import { PressableScale } from '@/components/motion/PressableScale'
@@ -13,6 +13,7 @@ import { AvatarStack, crewLine } from './Avatars'
 import { CrewBadge } from './CrewTheme'
 import { Ring } from './Ring'
 import { StateChip, type ChipTone } from './StateChip'
+import { StreakFlame } from './StreakFlame'
 
 /** Where the caller stands in a pact today, when there is no board to show it. */
 function statusChip(pact: PactListItem): { label: string; tone: ChipTone } | null {
@@ -113,11 +114,7 @@ export function PactCard({ pact, myId }: { pact: PactListItem; myId: string | nu
 					<View style={s.crew} />
 				)}
 				<View style={s.streak} accessibilityLabel={`${streak} day streak`}>
-					<Flame
-						size={20}
-						color={streak > 0 ? c.warning : c.textDisabled}
-						fill={streak > 0 ? c.warningSoft : 'none'}
-					/>
+					<StreakFlame streak={streak} size={20} />
 					<Text variant="h3" tabular>
 						{streak}
 					</Text>

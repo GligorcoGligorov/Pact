@@ -3,7 +3,7 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native'
 import { Image } from 'expo-image'
 import Animated, { FadeIn, FadeInDown, ZoomIn } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Check, Flame, Info, TriangleAlert } from 'lucide-react-native'
+import { Check, Info, TriangleAlert } from 'lucide-react-native'
 import type { TodayBoard, Verdict } from '@app/contract'
 import { NumberTicker } from '@/components/motion/NumberTicker'
 import { Button } from '@/components/ui/Button'
@@ -13,6 +13,7 @@ import { useTheme } from '@/contexts/ThemeContext'
 import { haptic } from '@/lib/haptics'
 import { AvatarStack, crewLine } from './Avatars'
 import { Confetti } from './Confetti'
+import { StreakFlame } from './StreakFlame'
 
 /** What shows in the caption's place when the AI has no caption (R14, R16). */
 const FALLBACK: Record<Exclude<Verdict, 'pass' | 'suspicious'>, string> = {
@@ -160,7 +161,6 @@ export function VerdictView({
 
 /** "5 → 6" when this check-in kept the day, ticking up; otherwise the streak as it stands. */
 function Streak({ before, after }: { before: number; after: number }) {
-	const { colors: c } = useTheme()
 	const grew = after > before
 	const [shown, setShown] = useState(before)
 	useEffect(() => {
@@ -172,15 +172,9 @@ function Streak({ before, after }: { before: number; after: number }) {
 		return () => clearTimeout(timer)
 	}, [grew, after])
 
-	const lit = after > 0
 	return (
 		<View style={s.streak}>
-			<Flame
-				size={30}
-				color={lit ? c.warning : c.textDisabled}
-				fill={lit ? c.warningSoft : 'none'}
-				strokeWidth={2}
-			/>
+			<StreakFlame streak={after} size={30} />
 			{grew ? (
 				<View style={s.streakNumbers}>
 					<Text variant="h2" tone="tertiary" tabular>
