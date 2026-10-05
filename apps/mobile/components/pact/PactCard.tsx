@@ -1,15 +1,19 @@
 import { StyleSheet, View } from 'react-native'
 import { router } from 'expo-router'
-import { Camera, Check, Flame } from 'lucide-react-native'
+import { Camera, Check } from 'lucide-react-native'
 import type { PactListItem } from '@app/contract'
+import { Pop } from '@/components/motion/Pop'
 import { PressableScale } from '@/components/motion/PressableScale'
 import { Button } from '@/components/ui/Button'
 import { Text } from '@/components/ui/Text'
 import { useTheme } from '@/contexts/ThemeContext'
 import { daysBetween, localIsoDate, shortDay } from '@/lib/pacts'
+import { crewTone } from '@/lib/crew'
 import { AvatarStack, crewLine } from './Avatars'
+import { CrewBadge } from './CrewTheme'
 import { Ring } from './Ring'
 import { StateChip, type ChipTone } from './StateChip'
+import { StreakFlame } from './StreakFlame'
 
 /** Where the caller stands in a pact today, when there is no board to show it. */
 function statusChip(pact: PactListItem): { label: string; tone: ChipTone } | null {
@@ -45,10 +49,13 @@ export function PactCard({ pact, myId }: { pact: PactListItem; myId: string | nu
 	const total = daysBetween(pact.start_day, pact.end_day) + 1
 	const day = Math.min(daysBetween(pact.start_day, localIsoDate()) + 1, total)
 	const streak = pact.progress.current_streak
+	// The crew's colour marks what is theirs (ring, mark, name); green stays the check-in.
+	const tone = crewTone(c, pact.color)
 
 	return (
 		<PressableScale
 			scaleTo="card"
+			lift={{ from: elevation.card, to: elevation.raised }}
 			onPress={() => router.push(`/pact/${pact.id}`)}
 			accessibilityRole="button"
 			accessibilityLabel={`${pact.name}: ${pact.habit}.${board ? ` ${crewLine(board.members, myId)}.` : ''}`}
@@ -59,11 +66,15 @@ export function PactCard({ pact, myId }: { pact: PactListItem; myId: string | nu
 			]}
 		>
 			<View style={s.top}>
+				{/* The crew's identity, big enough to find the pact by. */}
+				<CrewBadge color={pact.color} emoji={pact.emoji} size={CARD_BADGE} />
 				<View style={s.title}>
-					<Text variant="eyebrow" tone="tertiary" numberOfLines={1}>
-						{pact.name}
-						{pact.status === 'active' ? ` · Day ${day}/${total}` : ''}
-					</Text>
+					<View style={s.eyebrow}>
+						<Text variant="eyebrow" numberOfLines={1} style={[s.eyebrowText, { color: tone.ink }]}>
+							{pact.name}
+							{pact.status === 'active' ? ` · Day ${day}/${total}` : ''}
+						</Text>
+					</View>
 					<Text variant="h2" numberOfLines={2}>
 						{pact.habit}
 					</Text>
@@ -75,11 +86,14 @@ export function PactCard({ pact, myId }: { pact: PactListItem; myId: string | nu
 						max={board.held_count}
 						size={68}
 						stroke={8}
-						color={c.brandFill}
-						track={c.tintTrack}
+						color={tone.fill}
+						track={tone.track}
 					>
 						{board.in_count === board.held_count ? (
-							<Check size={24} color={c.brandInk} strokeWidth={3} />
+							// Lands once the ring has filled.
+							<Pop delay={RING_FILL_MS}>
+								<Check size={24} color={tone.ink} strokeWidth={3} />
+							</Pop>
 						) : (
 							<Text variant="label" tabular>
 								{board.in_count}/{board.held_count}
@@ -101,11 +115,7 @@ export function PactCard({ pact, myId }: { pact: PactListItem; myId: string | nu
 					<View style={s.crew} />
 				)}
 				<View style={s.streak} accessibilityLabel={`${streak} day streak`}>
-					<Flame
-						size={20}
-						color={streak > 0 ? c.warning : c.textDisabled}
-						fill={streak > 0 ? c.warningSoft : 'none'}
-					/>
+					<StreakFlame streak={streak} size={20} />
 					<Text variant="h3" tabular>
 						{streak}
 					</Text>
@@ -122,7 +132,9 @@ export function PactCard({ pact, myId }: { pact: PactListItem; myId: string | nu
 				/>
 			) : done ? (
 				<View style={[s.doneBar, { backgroundColor: c.successSoft }]}>
-					<Check size={16} color={c.successText} strokeWidth={3} />
+					<Pop>
+						<Check size={16} color={c.successText} strokeWidth={3} />
+					</Pop>
 					<Text variant="label" tone="success">
 						{pact.my_state_today === 'saver' ? 'Saver used today' : "You're in today"}
 					</Text>
@@ -132,6 +144,11 @@ export function PactCard({ pact, myId }: { pact: PactListItem; myId: string | nu
 	)
 }
 
+const CARD_BADGE = 52
+
+/** About when Ring's gentle spring has nearly filled the arc. */
+const RING_FILL_MS = 250
+
 const s = StyleSheet.create({
 	card: {
 		borderRadius: 28,
@@ -139,8 +156,10 @@ const s = StyleSheet.create({
 		padding: 20,
 		gap: 18
 	},
-	top: { flexDirection: 'row', alignItems: 'flex-start', gap: 16 },
+	top: { flexDirection: 'row', alignItems: 'flex-start', gap: 14 },
 	title: { flex: 1, gap: 6 },
+	eyebrow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+	eyebrowText: { flex: 1 },
 	social: { flexDirection: 'row', alignItems: 'center', gap: 12 },
 	crew: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },
 	crewText: { flex: 1 },

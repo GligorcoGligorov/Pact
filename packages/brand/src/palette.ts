@@ -13,11 +13,13 @@ import {
 	contrast,
 	ensureContrast,
 	luminance,
+	mix,
 	mostContrasting,
 	shiftLightness,
 	toHex,
 	withAlpha
 } from './color'
+import { CREW_COLORS, CREW_SEEDS, type CrewColor, type CrewTone } from './crew'
 import type { Palette, PresetName, SchemeSpec } from './types'
 
 /** WCAG 2.2 AA for normal text. */
@@ -163,6 +165,39 @@ export function buildPalette(
 		heroText: spec.hero.text,
 		heroTextSecondary: spec.hero.textSecondary,
 		heroBorder: withAlpha(spec.hero.text, 0.14),
-		heroBrandInk: ensureContrast(brandFill, [spec.hero.bg], DERIVE_TARGET, 'lighten')
+		heroBrandInk: ensureContrast(brandFill, [spec.hero.bg], DERIVE_TARGET, 'lighten'),
+
+		crew: Object.fromEntries(
+			CREW_COLORS.map((k) => [k, crewTone(CREW_SEEDS[k], spec, grounds, away)])
+		) as Record<CrewColor, CrewTone>
+	}
+}
+
+/** A crew seed as a full tone, derived like the accent so every text pair clears AA. */
+function crewTone(
+	seed: string,
+	spec: SchemeSpec,
+	grounds: readonly string[],
+	away: 'lighten' | 'darken'
+): CrewTone {
+	const A = spec.alpha
+	const fill = toHex(seed)
+	const dim = withAlpha(fill, A.brandDim)
+	const onFill = onColor(fill, spec.onFill)
+	// Muted text leans toward the fill, but never below AA: if the lean would cost that, it doesn't.
+	const leaned = mix(onFill, fill, 0.22)
+	return {
+		fill,
+		onFill,
+		onFillMuted: contrast(leaned, fill) >= DERIVE_TARGET ? leaned : onFill,
+		onFillTrack: withAlpha(onFill, 0.2),
+		ink: ensureContrast(
+			fill,
+			[...grounds, ...grounds.map((g) => composite(dim, g))],
+			DERIVE_TARGET,
+			away
+		),
+		dim,
+		track: withAlpha(fill, A.track + 0.08)
 	}
 }

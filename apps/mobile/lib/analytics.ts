@@ -137,7 +137,11 @@ type EventName =
 	// below that happens inside a pact also carries { pact_id }.
 	//
 	// Create: pact_create_started → pact_created
-	//   pact_created  metadata: { cadence: 'daily' | 'weekdays', days, has_stake }
+	//   pact_created  metadata: { cadence: 'daily' | 'weekdays', days, has_stake,
+	//                 color, emoji, theme_source: 'suggested' | 'picked' }
+	//                 color and emoji are keys from the fixed crew sets, never free text.
+	//                 theme_source answers whether people play with the picker or take
+	//                 the match suggested from the habit.
 	| 'pact_create_started'
 	| 'pact_created'
 	// Invite, the growth loop. metadata: { method: 'share_sheet' | 'copy_code' }
@@ -175,6 +179,11 @@ type EventName =
 	// The board's "day kept by the whole crew" celebration was seen, once per pact-day.
 	// metadata: { pact_id }
 	| 'crew_day_kept_viewed'
+	// A streak milestone card (3, 7, 14 days in a row) was seen, once per pact and milestone
+	// on this device. metadata: { pact_id, days: 3 | 7 | 14 }; `days` is the discriminator.
+	// Answers how many crews reach each milestone, and whether the 7 → 14 drop is where
+	// pacts die.
+	| 'streak_milestone_viewed'
 	// Social pressure and the local 22:00 reminder. reminder_opened is the only
 	// way to tell whether a local notification brings anyone back.
 	| 'nudge_sent'

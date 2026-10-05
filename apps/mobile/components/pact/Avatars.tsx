@@ -1,8 +1,19 @@
+import { useEffect } from 'react'
 import { StyleSheet, View } from 'react-native'
+import Animated, {
+	cancelAnimation,
+	Easing,
+	useAnimatedStyle,
+	useSharedValue,
+	withRepeat,
+	withTiming
+} from 'react-native-reanimated'
 import { Check } from 'lucide-react-native'
 import type { MemberState, TodayBoard } from '@app/contract'
+import { Pop } from '@/components/motion/Pop'
 import { Text } from '@/components/ui/Text'
 import { useColors } from '@/contexts/ThemeContext'
+import { useReducedMotion } from '@/lib/motion'
 import { getInitials } from '@/lib/utils'
 
 type BoardMember = TodayBoard['members'][number]
@@ -18,20 +29,67 @@ export function displayName(member: { display_name: string | null }): string {
 	return member.display_name?.trim() || 'A member'
 }
 
+/** One breath of the "not yet" ring, out and back: slow enough to read as waiting, not alarm. */
+const BREATH_MS = 1800
+
 /**
- * A member as coloured initials. `state` adds today's mark: a green check once they're in (or
- * a saver), dimmed while they still owe the day.
+ * The ring around someone who still owes today: it breathes outward, so the crew sees who to
+ * nudge. With Reduce Motion it is a still ring.
+ */
+function WaitingRing({ size }: { size: number }) {
+	const c = useColors()
+	const reduced = useReducedMotion()
+	const t = useSharedValue(0)
+	useEffect(() => {
+		if (reduced) return
+		t.value = withRepeat(
+			withTiming(1, { duration: BREATH_MS / 2, easing: Easing.inOut(Easing.sin) }),
+			-1,
+			true
+		)
+		return () => cancelAnimation(t)
+	}, [reduced, t])
+	const breathe = useAnimatedStyle(() => ({
+		opacity: 0.9 - 0.45 * t.value,
+		transform: [{ scale: 1 + 0.1 * t.value }]
+	}))
+	const ring = size + 8
+	return (
+		<Animated.View
+			pointerEvents="none"
+			style={[
+				s.ring,
+				{
+					width: ring,
+					height: ring,
+					borderRadius: ring / 2,
+					top: -4,
+					left: -4,
+					borderColor: c.warning
+				},
+				breathe
+			]}
+		/>
+	)
+}
+
+/**
+ * A member as coloured initials. `state` adds today's mark: a green check that pops in once
+ * they're in (or a saver), and a breathing ring while they still owe the day.
  */
 export function Avatar({
 	userId,
 	name,
 	state,
-	size = 36
+	size = 36,
+	breathe = true
 }: {
 	userId: string
 	name: string
 	state?: MemberState
 	size?: number
+	/** The breathing "not yet" ring. Off where faces overlap (a stack), which only dims them. */
+	breathe?: boolean
 }) {
 	const c = useColors()
 	const palette = [
@@ -54,28 +112,31 @@ export function Avatar({
 					borderRadius: size / 2,
 					backgroundColor: look.bg,
 					borderColor: c.surface,
-					opacity: state === 'out' ? 0.55 : 1
+					opacity: state === 'out' ? 0.8 : 1
 				}
 			]}
 		>
+			{state === 'out' && breathe ? <WaitingRing size={size} /> : null}
 			<Text style={{ color: look.fg, fontSize: size * 0.36, fontWeight: '700' }}>
 				{getInitials(name)}
 			</Text>
 			{done ? (
-				<View
-					style={[
-						s.badge,
-						{
-							width: badge,
-							height: badge,
-							borderRadius: badge / 2,
-							backgroundColor: state === 'saver' ? c.info : c.brandFill,
-							borderColor: c.surface
-						}
-					]}
-				>
-					<Check size={badge * 0.6} color={c.onBrand} strokeWidth={3.5} />
-				</View>
+				<Pop style={[s.badgeSpot, { width: badge, height: badge }]}>
+					<View
+						style={[
+							s.badge,
+							{
+								width: badge,
+								height: badge,
+								borderRadius: badge / 2,
+								backgroundColor: state === 'saver' ? c.info : c.brandFill,
+								borderColor: c.surface
+							}
+						]}
+					>
+						<Check size={badge * 0.6} color={c.onBrand} strokeWidth={3.5} />
+					</View>
+				</Pop>
 			) : null}
 		</View>
 	)
@@ -101,7 +162,13 @@ export function AvatarStack({
 		<View style={s.stack} accessibilityLabel={`${members.length} members`}>
 			{shown.map((m, i) => (
 				<View key={m.user_id} style={{ marginLeft: i === 0 ? 0 : -size * 0.3, zIndex: max - i }}>
-					<Avatar userId={m.user_id} name={displayName(m)} state={m.state} size={size} />
+					<Avatar
+						userId={m.user_id}
+						name={displayName(m)}
+						state={m.state}
+						size={size}
+						breathe={false}
+					/>
 				</View>
 			))}
 			{extra > 0 ? (
@@ -153,10 +220,9 @@ export function crewLine(
 
 const s = StyleSheet.create({
 	avatar: { alignItems: 'center', justifyContent: 'center', borderWidth: 2 },
+	ring: { position: 'absolute', borderWidth: 2 },
+	badgeSpot: { position: 'absolute', right: -3, bottom: -3 },
 	badge: {
-		position: 'absolute',
-		right: -3,
-		bottom: -3,
 		alignItems: 'center',
 		justifyContent: 'center',
 		borderWidth: 2

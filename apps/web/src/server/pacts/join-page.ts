@@ -19,6 +19,9 @@ export interface JoinPage {
 	pactId: string
 	name: string
 	habit: string
+	/** The crew's identity, as on the pact: a PACT_COLORS key and a PACT_EMOJIS value. */
+	color: string
+	emoji: string
 	cadence: 'daily' | 'weekdays'
 	stake: string | null
 	status: Pact['status']
@@ -71,6 +74,8 @@ export async function getJoinPage(code: string, now = new Date()): Promise<JoinP
 		pactId: pact.id,
 		name: pact.name,
 		habit: pact.habit,
+		color: pact.color,
+		emoji: pact.emoji,
 		cadence: pact.cadence,
 		stake: pact.stake,
 		status,

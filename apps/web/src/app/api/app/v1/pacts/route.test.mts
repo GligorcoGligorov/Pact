@@ -65,15 +65,29 @@ test('create: 201, the owner is the caller, 21 days end 20 days after the start'
 	assert.deepEqual(input.startDay, at(TODAY))
 	assert.deepEqual(input.endDay, at('2026-10-20'))
 	assert.equal(input.stake, null)
+	assert.equal(input.color, 'coral', 'an app sending no theme gets the one its habit suggests')
+	assert.equal(input.emoji, '🏃')
 
 	assert.deepEqual(events(), [
 		{
 			userId: USER,
 			name: 'pact_created',
 			path: null,
-			metadata: { pact_id: PACT_ID, cadence: 'daily' }
+			metadata: { pact_id: PACT_ID, cadence: 'daily', color: 'coral', emoji: '🏃' }
 		}
 	])
+})
+
+test('create: the crew theme the app picked is the one stored', async () => {
+	await send(pacts.POST, '/api/app/v1/pacts', {
+		method: 'POST',
+		body: { ...body, color: 'violet', emoji: '🧘' }
+	})
+	const input = fake.storeCalls.find((c) => c.method === 'create')?.args[1] as {
+		color: string
+		emoji: string
+	}
+	assert.deepEqual([input.color, input.emoji], ['violet', '🧘'])
 })
 
 test('create: an alias timezone is stored as its canonical name', async () => {

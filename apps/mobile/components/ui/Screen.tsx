@@ -64,6 +64,21 @@ export function Screen({
 			) : (
 				<View style={[{ flex: 1 }, padding, contentStyle]}>{children}</View>
 			)}
+			{/* Without a header, scrolled content would slide under the status bar and the Dynamic
+			    Island: the page's ground masks that strip. */}
+			{!header && scroll ? (
+				<View
+					pointerEvents="none"
+					style={{
+						position: 'absolute',
+						top: 0,
+						left: 0,
+						right: 0,
+						height: insets.top,
+						backgroundColor: c.bg
+					}}
+				/>
+			) : null}
 			{footer ? (
 				<View
 					style={{

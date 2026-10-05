@@ -2,13 +2,15 @@ import { useState } from 'react'
 import { RefreshControl, StyleSheet, View } from 'react-native'
 import { router, useLocalSearchParams } from 'expo-router'
 import { useQueryClient } from '@tanstack/react-query'
-import { Camera, Check, Flame, ScanEye, SearchX, Settings2, UserPlus } from 'lucide-react-native'
+import { Camera, Check, ScanEye, SearchX, Settings2, UserPlus } from 'lucide-react-native'
 import { Chain, chainTiles } from '@/components/pact/Chain'
-import { Confetti } from '@/components/pact/Confetti'
 import { Countdown } from '@/components/pact/Countdown'
-import { KeptCard, useFirstKeptView } from '@/components/pact/KeptCard'
+import { EmojiBurst } from '@/components/pact/EmojiBurst'
+import { KeptCard, useFirstKeptView, useFirstMilestoneView } from '@/components/pact/KeptCard'
+import { CrewBadge } from '@/components/pact/CrewTheme'
 import { MemberRow } from '@/components/pact/MemberRow'
 import { Ring } from '@/components/pact/Ring'
+import { StreakFlame } from '@/components/pact/StreakFlame'
 import { QueryErrorState } from '@/components/QueryError'
 import { FadeSlideIn } from '@/components/motion/FadeSlideIn'
 import { Button } from '@/components/ui/Button'
@@ -24,6 +26,8 @@ import { useColors, useTheme } from '@/contexts/ThemeContext'
 import { useToast } from '@/contexts/ToastContext'
 import { track } from '@/lib/analytics'
 import { errorCode, errorMessage } from '@/lib/api'
+import { crewEmoji, crewTone } from '@/lib/crew'
+import { milestoneFor } from '@/lib/streaks'
 import { haptic } from '@/lib/haptics'
 import {
 	daysBetween,
@@ -75,6 +79,8 @@ export default function PactBoardScreen() {
 	const today = detail?.today ?? null
 	const kept = !!today && today.held_count >= MIN_CREW && today.in_count === today.held_count
 	const celebrate = useFirstKeptView(id, today?.day ?? '', kept)
+	const milestone = kept && detail ? milestoneFor(detail.progress.current_streak) : null
+	const milestoneFirst = useFirstMilestoneView(id, milestone)
 
 	return (
 		<View style={s.root}>
@@ -115,7 +121,12 @@ export default function PactBoardScreen() {
 					<Board detail={detail} myId={myId ?? null} kept={kept} />
 				)}
 			</Screen>
-			{celebrate ? <Confetti /> : null}
+			{(celebrate || milestoneFirst) && detail ? (
+				// The crew's own emoji leads; a milestone adds the trophy.
+				<EmojiBurst
+					emoji={[crewEmoji(detail.pact.emoji), '🎉', '🔥', ...(milestoneFirst ? ['🏆'] : [])]}
+				/>
+			) : null}
 		</View>
 	)
 }
@@ -163,18 +174,31 @@ function Board({
 	const tiles = chainTiles(progress.chain, pact.start_day, pact.end_day, pact.cadence)
 	const totalDays = tiles.length
 	const doneDays = tiles.filter((t) => t.status !== 'future').length
+	// The hero is the crew's own: its bright colour, its mark by the name, its ring.
+	const tone = crewTone(c, pact.color)
 
 	return (
 		<>
 			<FadeSlideIn index={0}>
-				{/* The screen's one dark card: ref 03's countdown and the crew's ring. */}
-				<Card tier="hero" padding="spacious" style={s.hero}>
+				{/* The crew's own card, in its bright colour (ref 01): the countdown and the crew's ring. */}
+				<Card
+					tier="hero"
+					padding="spacious"
+					style={[s.hero, { backgroundColor: tone.fill, borderColor: tone.fill }]}
+				>
 					<View style={s.heroTop}>
 						<View style={s.heroTitle}>
-							<Text variant="eyebrow" style={{ color: c.heroTextSecondary }} numberOfLines={1}>
-								{pact.name}
-							</Text>
-							<Text variant="h1" style={{ color: c.heroText }}>
+							<View style={s.heroEyebrow}>
+								<CrewBadge color={pact.color} emoji={pact.emoji} size={30} onFill />
+								<Text
+									variant="eyebrow"
+									style={[s.heroEyebrowText, { color: tone.onFillMuted }]}
+									numberOfLines={1}
+								>
+									{pact.name}
+								</Text>
+							</View>
+							<Text variant="h1" style={{ color: tone.onFill }}>
 								{pact.habit}
 							</Text>
 						</View>
@@ -184,13 +208,13 @@ function Board({
 								max={today.held_count}
 								size={80}
 								stroke={9}
-								color={c.brandFill}
-								track={c.heroBorder}
+								color={tone.onFill}
+								track={tone.onFillTrack}
 							>
-								<Text variant="h3" tabular style={{ color: c.heroText }}>
+								<Text variant="h3" tabular style={{ color: tone.onFill }}>
 									{today.in_count}/{today.held_count}
 								</Text>
-								<Text variant="caption" style={{ color: c.heroTextSecondary }}>
+								<Text variant="caption" style={{ color: tone.onFillMuted }}>
 									in
 								</Text>
 							</Ring>
@@ -201,15 +225,15 @@ function Board({
 						<View>
 							<Countdown
 								closesAt={today.closes_at}
-								color={c.heroText}
-								unitColor={c.heroTextSecondary}
+								color={tone.onFill}
+								unitColor={tone.onFillMuted}
 							/>
-							<Text variant="bodySm" style={{ color: c.heroTextSecondary }}>
+							<Text variant="bodySm" style={{ color: tone.onFillMuted }}>
 								{kept ? 'until tomorrow’s check-in' : 'left to check in today'}
 							</Text>
 						</View>
 					) : (
-						<Text variant="lead" style={{ color: c.heroTextSecondary }}>
+						<Text variant="lead" style={{ color: tone.onFillMuted }}>
 							{heroLine(detail)}
 						</Text>
 					)}
@@ -217,7 +241,11 @@ function Board({
 			</FadeSlideIn>
 
 			{kept ? (
-				<KeptCard dayNumber={progress.chain.length} streak={progress.current_streak} />
+				<KeptCard
+					dayNumber={progress.chain.length}
+					streak={progress.current_streak}
+					milestone={milestoneFor(progress.current_streak)}
+				/>
 			) : null}
 
 			{today && today.held_count > 0 && !kept ? (
@@ -277,12 +305,7 @@ function Board({
 				<Card padding="spacious" style={s.streakCard}>
 					<View style={s.streakTop}>
 						<View style={s.streak}>
-							<Flame
-								size={34}
-								color={progress.current_streak > 0 ? c.warning : c.textDisabled}
-								fill={progress.current_streak > 0 ? c.warningSoft : 'none'}
-								strokeWidth={2}
-							/>
+							<StreakFlame streak={progress.current_streak} size={34} />
 							<View>
 								<Text variant="display" tabular>
 									{progress.current_streak}
@@ -386,6 +409,8 @@ const s = StyleSheet.create({
 	hero: { gap: 18 },
 	heroTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 16 },
 	heroTitle: { flex: 1, gap: 6 },
+	heroEyebrow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+	heroEyebrowText: { flex: 1 },
 	challenge: { flexDirection: 'row', alignItems: 'center', gap: 14 },
 	challengeIcon: {
 		width: 48,

@@ -45,6 +45,8 @@ export function toWirePact(pact: PactRecord, role: MemberRecord['role'], today: 
 		id: pact.id,
 		name: pact.name,
 		habit: pact.habit,
+		color: pact.color,
+		emoji: pact.emoji,
 		cadence: pact.cadence,
 		timezone: pact.timezone,
 		start_day: dayFromDate(pact.startDay),

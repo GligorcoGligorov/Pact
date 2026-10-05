@@ -87,7 +87,8 @@ export function Ring({
 	size = 88,
 	stroke = 10,
 	children,
-	className
+	className,
+	arcClassName = 'stroke-brand-fill'
 }: {
 	value: number
 	max: number
@@ -95,6 +96,8 @@ export function Ring({
 	stroke?: number
 	children?: React.ReactNode
 	className?: string
+	/** The arc's colour; a crew's page passes its crew colour. */
+	arcClassName?: string
 }) {
 	const r = (size - stroke) / 2
 	const circumference = 2 * Math.PI * r
@@ -123,7 +126,7 @@ export function Ring({
 						strokeLinecap="round"
 						strokeDasharray={circumference}
 						strokeDashoffset={circumference * (1 - share)}
-						className="stroke-brand-fill"
+						className={arcClassName}
 					/>
 				) : null}
 			</svg>

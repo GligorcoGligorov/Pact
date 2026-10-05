@@ -296,6 +296,6 @@ export const dusk: Preset = {
 			modalOut: 170
 		},
 		stagger: { step: 80, cap: 6, distance: 16 },
-		press: { button: 0.96, card: 0.98 }
+		press: { button: 0.94, card: 0.975 }
 	}
 }

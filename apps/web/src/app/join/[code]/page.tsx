@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { cache } from 'react'
 import { Camera, Flame, Link2Off, Lock, Sparkles, Trophy } from 'lucide-react'
-import { inviteCodeSchema } from '@app/contract'
+import { crewThemeOf, inviteCodeSchema } from '@app/contract'
 import { brandConfig } from '@app/brand'
 import { BrandMark } from '@/components/BrandMark'
 import { TrackEvent } from '@/components/TrackEvent'
@@ -11,6 +11,7 @@ import { Countdown } from '@/components/join/Countdown'
 import { CrewGrid, crewLine, Ring } from '@/components/join/Crew'
 import { JoinPanel } from '@/components/join/JoinPanel'
 import { JOIN_PAGE_EVENTS } from '@/lib/analytics/events'
+import { crewHeroStyle, crewStyle } from '@/lib/pacts/crew'
 import { getJoinPage, type JoinPage } from '@/server/pacts/join-page'
 
 export const dynamic = 'force-dynamic'
@@ -82,9 +83,12 @@ export default async function JoinPage({ params }: Props) {
 	const open = page.status === 'active' || page.status === 'lobby'
 	const full = page.members.length >= page.maxMembers
 	const cadence = page.cadence === 'weekdays' ? 'every weekday' : 'every day'
+	const { emoji } = crewThemeOf(page.color, page.emoji)
 
+	// The crew's colour and emoji are the first thing a friend sees: on the name, the hero and
+	// the ring. The join button stays the accent green, the colour of action.
 	return (
-		<div className="min-h-[100svh] bg-bg">
+		<div className="min-h-[100svh] bg-bg" style={crewStyle(page.color)}>
 			<TrackEvent name={JOIN_PAGE_EVENTS.joinPageView} />
 			<main className="mx-auto flex w-full max-w-[440px] flex-col gap-5 px-4 pb-14 pt-5">
 				<header className="flex items-center justify-between">
@@ -98,20 +102,26 @@ export default async function JoinPage({ params }: Props) {
 				</header>
 
 				<section className="enter space-y-2 pt-3">
+					<span
+						className="mb-2 grid h-16 w-16 place-items-center rounded-full bg-[var(--crew-fill)] text-[34px] leading-none shadow-soft"
+						aria-hidden="true"
+					>
+						{emoji}
+					</span>
 					<p className="text-sm font-semibold uppercase tracking-[0.14em] text-ink-tertiary">
 						{invitedLine(page)}
 					</p>
 					<h1 className="font-display text-[44px] font-extrabold leading-[1.02] tracking-[-0.03em] text-ink">
 						{page.name}
 					</h1>
-					<p className="text-lg font-medium text-brand-ink">
+					<p className="text-lg font-medium text-[color:var(--crew-ink)]">
 						{page.habit}, {cadence}
 					</p>
 				</section>
 
 				<section
 					className="enter rounded-card bg-hero p-6 shadow-raised"
-					style={{ '--enter-delay': '80ms' } as React.CSSProperties}
+					style={{ '--enter-delay': '80ms', ...crewHeroStyle(page.color) } as React.CSSProperties}
 				>
 					<div className="flex items-start justify-between gap-4">
 						<div className="min-w-0 space-y-1">
@@ -142,6 +152,7 @@ export default async function JoinPage({ params }: Props) {
 								size={76}
 								stroke={9}
 								className="shrink-0"
+								arcClassName="stroke-hero-text"
 							>
 								<span className="block font-display text-xl font-bold leading-none text-hero-text">
 									{page.inCount}/{page.heldCount}

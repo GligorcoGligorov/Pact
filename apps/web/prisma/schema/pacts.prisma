@@ -17,6 +17,10 @@ model Pact {
   ownerId       String         @map("owner_id") @db.Uuid
   name          String
   habit         String
+  /// The crew's identity colour, a key from @app/contract's PACT_COLORS (never green).
+  color         PactColor      @default(sky)
+  /// One of PACT_EMOJIS, validated at the boundary.
+  emoji         String         @default("✨")
   cadence       PactCadence    @default(daily)
   /// IANA name, validated on create; never changes.
   timezone      String
@@ -170,6 +174,18 @@ model CheckInReport {
   @@unique([checkInId, reporterId])
   @@index([reporterId])
   @@map("check_in_reports")
+}
+
+enum PactColor {
+  coral
+  tangerine
+  sun
+  rose
+  violet
+  ocean
+  sky
+
+  @@map("pact_color")
 }
 
 enum PactCadence {

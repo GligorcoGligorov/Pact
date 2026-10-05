@@ -22,7 +22,7 @@ const FEED_ROW = {
 	member: {
 		select: {
 			profile: { select: { displayName: true } },
-			pact: { select: { name: true, habit: true } }
+			pact: { select: { name: true, habit: true, color: true, emoji: true } }
 		}
 	}
 } as const

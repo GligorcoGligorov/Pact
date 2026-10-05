@@ -121,8 +121,9 @@ export default function HomeScreen() {
 					<FadeSlideIn index={2} style={s.empty}>
 						<EmptyState
 							icon={Handshake}
-							title="No pacts yet"
-							body="Make a pact with a few friends, or join theirs with a code. Miss a day and the whole crew sees it."
+							emoji={['🤝', '🔥', '📸']}
+							title="No pacts yet. Let's fix that."
+							body="Grab a few friends, pick one habit, keep each other honest. Miss a day and the whole crew knows."
 						/>
 						<Button
 							label="New pact"

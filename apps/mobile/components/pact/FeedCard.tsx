@@ -13,7 +13,9 @@ import { REACTIONS, type FeedEntry, type Reaction } from '@app/contract'
 import { PressableScale } from '@/components/motion/PressableScale'
 import { Text } from '@/components/ui/Text'
 import { useTheme } from '@/contexts/ThemeContext'
+import { crewTone } from '@/lib/crew'
 import { Avatar, displayName } from './Avatars'
+import { CrewBadge } from './CrewTheme'
 
 /** The reactions' faces: the data says fire, clap, laugh; the person sees the emoji. */
 export const REACTION_EMOJI: Record<Reaction, string> = { fire: '🔥', clap: '👏', laugh: '😂' }
@@ -56,6 +58,7 @@ export function FeedCard({
 	const name = displayName(entry)
 	const mine = entry.user_id === myId
 	const flagged = entry.verdict === 'suspicious'
+	const tone = crewTone(c, entry.pact_color)
 
 	return (
 		<View
@@ -73,13 +76,22 @@ export function FeedCard({
 				accessibilityLabel={`${mine ? 'You' : name} in ${entry.pact_name}`}
 				style={s.header}
 			>
-				<Avatar userId={entry.user_id} name={name} size={38} />
+				<View>
+					<Avatar userId={entry.user_id} name={name} size={38} />
+					{/* Which crew it's for, at a glance: the crew's mark on the face. */}
+					<View style={[s.crewMark, { borderColor: c.surface }]}>
+						<CrewBadge color={entry.pact_color} emoji={entry.pact_emoji} size={16} />
+					</View>
+				</View>
 				<View style={s.who}>
 					<Text variant="label" numberOfLines={1}>
 						{mine ? 'You' : name}
 					</Text>
 					<Text variant="caption" tone="tertiary" numberOfLines={1}>
-						{entry.pact_name} · {timeAgo(entry.created_at)}
+						<Text variant="caption" style={{ color: tone.ink }}>
+							{entry.pact_name}
+						</Text>
+						{` · ${timeAgo(entry.created_at)}`}
 					</Text>
 				</View>
 				{!mine && onMore ? (
@@ -204,6 +216,7 @@ const s = StyleSheet.create({
 	card: { borderRadius: 26, borderWidth: StyleSheet.hairlineWidth, padding: 14, gap: 12 },
 	header: { flexDirection: 'row', alignItems: 'center', gap: 10 },
 	who: { flex: 1, gap: 1 },
+	crewMark: { position: 'absolute', right: -7, bottom: -5, borderRadius: 10, borderWidth: 2 },
 	more: { padding: 6 },
 	photo: { width: '100%', aspectRatio: 4 / 5, borderRadius: 18 },
 	saver: {

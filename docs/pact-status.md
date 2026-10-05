@@ -3,7 +3,8 @@
 The one "where are we" file. Read it first; update it at the end of every phase.
 Spec: [pact-requirements.md](pact-requirements.md) (R-numbers). Plan: [pact-plan.md](pact-plan.md).
 
-**Last updated:** 2026-10-04, end of Phase 4, on branch `feat/phase-4-web-social` (no CI in
+**Last updated:** 2026-10-05, fun pass steps 0–7 done on branch `feat/fun-pass`. Earlier:
+2026-10-04, end of Phase 4, on branch `feat/phase-4-web-social` (no CI in
 this trial, see [trial-local-only](memory/trial-local-only.md)). Build traps:
 [device-build-traps](memory/device-build-traps.md).
 
@@ -18,6 +19,21 @@ this trial, see [trial-local-only](memory/trial-local-only.md)). Build traps:
 | 4 — Social loop                    | done     | Join page, landing, feed, nudges, crew complete, reminder, safety. 2026-10-04.     |
 | 5 — Closer, results, onboarding    | **next** |                                                                                    |
 | 6 — Dogfood and gates              | –        |                                                                                    |
+
+## Fun pass
+
+Plan: [design/fun-pass-plan.md](design/fun-pass-plan.md) (steps 0–7). Done: 0 (cleanup),
+1 (tactile: `lib/motion.ts` `Springs.pop`, `components/motion/Pop.tsx`, `PressableScale`'s
+`lift`, the springing `Ring`), 2 (crew identity: `PACT_COLORS` / `PACT_EMOJIS` /
+`suggestCrewTheme` in the contract, `pacts.color` + `pacts.emoji` from migration
+`20261005172429_crew_theme`, `@app/brand`'s `CREW_COLORS` and `palette.crew`, `lib/crew.ts`,
+`components/pact/CrewTheme.tsx`; the hero, rings, home cards, feed, web join page and its
+preview image wear it), 3 (`StreakFlame`, levels in `lib/streaks.ts`), 4 (the breathing "not
+yet" ring in `Avatars`), 5 (floating emoji in `EmptyState`, warmer copy), 6 (`EmojiBurst`
+replaces the confetti; 3/7/14 milestones in `KeptCard`, `streak_milestone_viewed`), 7
+(`CrewWall` on the verdict: your print flies onto the crew's wall). Celebration timing is
+`CELEBRATION` in `lib/streaks.ts`, held to ≤400ms / 700ms by a test. Owed: a hand pass on the
+simulator.
 
 ## What exists and where
 
@@ -87,7 +103,7 @@ this trial, see [trial-local-only](memory/trial-local-only.md)). Build traps:
 - Screens: `(tabs)/index` (home), `pact/new`, `pact/[id]/index` (board), `pact/[id]/invite`,
   `pact/[id]/check-in` (consent → camera → preview → verdict), `join/index`, `join/[code]`.
 - `components/pact/`: `PactCard`, `Avatars` (avatars, stack, `crewLine`), `Ring`, `Chain`,
-  `Countdown`, `MemberRow`, `StateChip`, `WeekStrip`, `VerdictView`, `Confetti`.
+  `Countdown`, `MemberRow`, `StateChip`, `WeekStrip`, `VerdictView`, `EmojiBurst`, `CrewWall`.
 - API, additive: `GET pacts` and `GET pacts/:id` both carry `progress` (chain, current and best
   streak); `GET pacts` also carries each pact's `today` board, for home's crew, ring and streak.
 

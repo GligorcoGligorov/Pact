@@ -3,7 +3,7 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native'
 import { Image } from 'expo-image'
 import Animated, { FadeIn, FadeInDown, ZoomIn } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Check, Flame, Info, TriangleAlert } from 'lucide-react-native'
+import { Check, Info, TriangleAlert } from 'lucide-react-native'
 import type { TodayBoard, Verdict } from '@app/contract'
 import { NumberTicker } from '@/components/motion/NumberTicker'
 import { Button } from '@/components/ui/Button'
@@ -11,8 +11,10 @@ import { Card } from '@/components/ui/Card'
 import { Text } from '@/components/ui/Text'
 import { useTheme } from '@/contexts/ThemeContext'
 import { haptic } from '@/lib/haptics'
-import { AvatarStack, crewLine } from './Avatars'
-import { Confetti } from './Confetti'
+import { crewLine } from './Avatars'
+import { CrewWall } from './CrewWall'
+import { EmojiBurst } from './EmojiBurst'
+import { StreakFlame } from './StreakFlame'
 
 /** What shows in the caption's place when the AI has no caption (R14, R16). */
 const FALLBACK: Record<Exclude<Verdict, 'pass' | 'suspicious'>, string> = {
@@ -23,6 +25,15 @@ const FALLBACK: Record<Exclude<Verdict, 'pass' | 'suspicious'>, string> = {
 }
 
 /** How long the streak waits before it ticks up, so the eye lands on it first. */
+/** The big print's tilt; the flight to the wall starts at it. */
+const PRINT_TILT = -3
+
+/** The payoff card fades in at 380ms; the print flies once it's there. */
+const WALL_FLIGHT_DELAY_MS = 480
+
+/** A passed check-in's cheer. */
+const PASS_BURST = ['🎉', '🔥', '👏'] as const
+
 const STREAK_TICK_DELAY_MS = 700
 
 export interface VerdictProgress {
@@ -39,8 +50,8 @@ export interface VerdictProgress {
 /**
  * The verdict, in ref 01's style: a light page, the proof photo as a tilted polaroid (never
  * text over it), the day's result, the AI's caption, then the payoff: the streak ticking up and
- * the crew, with who is still to come. A pass gets confetti and a success haptic; a suspicious
- * one is amber, with no confetti, and still counts (R15).
+ * the crew wall, where your print flies to land beside whoever is in. A pass gets an emoji burst
+ * and a success haptic; a suspicious one is amber, with no burst, and still counts (R15).
  */
 export function VerdictView({
 	photoUri,
@@ -65,6 +76,7 @@ export function VerdictView({
 	const insets = useSafeAreaInsets()
 	const judging = verdict === undefined
 	const viewed = useRef(false)
+	const print = useRef<View>(null)
 
 	useEffect(() => {
 		if (!verdict || viewed.current) return
@@ -91,7 +103,11 @@ export function VerdictView({
 		<View style={[s.root, { backgroundColor: c.bg, paddingTop: insets.top + 28 }]}>
 			{/* The entering animation owns the outer transform, so the tilt lives on the inner card. */}
 			<Animated.View entering={ZoomIn.springify().damping(13)} style={s.polaroidSlot}>
-				<View style={[s.polaroid, { backgroundColor: c.surface }, elevation.raised]}>
+				<View
+					ref={print}
+					collapsable={false}
+					style={[s.polaroid, { backgroundColor: c.surface }, elevation.raised]}
+				>
 					<Image source={{ uri: photoUri }} style={s.photo} contentFit="cover" />
 				</View>
 			</Animated.View>
@@ -133,12 +149,22 @@ export function VerdictView({
 					<Animated.View entering={FadeInDown.delay(380).duration(400)}>
 						<Card padding="normal" style={s.payoff}>
 							<Streak before={progress.streakBefore} after={progress.streakAfter} />
-							{progress.board && progress.board.members.length > 1 ? (
+							{progress.board && progress.board.members.length > 0 ? (
 								<View style={[s.crew, { borderTopColor: c.borderHairline }]}>
-									<AvatarStack members={progress.board.members} size={34} />
-									<Text variant="bodySm" tone="secondary" style={s.crewText} numberOfLines={2}>
-										{crewLine(progress.board.members, progress.myId)}
-									</Text>
+									<CrewWall
+										members={progress.board.members}
+										myId={progress.myId}
+										photoUri={photoUri}
+										land={!judging}
+										delayMs={WALL_FLIGHT_DELAY_MS}
+										from={print}
+										fromTilt={PRINT_TILT}
+									/>
+									{progress.board.members.length > 1 ? (
+										<Text variant="bodySm" tone="secondary" style={s.crewText} numberOfLines={2}>
+											{crewLine(progress.board.members, progress.myId)}
+										</Text>
+									) : null}
 								</View>
 							) : null}
 						</Card>
@@ -153,14 +179,13 @@ export function VerdictView({
 				<Button label="Done" size="lg" fullWidth onPress={onDone} disabled={judging} />
 			</Animated.View>
 
-			{isPass ? <Confetti /> : null}
+			{isPass ? <EmojiBurst emoji={PASS_BURST} /> : null}
 		</View>
 	)
 }
 
 /** "5 → 6" when this check-in kept the day, ticking up; otherwise the streak as it stands. */
 function Streak({ before, after }: { before: number; after: number }) {
-	const { colors: c } = useTheme()
 	const grew = after > before
 	const [shown, setShown] = useState(before)
 	useEffect(() => {
@@ -172,15 +197,9 @@ function Streak({ before, after }: { before: number; after: number }) {
 		return () => clearTimeout(timer)
 	}, [grew, after])
 
-	const lit = after > 0
 	return (
 		<View style={s.streak}>
-			<Flame
-				size={30}
-				color={lit ? c.warning : c.textDisabled}
-				fill={lit ? c.warningSoft : 'none'}
-				strokeWidth={2}
-			/>
+			<StreakFlame streak={after} size={30} />
 			{grew ? (
 				<View style={s.streakNumbers}>
 					<Text variant="h2" tone="tertiary" tabular>
@@ -213,7 +232,7 @@ const s = StyleSheet.create({
 		padding: 10,
 		paddingBottom: 32,
 		borderRadius: 6,
-		transform: [{ rotate: '-3deg' }]
+		transform: [{ rotate: `${PRINT_TILT}deg` }]
 	},
 	photo: { width: '100%', aspectRatio: 4 / 5, borderRadius: 3 },
 	judging: { flex: 1, alignItems: 'center', justifyContent: 'center' },
@@ -236,13 +255,7 @@ const s = StyleSheet.create({
 	streak: { flexDirection: 'row', alignItems: 'center', gap: 10 },
 	streakNumbers: { flexDirection: 'row', alignItems: 'baseline', gap: 8 },
 	streakLabel: { flex: 1, gap: 2 },
-	crew: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		gap: 12,
-		paddingTop: 14,
-		borderTopWidth: StyleSheet.hairlineWidth
-	},
-	crewText: { flex: 1 },
+	crew: { gap: 12, paddingTop: 14, borderTopWidth: StyleSheet.hairlineWidth },
+	crewText: { textAlign: 'center' },
 	footer: { paddingTop: 12 }
 })

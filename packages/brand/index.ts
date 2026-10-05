@@ -16,6 +16,7 @@ import type { Palette, Scheme } from './src/types'
 
 export * from './src/types'
 export * from './src/color'
+export * from './src/crew'
 export { space, layout, TYPE_ROLES, HIT_TARGET } from './src/scale'
 export { AA, AA_NON_TEXT, buildPalette, onColor } from './src/palette'
 export { buildTheme, presets, SCHEMES } from './src/theme'

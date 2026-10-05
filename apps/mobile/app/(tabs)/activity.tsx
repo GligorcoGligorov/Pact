@@ -159,8 +159,9 @@ export default function ActivityScreen() {
 			) : entries.length === 0 ? (
 				<EmptyState
 					icon={Camera}
-					title="No check-ins yet"
-					body="When anyone in your pacts checks in, it shows up here. Be the first today."
+					emoji={['📸', '👏', '😂']}
+					title="Quiet in here…"
+					body="Every check-in from your crews lands here. Go first and set the pace."
 					action={{ label: 'Go to your pacts', onPress: () => router.navigate('/') }}
 				/>
 			) : (

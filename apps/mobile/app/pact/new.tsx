@@ -1,7 +1,16 @@
 import { useEffect, useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 import { router } from 'expo-router'
-import { PACT_HABIT_MAX, PACT_NAME_MAX, PACT_STAKE_MAX, type CreatePactBody } from '@app/contract'
+import {
+	PACT_HABIT_MAX,
+	PACT_NAME_MAX,
+	PACT_STAKE_MAX,
+	suggestCrewTheme,
+	type CreatePactBody,
+	type PactColor,
+	type PactEmoji
+} from '@app/contract'
+import { CrewThemePicker } from '@/components/pact/CrewTheme'
 import { Button } from '@/components/ui/Button'
 import { PageHeader, ScreenTitle } from '@/components/ui/PageHeader'
 import { Screen } from '@/components/ui/Screen'
@@ -19,7 +28,10 @@ type Start = 'today' | 'tomorrow'
 
 const LENGTHS: Length[] = ['7', '14', '21', '30']
 
-/** R1: name, habit, cadence, length, start day and an optional stake. The timezone is the device's. */
+/**
+ * R1: name, habit, cadence, length, start day and an optional stake. The timezone is the device's.
+ * The crew's colour and emoji follow the habit's suggestion until the person picks their own.
+ */
 export default function NewPactScreen() {
 	const create = useCreatePact()
 	const [name, setName] = useState('')
@@ -29,6 +41,11 @@ export default function NewPactScreen() {
 	const [start, setStart] = useState<Start>('today')
 	const [stake, setStake] = useState('')
 	const [showErrors, setShowErrors] = useState(false)
+	const [picked, setPicked] = useState<{ color?: PactColor; emoji?: PactEmoji }>({})
+
+	const suggested = suggestCrewTheme(habit)
+	const color = picked.color ?? suggested.color
+	const emoji = picked.emoji ?? suggested.emoji
 
 	useEffect(() => track('pact_create_started'), [])
 
@@ -49,6 +66,8 @@ export default function NewPactScreen() {
 		const body: CreatePactBody = {
 			name: name.trim(),
 			habit: habit.trim(),
+			color,
+			emoji,
 			cadence,
 			days: Number(length),
 			start_day: start === 'today' ? today : addIsoDays(today, 1),
@@ -62,7 +81,10 @@ export default function NewPactScreen() {
 					pact_id: pact.id,
 					cadence: body.cadence,
 					days: body.days,
-					has_stake: !!body.stake
+					has_stake: !!body.stake,
+					color,
+					emoji,
+					theme_source: picked.color || picked.emoji ? 'picked' : 'suggested'
 				})
 				router.replace(`/pact/${pact.id}/invite`)
 			},
@@ -115,6 +137,15 @@ export default function NewPactScreen() {
 				error={habitError}
 				hint="One thing a photo can prove."
 			/>
+
+			<Field label="Your crew">
+				<CrewThemePicker
+					color={color}
+					emoji={emoji}
+					onColor={(next) => setPicked((p) => ({ ...p, color: next }))}
+					onEmoji={(next) => setPicked((p) => ({ ...p, emoji: next }))}
+				/>
+			</Field>
 
 			<Field label="How often">
 				<SegmentedControl
