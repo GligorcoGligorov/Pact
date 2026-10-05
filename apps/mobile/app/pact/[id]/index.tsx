@@ -2,11 +2,13 @@ import { useState } from 'react'
 import { RefreshControl, StyleSheet, View } from 'react-native'
 import { router, useLocalSearchParams } from 'expo-router'
 import { useQueryClient } from '@tanstack/react-query'
+import { composite } from '@app/brand'
 import { Camera, Check, Flame, ScanEye, SearchX, Settings2, UserPlus } from 'lucide-react-native'
 import { Chain, chainTiles } from '@/components/pact/Chain'
 import { Confetti } from '@/components/pact/Confetti'
 import { Countdown } from '@/components/pact/Countdown'
 import { KeptCard, useFirstKeptView } from '@/components/pact/KeptCard'
+import { CrewBadge } from '@/components/pact/CrewTheme'
 import { MemberRow } from '@/components/pact/MemberRow'
 import { Ring } from '@/components/pact/Ring'
 import { QueryErrorState } from '@/components/QueryError'
@@ -24,6 +26,7 @@ import { useColors, useTheme } from '@/contexts/ThemeContext'
 import { useToast } from '@/contexts/ToastContext'
 import { track } from '@/lib/analytics'
 import { errorCode, errorMessage } from '@/lib/api'
+import { crewTone } from '@/lib/crew'
 import { haptic } from '@/lib/haptics'
 import {
 	daysBetween,
@@ -163,17 +166,30 @@ function Board({
 	const tiles = chainTiles(progress.chain, pact.start_day, pact.end_day, pact.cadence)
 	const totalDays = tiles.length
 	const doneDays = tiles.filter((t) => t.status !== 'future').length
+	// The hero is the crew's own: washed in its colour, its mark by the name, its ring.
+	const tone = crewTone(c, pact.color)
 
 	return (
 		<>
 			<FadeSlideIn index={0}>
 				{/* The screen's one dark card: ref 03's countdown and the crew's ring. */}
-				<Card tier="hero" padding="spacious" style={s.hero}>
+				<Card
+					tier="hero"
+					padding="spacious"
+					style={[s.hero, { backgroundColor: composite(tone.heroWash, c.hero) }]}
+				>
 					<View style={s.heroTop}>
 						<View style={s.heroTitle}>
-							<Text variant="eyebrow" style={{ color: c.heroTextSecondary }} numberOfLines={1}>
-								{pact.name}
-							</Text>
+							<View style={s.heroEyebrow}>
+								<CrewBadge color={pact.color} emoji={pact.emoji} size={28} />
+								<Text
+									variant="eyebrow"
+									style={[s.heroEyebrowText, { color: tone.heroInk }]}
+									numberOfLines={1}
+								>
+									{pact.name}
+								</Text>
+							</View>
 							<Text variant="h1" style={{ color: c.heroText }}>
 								{pact.habit}
 							</Text>
@@ -184,7 +200,7 @@ function Board({
 								max={today.held_count}
 								size={80}
 								stroke={9}
-								color={c.brandFill}
+								color={tone.fill}
 								track={c.heroBorder}
 							>
 								<Text variant="h3" tabular style={{ color: c.heroText }}>
@@ -386,6 +402,8 @@ const s = StyleSheet.create({
 	hero: { gap: 18 },
 	heroTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 16 },
 	heroTitle: { flex: 1, gap: 6 },
+	heroEyebrow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+	heroEyebrowText: { flex: 1 },
 	challenge: { flexDirection: 'row', alignItems: 'center', gap: 14 },
 	challengeIcon: {
 		width: 48,

@@ -8,7 +8,9 @@ import { Button } from '@/components/ui/Button'
 import { Text } from '@/components/ui/Text'
 import { useTheme } from '@/contexts/ThemeContext'
 import { daysBetween, localIsoDate, shortDay } from '@/lib/pacts'
+import { crewTone } from '@/lib/crew'
 import { AvatarStack, crewLine } from './Avatars'
+import { CrewBadge } from './CrewTheme'
 import { Ring } from './Ring'
 import { StateChip, type ChipTone } from './StateChip'
 
@@ -46,6 +48,8 @@ export function PactCard({ pact, myId }: { pact: PactListItem; myId: string | nu
 	const total = daysBetween(pact.start_day, pact.end_day) + 1
 	const day = Math.min(daysBetween(pact.start_day, localIsoDate()) + 1, total)
 	const streak = pact.progress.current_streak
+	// The crew's colour marks what is theirs (ring, mark, name); green stays the check-in.
+	const tone = crewTone(c, pact.color)
 
 	return (
 		<PressableScale
@@ -62,10 +66,13 @@ export function PactCard({ pact, myId }: { pact: PactListItem; myId: string | nu
 		>
 			<View style={s.top}>
 				<View style={s.title}>
-					<Text variant="eyebrow" tone="tertiary" numberOfLines={1}>
-						{pact.name}
-						{pact.status === 'active' ? ` · Day ${day}/${total}` : ''}
-					</Text>
+					<View style={s.eyebrow}>
+						<CrewBadge color={pact.color} emoji={pact.emoji} size={24} />
+						<Text variant="eyebrow" numberOfLines={1} style={[s.eyebrowText, { color: tone.ink }]}>
+							{pact.name}
+							{pact.status === 'active' ? ` · Day ${day}/${total}` : ''}
+						</Text>
+					</View>
 					<Text variant="h2" numberOfLines={2}>
 						{pact.habit}
 					</Text>
@@ -77,13 +84,13 @@ export function PactCard({ pact, myId }: { pact: PactListItem; myId: string | nu
 						max={board.held_count}
 						size={68}
 						stroke={8}
-						color={c.brandFill}
-						track={c.tintTrack}
+						color={tone.fill}
+						track={tone.track}
 					>
 						{board.in_count === board.held_count ? (
 							// Lands once the ring has filled.
 							<Pop delay={RING_FILL_MS}>
-								<Check size={24} color={c.brandInk} strokeWidth={3} />
+								<Check size={24} color={tone.ink} strokeWidth={3} />
 							</Pop>
 						) : (
 							<Text variant="label" tabular>
@@ -151,6 +158,8 @@ const s = StyleSheet.create({
 	},
 	top: { flexDirection: 'row', alignItems: 'flex-start', gap: 16 },
 	title: { flex: 1, gap: 6 },
+	eyebrow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+	eyebrowText: { flex: 1 },
 	social: { flexDirection: 'row', alignItems: 'center', gap: 12 },
 	crew: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },
 	crewText: { flex: 1 },

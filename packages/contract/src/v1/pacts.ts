@@ -29,6 +29,64 @@ export const pactStatusSchema = z.enum(PACT_STATUSES)
 export const PACT_ROLES = ['owner', 'member'] as const
 export const pactRoleSchema = z.enum(PACT_ROLES)
 
+// A crew's identity: one colour and one emoji, each a key from a fixed set, never free text.
+// The colours are @app/brand's CREW_COLORS (a mobile test proves the two lists match); none
+// is green, because green means action. The response fields are plain strings, so a colour or
+// emoji added later never breaks an older app, which falls back to its own default.
+export const PACT_COLORS = ['coral', 'tangerine', 'sun', 'rose', 'violet', 'ocean', 'sky'] as const
+export const pactColorSchema = z.enum(PACT_COLORS)
+export type PactColor = (typeof PACT_COLORS)[number]
+
+export const PACT_EMOJIS = [
+	'🔥',
+	'💪',
+	'🏃',
+	'🧘',
+	'📚',
+	'💧',
+	'🥗',
+	'😴',
+	'🚴',
+	'🏊',
+	'✍️',
+	'🎸',
+	'🚶',
+	'🧠',
+	'☀️',
+	'✨'
+] as const
+export const pactEmojiSchema = z.enum(PACT_EMOJIS)
+export type PactEmoji = (typeof PACT_EMOJIS)[number]
+
+/** What a pact gets when nothing matches its habit, and what a row without a theme reads as. */
+export const DEFAULT_CREW_THEME = { color: 'sky', emoji: '✨' } as const satisfies {
+	color: PactColor
+	emoji: PactEmoji
+}
+
+const THEME_MATCHES: readonly [RegExp, PactEmoji, PactColor][] = [
+	[/\b(run|jog|5k|10k|marathon)/i, '🏃', 'coral'],
+	[/\b(gym|lift|workout|push.?ups?|squat|train)/i, '💪', 'tangerine'],
+	[/\b(yoga|meditat|breath|stretch|mindful)/i, '🧘', 'violet'],
+	[/\b(read|book|page)/i, '📚', 'ocean'],
+	[/\b(water|hydrat|drink)/i, '💧', 'sky'],
+	[/\b(eat|veg|salad|cook|meal|fruit|sugar)/i, '🥗', 'sun'],
+	[/\b(sleep|bed|wake|early)/i, '😴', 'violet'],
+	[/\b(bike|cycl|ride)/i, '🚴', 'tangerine'],
+	[/\b(swim|pool)/i, '🏊', 'sky'],
+	[/\b(write|journal|diary)/i, '✍️', 'rose'],
+	[/\b(guitar|piano|music|sing|practi[cs]e)/i, '🎸', 'rose'],
+	[/\b(walk|steps|hike)/i, '🚶', 'sun'],
+	[/\b(study|learn|duolingo|language|code)/i, '🧠', 'ocean'],
+	[/\b(sun|outside|outdoor)/i, '☀️', 'sun']
+]
+
+/** The colour and emoji suggested for a habit; the create screen starts from it. */
+export function suggestCrewTheme(habit: string): { color: PactColor; emoji: PactEmoji } {
+	for (const [re, emoji, color] of THEME_MATCHES) if (re.test(habit)) return { color, emoji }
+	return DEFAULT_CREW_THEME
+}
+
 export const PACT_NAME_MAX = 60
 export const PACT_HABIT_MAX = 80
 export const PACT_STAKE_MAX = 80
@@ -55,6 +113,10 @@ export const pactSchema = z.object({
 	id: uuid,
 	name: z.string(),
 	habit: z.string(),
+	/** A PACT_COLORS key, as a string so a future colour never breaks this app. */
+	color: z.string(),
+	/** A PACT_EMOJIS value, likewise. */
+	emoji: z.string(),
 	cadence: pactCadenceSchema,
 	/** IANA name, fixed at creation. Every day of the pact is a day here. */
 	timezone: z.string(),
@@ -78,6 +140,9 @@ export const createPactBody = z
 		id: uuid.optional(),
 		name: z.string().trim().min(1).max(PACT_NAME_MAX),
 		habit: z.string().trim().min(1).max(PACT_HABIT_MAX),
+		/** Omitted by apps from before crew themes: the server suggests one from the habit. */
+		color: pactColorSchema.optional(),
+		emoji: pactEmojiSchema.optional(),
 		cadence: pactCadenceSchema,
 		/** Calendar days, for either cadence: a 7-day weekdays pact holds 5 days. */
 		days: z.number().int().min(PACT_MIN_DAYS).max(PACT_MAX_DAYS),
@@ -204,6 +269,8 @@ export const invitePactSchema = pactSchema.pick({
 	id: true,
 	name: true,
 	habit: true,
+	color: true,
+	emoji: true,
 	cadence: true,
 	start_day: true,
 	end_day: true,

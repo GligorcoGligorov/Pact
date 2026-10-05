@@ -1,4 +1,4 @@
-import { endpoints, type MemberState } from '@app/contract'
+import { endpoints, suggestCrewTheme, type MemberState } from '@app/contract'
 import { ApiError } from '@/server/api/app-errors'
 import { createAppRoute, idConflict } from '@/server/api/app-route'
 import {
@@ -98,10 +98,14 @@ export const POST = createAppRoute(endpoints.createPact, async ({ user, body }) 
 		})
 	}
 
+	// An app from before crew themes sends neither: it gets the theme its habit suggests.
+	const suggested = suggestCrewTheme(body.habit)
 	const result = await pactStore.create(user.id, {
 		id: body.id,
 		name: body.name,
 		habit: body.habit,
+		color: body.color ?? suggested.color,
+		emoji: body.emoji ?? suggested.emoji,
 		cadence: body.cadence,
 		timezone,
 		startDay: fromIsoDate(body.start_day),
@@ -111,7 +115,12 @@ export const POST = createAppRoute(endpoints.createPact, async ({ user, body }) 
 	if (result.outcome === 'conflict') throw idConflict()
 	if (result.outcome === 'created') {
 		await recordUserEvent(user.id, PACT_EVENTS.pactCreated, {
-			metadata: { pact_id: result.pact.id, cadence: result.pact.cadence },
+			metadata: {
+				pact_id: result.pact.id,
+				cadence: result.pact.cadence,
+				color: result.pact.color,
+				emoji: result.pact.emoji
+			},
 			dedupeDaily: false
 		})
 	}

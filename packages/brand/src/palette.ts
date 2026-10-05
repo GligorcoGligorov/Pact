@@ -18,6 +18,7 @@ import {
 	toHex,
 	withAlpha
 } from './color'
+import { CREW_COLORS, CREW_SEEDS, type CrewColor, type CrewTone } from './crew'
 import type { Palette, PresetName, SchemeSpec } from './types'
 
 /** WCAG 2.2 AA for normal text. */
@@ -163,6 +164,45 @@ export function buildPalette(
 		heroText: spec.hero.text,
 		heroTextSecondary: spec.hero.textSecondary,
 		heroBorder: withAlpha(spec.hero.text, 0.14),
-		heroBrandInk: ensureContrast(brandFill, [spec.hero.bg], DERIVE_TARGET, 'lighten')
+		heroBrandInk: ensureContrast(brandFill, [spec.hero.bg], DERIVE_TARGET, 'lighten'),
+
+		crew: Object.fromEntries(
+			CREW_COLORS.map((k) => [k, crewTone(CREW_SEEDS[k], spec, grounds, away)])
+		) as Record<CrewColor, CrewTone>
+	}
+}
+
+/** How strongly a crew colour washes over the hero: enough to own it, never enough to shout. */
+const CREW_HERO_WASH = 0.2
+
+/** A crew seed as a full tone, derived like the accent so every text pair clears AA. */
+function crewTone(
+	seed: string,
+	spec: SchemeSpec,
+	grounds: readonly string[],
+	away: 'lighten' | 'darken'
+): CrewTone {
+	const A = spec.alpha
+	const fill = toHex(seed)
+	const dim = withAlpha(fill, A.brandDim)
+	const heroWash = withAlpha(fill, CREW_HERO_WASH)
+	return {
+		fill,
+		onFill: onColor(fill, spec.onFill),
+		ink: ensureContrast(
+			fill,
+			[...grounds, ...grounds.map((g) => composite(dim, g))],
+			DERIVE_TARGET,
+			away
+		),
+		dim,
+		track: withAlpha(fill, A.track + 0.08),
+		heroInk: ensureContrast(
+			fill,
+			[spec.hero.bg, composite(heroWash, spec.hero.bg)],
+			DERIVE_TARGET,
+			'lighten'
+		),
+		heroWash
 	}
 }

@@ -22,6 +22,8 @@ export const GET = createAppRoute(endpoints.getInvite, async ({ user, params }) 
 					id: pact.id,
 					name: pact.name,
 					habit: pact.habit,
+					color: pact.color,
+					emoji: pact.emoji,
 					cadence: pact.cadence,
 					start_day: dayFromDate(pact.startDay),
 					end_day: dayFromDate(pact.endDay),

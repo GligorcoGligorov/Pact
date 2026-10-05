@@ -11,6 +11,10 @@ import {
 	createCheckInUploadBody,
 	createPactBody,
 	createUploadBody,
+	DEFAULT_CREW_THEME,
+	PACT_COLORS,
+	PACT_EMOJIS,
+	suggestCrewTheme,
 	endpoints,
 	ERROR_CODES,
 	inviteCodeSchema,
@@ -215,9 +219,24 @@ test('create pact: 7 to 90 days, a bounded habit and stake, nothing else', () =>
 		{ ...pactBody, cadence: 'weekly' },
 		{ ...pactBody, start_day: '2026-10-01T00:00:00Z' },
 		{ ...pactBody, owner_id: USER },
-		{ ...pactBody, invite_code: 'STREAK' }
+		{ ...pactBody, invite_code: 'STREAK' },
+		{ ...pactBody, color: 'green' },
+		{ ...pactBody, color: '#ff0000' },
+		{ ...pactBody, emoji: '🍕' }
 	]) {
 		assert.equal(createPactBody.safeParse(bad).success, false, JSON.stringify(bad))
+	}
+})
+
+test('crew theme: a fixed colour and emoji, optional for older apps, suggested from the habit', () => {
+	assert.ok(createPactBody.safeParse({ ...pactBody, color: 'violet', emoji: '🧘' }).success)
+	assert.ok(createPactBody.safeParse(pactBody).success)
+	assert.deepEqual(suggestCrewTheme('Run 3 km before 9'), { color: 'coral', emoji: '🏃' })
+	assert.deepEqual(suggestCrewTheme('Read 10 pages'), { color: 'ocean', emoji: '📚' })
+	assert.deepEqual(suggestCrewTheme('Floss'), DEFAULT_CREW_THEME)
+	for (const habit of ['run', 'gym', 'yoga', 'read', 'water', 'salad', 'sleep', 'bike', 'swim']) {
+		const t = suggestCrewTheme(habit)
+		assert.ok(PACT_COLORS.includes(t.color) && PACT_EMOJIS.includes(t.emoji), habit)
 	}
 })
 
@@ -257,6 +276,8 @@ test("pact detail parses a pact with today's board, and one with none", () => {
 		id: ID,
 		name: 'Morning run crew',
 		habit: 'Run 3 km before 9',
+		color: 'coral',
+		emoji: '🏃',
 		cadence: 'daily',
 		timezone: 'Europe/Skopje',
 		start_day: '2026-09-23',

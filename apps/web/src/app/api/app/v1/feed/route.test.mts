@@ -31,7 +31,10 @@ function row(id: string, extra: Record<string, unknown> = {}) {
 		aiReason: 'No thumb in sight.',
 		aiCaption: 'Bold.',
 		createdAt: new Date('2026-09-30T10:00:00.000Z'),
-		member: { profile: { displayName: 'Ben' }, pact: { name: '6am Run Club', habit: 'Run' } },
+		member: {
+			profile: { displayName: 'Ben' },
+			pact: { name: '6am Run Club', habit: 'Run', color: 'coral', emoji: '🏃' }
+		},
 		...extra
 	}
 }
@@ -73,6 +76,8 @@ test('the feed: each check-in with its signed photo, verdict and reactions, and 
 	const [photo, saver] = res.body.entries
 	assert.equal(photo.display_name, 'Ben')
 	assert.equal(photo.pact_name, '6am Run Club')
+	assert.equal(photo.pact_color, 'coral')
+	assert.equal(photo.pact_emoji, '🏃')
 	assert.equal(photo.verdict, 'suspicious')
 	assert.equal(photo.ai_reason, 'No thumb in sight.', 'the crew sees why (R15)')
 	assert.match(photo.photo_url, /token=t/)

@@ -26,6 +26,9 @@ export const feedEntrySchema = z.object({
 	id: uuid,
 	pact_id: uuid,
 	pact_name: z.string(),
+	/** The pact's crew colour and emoji, as on the pact (plain strings, like there). */
+	pact_color: z.string(),
+	pact_emoji: z.string(),
 	habit: z.string(),
 	user_id: uuid,
 	display_name: z.string().nullable(),

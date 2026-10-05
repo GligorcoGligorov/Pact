@@ -5,6 +5,7 @@ import type {
 	CheckInKind,
 	Pact,
 	PactCadence,
+	PactColor,
 	PactMember,
 	PrismaClient
 } from '@prisma/client'
@@ -26,6 +27,8 @@ export type PactRecord = Pick<
 	| 'ownerId'
 	| 'name'
 	| 'habit'
+	| 'color'
+	| 'emoji'
 	| 'cadence'
 	| 'timezone'
 	| 'startDay'
@@ -64,6 +67,8 @@ export type NewPact = {
 	id?: string
 	name: string
 	habit: string
+	color: PactColor
+	emoji: string
 	cadence: PactCadence
 	/** Already canonical (canonicalTimeZone). */
 	timezone: string
@@ -95,6 +100,8 @@ const PACT = {
 	ownerId: true,
 	name: true,
 	habit: true,
+	color: true,
+	emoji: true,
 	cadence: true,
 	timezone: true,
 	startDay: true,
@@ -230,6 +237,8 @@ export function createPactStore(client: PrismaClient, codes: () => string = newI
 								ownerId: userId,
 								name: input.name,
 								habit: input.habit,
+								color: input.color,
+								emoji: input.emoji,
 								cadence: input.cadence,
 								timezone: input.timezone,
 								startDay: input.startDay,

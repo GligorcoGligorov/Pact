@@ -18,6 +18,8 @@ export function pactRow(overrides: Partial<PactRecord> = {}): PactRecord {
 		ownerId: USER,
 		name: 'Morning run crew',
 		habit: 'Run 3 km before 9',
+		color: 'coral',
+		emoji: '🏃',
 		cadence: 'daily',
 		timezone: 'Europe/Skopje',
 		startDay: at('2026-09-23'),

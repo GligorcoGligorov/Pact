@@ -218,6 +218,8 @@ async function main() {
 		ownerId: idOf('ana'),
 		name: '6am Run Club',
 		habit: 'Run for 20 minutes',
+		color: 'coral' as const,
+		emoji: '🏃',
 		cadence: 'daily' as const,
 		timezone: timezone!,
 		startDay: dateFromDay(startDay),

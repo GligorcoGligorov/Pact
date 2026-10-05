@@ -21,6 +21,8 @@ import {
 	AA_NON_TEXT,
 	buildTheme,
 	composite,
+	CREW_SEEDS,
+	toOklch,
 	contrast,
 	type Palette,
 	type PresetName,
@@ -113,6 +115,22 @@ function checks(p: Palette): Check[] {
 	need('heroText on hero', p.heroText, p.hero)
 	need('heroTextSecondary on hero', p.heroTextSecondary, p.hero)
 	need('heroBrandInk on hero', p.heroBrandInk, p.hero)
+	// Crew colours: identity tones, held to the same bar as the accent.
+	for (const [k, tone] of Object.entries(p.crew)) {
+		need(`crew.${k}.onFill on fill`, tone.onFill, tone.fill)
+		need(`crew.${k}.heroInk on hero`, tone.heroInk, p.hero)
+		need(`crew.${k}.heroInk on heroWash`, tone.heroInk, composite(tone.heroWash, p.hero))
+		need(`heroText on crew.${k}.heroWash`, p.heroText, composite(tone.heroWash, p.hero))
+		need(
+			`heroTextSecondary on crew.${k}.heroWash`,
+			p.heroTextSecondary,
+			composite(tone.heroWash, p.hero)
+		)
+		for (const [g, bg] of Object.entries(grounds)) {
+			need(`crew.${k}.ink on ${g}`, tone.ink, bg)
+			need(`crew.${k}.ink on dim over ${g}`, tone.ink, composite(tone.dim, bg))
+		}
+	}
 	// Worst case for art: the scrim over a pure-white image.
 	need('inkOnArt on artScrim over white', p.inkOnArt, composite(p.artScrim, '#ffffff'))
 
@@ -154,6 +172,14 @@ describe('palette structure', () => {
 	it.each(PRESETS)('%s: brandFill is exactly the configured accent', (preset) => {
 		expect(buildTheme(preset, '#3B82F6').palettes.light.brandFill).toBe('#3b82f6')
 		expect(buildTheme(preset, '#3B82F6').palettes.dark.brandFill).toBe('#3b82f6')
+	})
+
+	it('no crew colour is green: green stays the colour of action', () => {
+		for (const seed of Object.values(CREW_SEEDS)) {
+			const { h, c } = toOklch(seed)
+			// Success greens sit around hue 150; keep every chromatic seed clear of 110–190.
+			if (c > 0.04) expect(h < 110 || h > 190).toBe(true)
+		}
 	})
 
 	it('rejects an accent that is not a hex', () => {

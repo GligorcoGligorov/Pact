@@ -36,6 +36,8 @@ export const GET = createAppRoute(endpoints.listFeed, async ({ user, query }) =>
 				id: row.id,
 				pact_id: row.pactId,
 				pact_name: row.member.pact.name,
+				pact_color: row.member.pact.color,
+				pact_emoji: row.member.pact.emoji,
 				habit: row.member.pact.habit,
 				user_id: row.userId,
 				display_name: row.member.profile.displayName,

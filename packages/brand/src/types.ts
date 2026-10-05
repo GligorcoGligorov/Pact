@@ -4,6 +4,7 @@
  * screen noticing.
  */
 
+import type { CrewColor, CrewTone } from './crew'
 import type { Layout, Space } from './scale'
 
 export type PresetName = 'dusk' | 'daylight'
@@ -131,6 +132,9 @@ export interface Palette {
 	heroBorder: string
 	/** The accent as text on `hero`. */
 	heroBrandInk: string
+
+	/** Each crew colour as a tone in this palette (src/crew.ts). Identity, never action. */
+	crew: Record<CrewColor, CrewTone>
 }
 
 export type ColorRole = {
