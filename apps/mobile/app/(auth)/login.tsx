@@ -111,6 +111,13 @@ const stepOut = FadeOut.duration(Durations.exit).reduceMotion(ReduceMotion.Syste
 
 type Provider = 'google' | 'apple'
 
+/**
+ * Apple and Google sign-in are off in this build: a free Apple ID can't sign the Sign in with
+ * Apple entitlement and no Google client is configured, so Pact signs in by email code only
+ * (docs/memory/trial-local-only.md). Turn both on together, never Google alone (Apple 4.8).
+ */
+const SOCIAL_SIGN_IN = false
+
 /** Provider buttons match the large Button (Apple's button takes an explicit height). */
 const PROVIDER_HEIGHT = 56
 
@@ -407,55 +414,59 @@ export default function LoginScreen() {
 								onPress={sendCode}
 							/>
 
-							<View style={s.divider}>
-								<View style={s.rule} />
-								<Text variant="caption" tone="tertiary">
-									or
-								</Text>
-								<View style={s.rule} />
-							</View>
+							{SOCIAL_SIGN_IN ? (
+								<>
+									<View style={s.divider}>
+										<View style={s.rule} />
+										<Text variant="caption" tone="tertiary">
+											or
+										</Text>
+										<View style={s.rule} />
+									</View>
 
-							<View style={s.providers}>
-								{nativeApple ? (
-									<View
-										pointerEvents={loading !== null ? 'none' : 'auto'}
-										style={loading !== null && s.dimmed}
-									>
-										<AppleAuthentication.AppleAuthenticationButton
-											buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
-											buttonStyle={
-												isDark
-													? AppleAuthentication.AppleAuthenticationButtonStyle.WHITE
-													: AppleAuthentication.AppleAuthenticationButtonStyle.BLACK
-											}
-											cornerRadius={Math.min(radii.button, PROVIDER_HEIGHT / 2)}
-											style={s.appleButton}
-											onPress={signInWithApple}
+									<View style={s.providers}>
+										{nativeApple ? (
+											<View
+												pointerEvents={loading !== null ? 'none' : 'auto'}
+												style={loading !== null && s.dimmed}
+											>
+												<AppleAuthentication.AppleAuthenticationButton
+													buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
+													buttonStyle={
+														isDark
+															? AppleAuthentication.AppleAuthenticationButtonStyle.WHITE
+															: AppleAuthentication.AppleAuthenticationButtonStyle.BLACK
+													}
+													cornerRadius={Math.min(radii.button, PROVIDER_HEIGHT / 2)}
+													style={s.appleButton}
+													onPress={signInWithApple}
+												/>
+											</View>
+										) : (
+											<Button
+												label="Continue with Apple"
+												variant="outline"
+												size="lg"
+												fullWidth
+												loading={loading === 'apple'}
+												disabled={loading !== null && loading !== 'apple'}
+												icon={(color) => <Ionicons name="logo-apple" size={18} color={color} />}
+												onPress={() => signInWithProvider('apple')}
+											/>
+										)}
+										<Button
+											label="Continue with Google"
+											variant="outline"
+											size="lg"
+											fullWidth
+											loading={loading === 'google'}
+											disabled={loading !== null && loading !== 'google'}
+											icon={(color) => <Ionicons name="logo-google" size={16} color={color} />}
+											onPress={() => signInWithProvider('google')}
 										/>
 									</View>
-								) : (
-									<Button
-										label="Continue with Apple"
-										variant="outline"
-										size="lg"
-										fullWidth
-										loading={loading === 'apple'}
-										disabled={loading !== null && loading !== 'apple'}
-										icon={(color) => <Ionicons name="logo-apple" size={18} color={color} />}
-										onPress={() => signInWithProvider('apple')}
-									/>
-								)}
-								<Button
-									label="Continue with Google"
-									variant="outline"
-									size="lg"
-									fullWidth
-									loading={loading === 'google'}
-									disabled={loading !== null && loading !== 'google'}
-									icon={(color) => <Ionicons name="logo-google" size={16} color={color} />}
-									onPress={() => signInWithProvider('google')}
-								/>
-							</View>
+								</>
+							) : null}
 						</Animated.View>
 					) : (
 						<Animated.View key="otp" entering={stepIn} exiting={stepOut} style={s.step}>
