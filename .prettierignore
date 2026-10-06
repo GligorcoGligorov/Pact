@@ -11,3 +11,6 @@
 package-lock.json
 .claude/settings.json
 .claude/settings.local.json
+
+# Built by docs/presentation/build.mjs: one 5 MB file of inlined images and fonts.
+docs/presentation/index.html

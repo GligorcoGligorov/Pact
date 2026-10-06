@@ -1,0 +1,1781 @@
+<!doctype html>
+<!--
+	Pact: the final presentation. This is the source; `node docs/presentation/build.mjs`
+	inlines the shots (`shot:<name>`, from docs/showcase/) and the fonts (`font:<weight>`)
+	into index.html and prints pact.pdf. Edit this file, never index.html.
+-->
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Pact</title>
+		<style>
+			@font-face {
+				font-family: 'Bricolage';
+				font-weight: 400;
+				src: url(font:400) format('truetype');
+			}
+			@font-face {
+				font-family: 'Bricolage';
+				font-weight: 600;
+				src: url(font:600) format('truetype');
+			}
+			@font-face {
+				font-family: 'Bricolage';
+				font-weight: 800;
+				src: url(font:800) format('truetype');
+			}
+
+			:root {
+				--ground: #f8faed;
+				--ground-2: #eef2df;
+				--ink: #232323;
+				--muted: #62675b;
+				--line: #e2e6d2;
+				--accent: #2f7d3d;
+				--accent-hi: #3d9a4d;
+				--accent-soft: #dcebd5;
+				--card: #ffffff;
+				--coral: #ff6b5e;
+				--tangerine: #ff9640;
+				--sun: #ffc93d;
+				--rose: #f45d9c;
+				--violet: #9a6bff;
+				--ocean: #3f7cf5;
+				--sky: #4cc3f5;
+				--shadow: 0 40px 80px -30px rgba(40, 54, 20, 0.32), 0 14px 30px -14px rgba(40, 54, 20, 0.2);
+				--shadow-sm:
+					0 18px 40px -20px rgba(40, 54, 20, 0.28), 0 4px 12px -6px rgba(40, 54, 20, 0.14);
+				--ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+			}
+
+			* {
+				box-sizing: border-box;
+			}
+			html,
+			body {
+				margin: 0;
+				height: 100%;
+			}
+			body {
+				background: var(--ground);
+				color: var(--ink);
+				font-family:
+					'Bricolage',
+					system-ui,
+					-apple-system,
+					sans-serif;
+				overflow: hidden;
+				-webkit-font-smoothing: antialiased;
+			}
+
+			/* The stage: every slide is 1920×1080, scaled to fit the window. */
+			#deck {
+				position: fixed;
+				left: 50%;
+				top: 50%;
+				width: 1920px;
+				height: 1080px;
+				transform-origin: center;
+			}
+			.slide {
+				position: absolute;
+				inset: 0;
+				padding: 96px 128px;
+				background: var(--ground);
+				overflow: hidden;
+				opacity: 0;
+				visibility: hidden;
+				transition:
+					opacity 0.5s ease,
+					visibility 0.5s;
+			}
+			.slide.active {
+				opacity: 1;
+				visibility: visible;
+			}
+			.rise {
+				opacity: 0;
+				transform: translateY(22px);
+				transition:
+					opacity 0.7s ease,
+					transform 0.8s var(--ease);
+				transition-delay: var(--d, 0s);
+			}
+			.slide.active .rise {
+				opacity: 1;
+				transform: none;
+			}
+
+			#progress {
+				position: fixed;
+				left: 0;
+				bottom: 0;
+				height: 4px;
+				background: var(--accent);
+				transition: width 0.4s var(--ease);
+				z-index: 2;
+			}
+
+			/* Type */
+			.kicker {
+				font-weight: 600;
+				font-size: 24px;
+				letter-spacing: 0.16em;
+				text-transform: uppercase;
+				color: var(--accent);
+			}
+			.h1,
+			.h2 {
+				font-weight: 800;
+				letter-spacing: -0.035em;
+				line-height: 0.98;
+				margin: 22px 0 0;
+				text-wrap: balance;
+			}
+			.h1 {
+				font-size: 112px;
+			}
+			.h2 {
+				font-size: 92px;
+			}
+			.sub {
+				font-size: 36px;
+				line-height: 1.3;
+				color: var(--muted);
+				margin: 34px 0 0;
+				max-width: 720px;
+				text-wrap: pretty;
+			}
+			.green {
+				color: var(--accent);
+			}
+			.center {
+				text-align: center;
+			}
+
+			/* Layout */
+			.split {
+				display: grid;
+				grid-template-columns: 1fr auto;
+				align-items: center;
+				gap: 72px;
+				height: 100%;
+			}
+			.stack {
+				display: flex;
+				flex-direction: column;
+			}
+
+			/* Chrome on every slide */
+			.foot {
+				position: absolute;
+				left: 128px;
+				right: 128px;
+				bottom: 44px;
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				font-size: 20px;
+				font-weight: 600;
+				color: var(--muted);
+				opacity: 0.8;
+			}
+			.foot .mark {
+				display: flex;
+				align-items: center;
+				gap: 12px;
+				color: var(--ink);
+			}
+			.logo {
+				display: inline-grid;
+				place-items: center;
+				width: 34px;
+				height: 34px;
+				border-radius: 10px;
+				background: linear-gradient(160deg, var(--accent-hi), var(--accent));
+				color: #fff;
+				font-weight: 800;
+				font-size: 20px;
+			}
+
+			/* Devices */
+			.phone {
+				width: var(--w, 380px);
+				padding: calc(var(--w, 380px) * 0.032);
+				border-radius: calc(var(--w, 380px) * 0.16);
+				background: #151515;
+				box-shadow:
+					inset 0 0 0 2px #3b3b3b,
+					inset 0 0 0 5px #0c0c0c,
+					var(--shadow);
+			}
+			.phone img,
+			.phone .screen {
+				display: block;
+				width: 100%;
+				border-radius: calc(var(--w, 380px) * 0.13);
+				background: var(--ground);
+			}
+			.phone .screen {
+				overflow: hidden;
+			}
+			.phone .screen img {
+				border-radius: 0;
+			}
+			.webbar {
+				position: relative;
+				height: calc(var(--w, 380px) * 0.2);
+				display: flex;
+				align-items: flex-end;
+				justify-content: center;
+				padding-bottom: calc(var(--w, 380px) * 0.02);
+				background: var(--ground);
+			}
+			.webbar::before {
+				content: '';
+				position: absolute;
+				top: calc(var(--w, 380px) * 0.03);
+				left: 50%;
+				width: 30%;
+				height: calc(var(--w, 380px) * 0.085);
+				transform: translateX(-50%);
+				background: #000;
+				border-radius: 99px;
+			}
+			.webbar span {
+				font-size: calc(var(--w, 380px) * 0.036);
+				font-weight: 600;
+				color: var(--muted);
+				background: #fff;
+				border-radius: 99px;
+				padding: 0.35em 1.1em;
+				box-shadow: 0 0 0 1px var(--line);
+			}
+			.browser {
+				border-radius: 18px;
+				background: #fff;
+				overflow: hidden;
+				box-shadow:
+					0 0 0 1px rgba(0, 0, 0, 0.06),
+					var(--shadow);
+			}
+			.browser .bar {
+				height: 44px;
+				display: flex;
+				align-items: center;
+				gap: 8px;
+				padding: 0 18px;
+				background: #f1f2ea;
+				border-bottom: 1px solid var(--line);
+			}
+			.browser .bar i {
+				width: 12px;
+				height: 12px;
+				border-radius: 50%;
+				background: #d8dacd;
+			}
+			.browser .bar b {
+				margin-left: 18px;
+				flex: 1;
+				max-width: 420px;
+				font-size: 15px;
+				font-weight: 600;
+				color: var(--muted);
+				background: #fff;
+				border-radius: 8px;
+				padding: 5px 14px;
+			}
+			.browser img {
+				display: block;
+				width: 100%;
+			}
+
+			.card {
+				background: var(--card);
+				border-radius: 32px;
+				box-shadow: var(--shadow-sm);
+			}
+			.chip {
+				display: inline-flex;
+				align-items: center;
+				gap: 12px;
+				padding: 14px 24px;
+				border-radius: 99px;
+				font-size: 26px;
+				font-weight: 600;
+				background: var(--card);
+				box-shadow: var(--shadow-sm);
+			}
+			.label {
+				font-size: 26px;
+				font-weight: 600;
+				color: var(--muted);
+				margin-top: 30px;
+				text-align: center;
+			}
+
+			/* Crew faces, as the app draws them */
+			.faces {
+				display: flex;
+				gap: 18px;
+			}
+			.face {
+				position: relative;
+				width: 92px;
+				height: 92px;
+				border-radius: 50%;
+				display: grid;
+				place-items: center;
+				font-weight: 600;
+				font-size: 30px;
+			}
+			.face.da {
+				background: #dde9f7;
+				color: #2f62b8;
+			}
+			.face.be {
+				background: #fbe7d3;
+				color: #a2541a;
+			}
+			.face.cl {
+				background: #e3e8d8;
+				color: #3c4436;
+			}
+			.face.an {
+				background: #f8dfdf;
+				color: #b0363a;
+			}
+			.face.in::after {
+				content: '✓';
+				position: absolute;
+				right: -2px;
+				bottom: -2px;
+				width: 32px;
+				height: 32px;
+				border-radius: 50%;
+				background: var(--accent);
+				color: #fff;
+				font-size: 18px;
+				display: grid;
+				place-items: center;
+				box-shadow: 0 0 0 4px var(--ground);
+			}
+			.loud .face.in::after {
+				box-shadow: 0 0 0 4px var(--accent);
+				background: #fff;
+				color: var(--accent);
+			}
+
+			/* ----- 1. Title ----- */
+			.s-title .glow {
+				position: absolute;
+				right: -200px;
+				top: -160px;
+				width: 1300px;
+				height: 1300px;
+				background: radial-gradient(closest-side, rgba(61, 154, 77, 0.2), transparent 70%);
+			}
+			.s-title .brand {
+				display: flex;
+				align-items: center;
+				gap: 18px;
+				font-size: 44px;
+				font-weight: 800;
+				letter-spacing: -0.02em;
+			}
+			.s-title .brand .logo {
+				width: 64px;
+				height: 64px;
+				border-radius: 18px;
+				font-size: 38px;
+			}
+			.s-title .h1 {
+				font-size: 108px;
+				margin-top: 64px;
+				max-width: 880px;
+			}
+			.by {
+				margin-top: 64px;
+				font-size: 30px;
+				color: var(--muted);
+			}
+			.by b {
+				color: var(--ink);
+				font-weight: 600;
+			}
+			.crewdots {
+				display: flex;
+				gap: 12px;
+				margin-top: 28px;
+			}
+			.crewdots i {
+				width: 22px;
+				height: 22px;
+				border-radius: 50%;
+			}
+			.fan {
+				position: relative;
+				width: 760px;
+				height: 888px;
+				margin-top: -20px;
+			}
+			.fan > div {
+				position: absolute;
+				top: 50%;
+				left: 50%;
+			}
+			.fan .f1 {
+				transform: translate(-118%, -44%) rotate(-9deg);
+			}
+			.fan .f2 {
+				transform: translate(-50%, -50%);
+				z-index: 2;
+			}
+			.fan .f3 {
+				transform: translate(18%, -44%) rotate(9deg);
+			}
+
+			/* ----- 2. Problem → idea ----- */
+			.pair {
+				display: grid;
+				grid-template-columns: 1fr 120px 1fr;
+				align-items: center;
+				height: 100%;
+				padding-bottom: 40px;
+			}
+			.panel {
+				border-radius: 44px;
+				padding: 72px 68px;
+				display: flex;
+				flex-direction: column;
+				height: 640px;
+			}
+			.panel .h2 {
+				font-size: 88px;
+			}
+			.panel.quiet {
+				background: var(--ground-2);
+			}
+			.panel.quiet .kicker {
+				color: var(--muted);
+			}
+			.panel.loud {
+				background: linear-gradient(160deg, var(--accent-hi), var(--accent));
+				color: #fff;
+				box-shadow: var(--shadow);
+			}
+			.panel.loud .kicker {
+				color: #d5ecd0;
+			}
+			.panel .bottom {
+				margin-top: auto;
+			}
+			.days {
+				display: flex;
+				gap: 16px;
+			}
+			.days i {
+				width: 74px;
+				height: 74px;
+				border-radius: 20px;
+				background: var(--accent);
+				display: grid;
+				place-items: center;
+				color: #fff;
+				font-style: normal;
+				font-size: 30px;
+				font-weight: 800;
+			}
+			.days i.gone {
+				background: transparent;
+				border: 3px dashed #c3c8b4;
+				color: transparent;
+			}
+			.days i.gone:nth-child(5) {
+				opacity: 0.75;
+			}
+			.days i.gone:nth-child(6) {
+				opacity: 0.5;
+			}
+			.days i.gone:nth-child(7) {
+				opacity: 0.25;
+			}
+			.panel .note {
+				font-size: 30px;
+				color: var(--muted);
+				margin-top: 26px;
+			}
+			.pair .arrow {
+				display: grid;
+				place-items: center;
+				font-size: 64px;
+				color: var(--accent);
+				font-weight: 800;
+			}
+			.stake {
+				margin-top: 34px;
+				background: rgba(255, 255, 255, 0.16);
+				color: #fff;
+				box-shadow: none;
+			}
+
+			/* ----- 3. Three steps ----- */
+			.steps {
+				display: grid;
+				grid-template-columns: repeat(3, 1fr);
+				gap: 60px;
+				margin-top: 54px;
+				justify-items: center;
+			}
+			.step {
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+			}
+			.step .n {
+				display: inline-grid;
+				place-items: center;
+				width: 48px;
+				height: 48px;
+				border-radius: 50%;
+				background: var(--accent);
+				color: #fff;
+				font-weight: 800;
+				font-size: 24px;
+				margin-right: 14px;
+			}
+			.step .label {
+				display: flex;
+				align-items: center;
+				color: var(--ink);
+				font-size: 30px;
+				margin-top: 34px;
+			}
+
+			/* ----- 4. Sign-in ----- */
+			.signin {
+				position: relative;
+				width: 1000px;
+				height: 888px;
+			}
+			.signin > div {
+				position: absolute;
+			}
+			.otp {
+				display: flex;
+				gap: 12px;
+				margin-top: 44px;
+			}
+			.otp span {
+				width: 72px;
+				height: 88px;
+				border-radius: 18px;
+				background: var(--card);
+				box-shadow: var(--shadow-sm);
+				display: grid;
+				place-items: center;
+				font-size: 44px;
+				font-weight: 800;
+			}
+
+			/* ----- 5. Home ----- */
+			.points {
+				list-style: none;
+				padding: 0;
+				margin: 56px 0 0;
+				display: grid;
+				gap: 22px;
+			}
+			.points li {
+				display: flex;
+				align-items: center;
+				gap: 22px;
+				font-size: 34px;
+				font-weight: 600;
+			}
+			.points li em {
+				font-style: normal;
+				width: 68px;
+				height: 68px;
+				border-radius: 20px;
+				background: var(--card);
+				box-shadow: var(--shadow-sm);
+				display: grid;
+				place-items: center;
+				font-size: 34px;
+			}
+
+			/* ----- 6. Create ----- */
+			.swatches {
+				display: flex;
+				gap: 18px;
+				margin-top: 56px;
+			}
+			.swatches i {
+				width: 72px;
+				height: 72px;
+				border-radius: 50%;
+				box-shadow: var(--shadow-sm);
+			}
+			.swatches i.on {
+				outline: 5px solid var(--ink);
+				outline-offset: 5px;
+			}
+			.emojis {
+				display: flex;
+				gap: 14px;
+				margin-top: 30px;
+				font-size: 44px;
+			}
+			.emojis span {
+				width: 72px;
+				height: 72px;
+				border-radius: 20px;
+				background: var(--card);
+				display: grid;
+				place-items: center;
+				box-shadow: var(--shadow-sm);
+			}
+
+			/* ----- 7. Invite ----- */
+			.trio {
+				display: flex;
+				justify-content: center;
+				align-items: flex-end;
+				gap: 84px;
+				margin-top: 40px;
+			}
+			.chat {
+				width: 520px;
+			}
+			.bubble {
+				display: inline-block;
+				background: #e9ebe0;
+				border-radius: 28px 28px 28px 8px;
+				padding: 18px 26px;
+				font-size: 26px;
+				margin-bottom: 16px;
+			}
+			.preview {
+				border-radius: 24px;
+				overflow: hidden;
+				background: #fff;
+				box-shadow: var(--shadow);
+			}
+			.preview img {
+				display: block;
+				width: 100%;
+			}
+			.preview div {
+				padding: 16px 22px 20px;
+				font-size: 22px;
+			}
+			.preview div b {
+				display: block;
+				font-size: 24px;
+			}
+			.preview div span {
+				color: var(--muted);
+			}
+
+			/* ----- 8. Challenge ----- */
+			.days-list {
+				margin-top: 52px;
+				display: grid;
+				gap: 16px;
+				width: 720px;
+			}
+			.day {
+				display: grid;
+				grid-template-columns: 150px 1fr auto;
+				align-items: center;
+				padding: 22px 30px;
+				border-radius: 24px;
+				min-height: 86px;
+				font-size: 30px;
+				background: var(--card);
+				box-shadow: var(--shadow-sm);
+			}
+			.day small {
+				font-size: 22px;
+				font-weight: 600;
+				letter-spacing: 0.1em;
+				text-transform: uppercase;
+				color: var(--muted);
+			}
+			.day.past {
+				opacity: 0.5;
+				box-shadow: none;
+				background: var(--ground-2);
+			}
+			.day.today {
+				background: var(--accent);
+				color: #fff;
+				font-weight: 600;
+				transform: scale(1.04);
+				box-shadow: var(--shadow);
+			}
+			.day.today small {
+				color: #d5ecd0;
+			}
+			.day.next {
+				background: transparent;
+				box-shadow: none;
+				border: 3px dashed #c3c8b4;
+				color: var(--muted);
+			}
+
+			/* ----- 9. Judge ----- */
+			.verdict {
+				position: relative;
+				width: 800px;
+				height: 888px;
+			}
+			.polaroid {
+				position: absolute;
+				background: #fff;
+				padding: 22px 22px 84px;
+				border-radius: 10px;
+				box-shadow: var(--shadow);
+			}
+			.polaroid .photo {
+				width: 100%;
+				overflow: hidden;
+				border-radius: 4px;
+				position: relative;
+			}
+			.polaroid .photo img {
+				position: absolute;
+				display: block;
+			}
+			.polaroid figcaption {
+				position: absolute;
+				left: 0;
+				right: 0;
+				bottom: 24px;
+				text-align: center;
+				font-size: 26px;
+				font-weight: 600;
+			}
+			.vcard {
+				position: absolute;
+				padding: 30px 34px;
+				width: 470px;
+			}
+			.vcard .tag {
+				display: inline-flex;
+				align-items: center;
+				gap: 10px;
+				font-size: 22px;
+				font-weight: 600;
+				letter-spacing: 0.08em;
+				text-transform: uppercase;
+			}
+			.vcard p {
+				margin: 14px 0 0;
+				font-size: 30px;
+				line-height: 1.3;
+			}
+			.pass .tag {
+				color: var(--accent);
+			}
+			.flag .tag {
+				color: #b06a00;
+			}
+
+			/* ----- 10. Board ----- */
+			.banner {
+				position: absolute;
+				width: 520px;
+				padding: 22px 26px;
+				border-radius: 30px;
+				background: rgba(255, 255, 255, 0.86);
+				backdrop-filter: blur(16px);
+				box-shadow: var(--shadow);
+				display: grid;
+				grid-template-columns: 56px 1fr;
+				gap: 6px 18px;
+				font-size: 24px;
+			}
+			.banner .logo {
+				width: 56px;
+				height: 56px;
+				border-radius: 14px;
+				font-size: 30px;
+				grid-row: span 2;
+			}
+			.banner b {
+				display: flex;
+				justify-content: space-between;
+				font-weight: 600;
+			}
+			.banner b small {
+				color: var(--muted);
+				font-weight: 400;
+				font-size: 20px;
+			}
+
+			/* ----- 11. Feed ----- */
+			.react {
+				position: absolute;
+				width: 104px;
+				height: 104px;
+				border-radius: 50%;
+				background: #fff;
+				box-shadow: var(--shadow);
+				display: grid;
+				place-items: center;
+				font-size: 52px;
+			}
+			.react b {
+				position: absolute;
+				right: -6px;
+				bottom: -4px;
+				font-size: 20px;
+				background: var(--ink);
+				color: #fff;
+				border-radius: 99px;
+				padding: 3px 10px;
+			}
+
+			/* ----- 12. Fun ----- */
+			.fun {
+				display: grid;
+				grid-template-columns: repeat(3, 1fr);
+				gap: 44px;
+				margin-top: 56px;
+			}
+			.fun .card {
+				padding: 46px 44px 44px;
+				height: 560px;
+				display: flex;
+				flex-direction: column;
+				overflow: hidden;
+				position: relative;
+			}
+			.fun h3 {
+				font-size: 40px;
+				font-weight: 800;
+				letter-spacing: -0.02em;
+				margin: auto 0 0;
+			}
+			.fun p {
+				font-size: 26px;
+				color: var(--muted);
+				margin: 12px 0 0;
+				line-height: 1.3;
+			}
+			.flames {
+				display: flex;
+				align-items: flex-end;
+				justify-content: space-between;
+				height: 220px;
+				padding: 0 6px;
+			}
+			.flames div {
+				text-align: center;
+				font-size: 22px;
+				font-weight: 600;
+				color: var(--muted);
+			}
+			.flames span {
+				display: block;
+				line-height: 1;
+				margin-bottom: 14px;
+			}
+			.burst {
+				position: relative;
+				height: 260px;
+				display: grid;
+				place-items: center;
+			}
+			.burst .kept {
+				background: var(--accent);
+				color: #fff;
+				border-radius: 26px;
+				padding: 24px 30px;
+				font-size: 32px;
+				font-weight: 800;
+				text-align: center;
+				line-height: 1.1;
+				box-shadow: var(--shadow-sm);
+			}
+			.burst .kept small {
+				display: block;
+				font-size: 22px;
+				font-weight: 400;
+				opacity: 0.85;
+				margin-top: 6px;
+			}
+			.burst i {
+				position: absolute;
+				font-style: normal;
+				font-size: 46px;
+			}
+			.wall {
+				position: relative;
+				height: 260px;
+			}
+			.wall .pol {
+				position: absolute;
+				width: 150px;
+				height: 180px;
+				background: #fff;
+				padding: 12px 12px 40px;
+				border-radius: 6px;
+				box-shadow: var(--shadow-sm);
+			}
+			.wall .pol div {
+				width: 100%;
+				height: 100%;
+				border-radius: 3px;
+				display: grid;
+				place-items: center;
+				font-size: 30px;
+				font-weight: 800;
+				overflow: hidden;
+				position: relative;
+			}
+			.wall .pol div img {
+				position: absolute;
+			}
+			.wall .pol::after {
+				content: attr(data-name);
+				position: absolute;
+				bottom: 8px;
+				left: 0;
+				right: 0;
+				text-align: center;
+				font-size: 18px;
+				font-weight: 600;
+			}
+
+			/* ----- 13. Finale ----- */
+			.finale {
+				position: relative;
+				width: 1060px;
+				height: 888px;
+			}
+			.finale > div {
+				position: absolute;
+			}
+			.sharecard {
+				width: 360px;
+				border-radius: 28px;
+				overflow: hidden;
+				box-shadow: var(--shadow);
+			}
+			.sharecard img {
+				display: block;
+				width: 100%;
+			}
+			.rematch {
+				background: var(--ink);
+				color: #fff;
+			}
+
+			/* ----- 14. Under the hood ----- */
+			.hood {
+				display: grid;
+				grid-template-columns: 1040px 1fr;
+				gap: 80px;
+				margin-top: 56px;
+				align-items: start;
+			}
+			.arch {
+				position: relative;
+				width: 1040px;
+				height: 630px;
+			}
+			.arch .node {
+				position: absolute;
+				width: 260px;
+				height: 130px;
+				padding: 22px 24px;
+				border-radius: 24px;
+				background: var(--card);
+				box-shadow: var(--shadow-sm);
+				border-top: 6px solid var(--c, var(--accent));
+			}
+			.arch .node b {
+				display: block;
+				font-size: 28px;
+				font-weight: 800;
+				letter-spacing: -0.01em;
+			}
+			.arch .node span {
+				display: block;
+				font-size: 19px;
+				color: var(--muted);
+				margin-top: 6px;
+				line-height: 1.25;
+			}
+			.arch svg {
+				position: absolute;
+				inset: 0;
+				overflow: visible;
+			}
+			.arch .wire {
+				position: absolute;
+				font-size: 17px;
+				font-weight: 600;
+				color: var(--muted);
+				text-align: center;
+				line-height: 1.2;
+			}
+			.stats {
+				display: grid;
+				grid-template-columns: 1fr 1fr;
+				gap: 22px;
+			}
+			.stat {
+				padding: 28px 30px;
+			}
+			.stat b {
+				display: block;
+				font-size: 72px;
+				font-weight: 800;
+				letter-spacing: -0.04em;
+				line-height: 1;
+				color: var(--accent);
+			}
+			.stat span {
+				display: block;
+				font-size: 24px;
+				color: var(--muted);
+				margin-top: 10px;
+			}
+
+			/* ----- 15. Decisions ----- */
+			.cols {
+				display: grid;
+				grid-template-columns: 1fr 1fr;
+				gap: 56px;
+				margin-top: 64px;
+			}
+			.col {
+				padding: 60px 60px 66px;
+			}
+			.col h3 {
+				margin: 0 0 30px;
+				font-size: 26px;
+				font-weight: 600;
+				letter-spacing: 0.14em;
+				text-transform: uppercase;
+				color: var(--accent);
+			}
+			.col.limits h3 {
+				color: #a1590a;
+			}
+			.col ul {
+				list-style: none;
+				margin: 0;
+				padding: 0;
+				display: grid;
+				gap: 44px;
+			}
+			.col li {
+				display: grid;
+				grid-template-columns: 68px 1fr;
+				font-size: 40px;
+				font-weight: 600;
+				line-height: 1.2;
+			}
+			.col li small {
+				display: block;
+				font-size: 28px;
+				font-weight: 400;
+				color: var(--muted);
+				margin-top: 6px;
+			}
+
+			/* ----- 16. Thanks ----- */
+			.next {
+				list-style: none;
+				padding: 0;
+				margin: 52px 0 0;
+				display: grid;
+				gap: 18px;
+			}
+			.next li {
+				display: flex;
+				align-items: center;
+				gap: 20px;
+				font-size: 32px;
+				font-weight: 600;
+			}
+			.next li::before {
+				content: '→';
+				color: var(--accent);
+				font-weight: 800;
+			}
+
+			/* Print: Cmd+P → Save as PDF gives one slide per page. */
+			@page {
+				size: 1920px 1080px;
+				margin: 0;
+			}
+			@media print {
+				html,
+				body {
+					height: auto;
+					overflow: visible;
+					background: var(--ground);
+				}
+				body {
+					-webkit-print-color-adjust: exact;
+					print-color-adjust: exact;
+				}
+				#deck {
+					position: static;
+					transform: none !important;
+					width: 1920px;
+					height: auto;
+				}
+				.slide {
+					position: relative;
+					width: 1920px;
+					height: 1080px;
+					opacity: 1 !important;
+					visibility: visible !important;
+					break-after: page;
+					page-break-after: always;
+				}
+				.rise {
+					opacity: 1 !important;
+					transform: none !important;
+					transition: none !important;
+				}
+				#progress,
+				#hint {
+					display: none;
+				}
+				/* Chrome's PDF printer fails on backdrop-filter. */
+				.banner {
+					backdrop-filter: none;
+					background: #fff;
+				}
+			}
+		</style>
+	</head>
+	<body>
+		<div id="deck">
+			<!-- 1. Title -->
+			<section class="slide s-title" data-plain>
+				<div class="glow"></div>
+				<div class="split" style="grid-template-columns: 1fr 760px; gap: 40px">
+					<div>
+						<div class="brand rise"><span class="logo">P</span>Pact</div>
+						<h1 class="h1 rise" style="--d: 0.1s">
+							Nobody notices when you quit. <span class="green">Your friends will.</span>
+						</h1>
+						<div class="crewdots rise" style="--d: 0.2s">
+							<i style="background: var(--coral)"></i><i style="background: var(--tangerine)"></i
+							><i style="background: var(--sun)"></i><i style="background: var(--rose)"></i
+							><i style="background: var(--violet)"></i><i style="background: var(--ocean)"></i
+							><i style="background: var(--sky)"></i>
+						</div>
+						<p class="by rise" style="--d: 0.25s">
+							Built by <b>Gligorco Gligorov</b> for <b>8x</b>
+						</p>
+					</div>
+					<div class="fan">
+						<div class="f1">
+							<div class="rise" style="--d: 0.3s">
+								<div class="phone" style="--w: 340px">
+									<img src="shot:14-board" alt="The pact board" />
+								</div>
+							</div>
+						</div>
+						<div class="f3">
+							<div class="rise" style="--d: 0.4s">
+								<div class="phone" style="--w: 340px">
+									<img src="shot:16-results-awards" alt="The results" />
+								</div>
+							</div>
+						</div>
+						<div class="f2">
+							<div class="rise" style="--d: 0.2s">
+								<div class="phone" style="--w: 410px"><img src="shot:08-home" alt="Home" /></div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</section>
+
+			<!-- 2. Problem → idea -->
+			<section class="slide">
+				<div class="pair">
+					<div class="panel quiet rise">
+						<div class="kicker">The problem</div>
+						<h2 class="h2">Habits die quietly.</h2>
+						<div class="bottom">
+							<div class="days">
+								<i>✓</i><i>✓</i><i>✓</i><i class="gone"></i><i class="gone"></i><i class="gone"></i
+								><i class="gone"></i>
+							</div>
+							<p class="note">Day 4. Nobody noticed.</p>
+						</div>
+					</div>
+					<div class="arrow rise" style="--d: 0.15s">→</div>
+					<div class="panel loud rise" style="--d: 0.25s">
+						<div class="kicker">The idea</div>
+						<h2 class="h2">Friends, a stake and daily proof.</h2>
+						<div class="bottom">
+							<div class="faces">
+								<div class="face da in">DA</div>
+								<div class="face be in">BE</div>
+								<div class="face cl in">CL</div>
+								<div class="face an in">AN</div>
+							</div>
+							<div class="chip stake">☕ Loser buys the coffees</div>
+						</div>
+					</div>
+				</div>
+			</section>
+
+			<!-- 3. How it works -->
+			<section class="slide">
+				<div class="kicker rise">How it works</div>
+				<h2 class="h2 rise" style="--d: 0.05s">Three steps. One crew.</h2>
+				<div class="steps">
+					<div class="step rise" style="--d: 0.15s">
+						<div class="phone" style="--w: 250px"><img src="shot:01-intro-1" alt="" /></div>
+						<div class="label"><span class="n">1</span>Make a pact together</div>
+					</div>
+					<div class="step rise" style="--d: 0.25s">
+						<div class="phone" style="--w: 250px"><img src="shot:02-intro-2" alt="" /></div>
+						<div class="label"><span class="n">2</span>Prove it with a photo</div>
+					</div>
+					<div class="step rise" style="--d: 0.35s">
+						<div class="phone" style="--w: 250px"><img src="shot:03-intro-3" alt="" /></div>
+						<div class="label"><span class="n">3</span>Keep the chain together</div>
+					</div>
+				</div>
+			</section>
+
+			<!-- 4. Sign-in -->
+			<section class="slide">
+				<div class="split" style="grid-template-columns: 1fr 1000px">
+					<div>
+						<div class="kicker rise">Getting in</div>
+						<h2 class="h2 rise" style="--d: 0.05s">An email code. No passwords.</h2>
+						<div class="otp rise" style="--d: 0.15s">
+							<span>4</span><span>8</span><span>2</span><span>9</span><span>1</span><span>6</span>
+						</div>
+					</div>
+					<div class="signin">
+						<div class="rise" style="left: 0; top: 30px; --d: 0.15s">
+							<div class="phone" style="--w: 360px">
+								<img src="shot:04-welcome" alt="Welcome" />
+							</div>
+						</div>
+						<div class="rise" style="left: 390px; top: 30px; --d: 0.25s">
+							<div class="phone" style="--w: 360px">
+								<img src="shot:06-sign-in-code" alt="The code step" />
+							</div>
+						</div>
+						<div class="rise" style="left: 600px; top: 560px; --d: 0.4s">
+							<div class="browser" style="width: 420px; transform: rotate(3deg)">
+								<div class="bar"><i></i><i></i><i></i><b>Mailpit</b></div>
+								<img src="shot:07-sign-in-mailpit" alt="The sign-in email" />
+							</div>
+						</div>
+					</div>
+				</div>
+			</section>
+
+			<!-- 5. Home -->
+			<section class="slide">
+				<div class="split" style="grid-template-columns: 1fr 640px">
+					<div>
+						<div class="kicker rise">Home</div>
+						<h2 class="h2 rise" style="--d: 0.05s">Every crew, at a glance.</h2>
+						<ul class="points">
+							<li class="rise" style="--d: 0.15s"><em>⏱</em>Time left today</li>
+							<li class="rise" style="--d: 0.22s"><em>👥</em>Who's in, who isn't</li>
+							<li class="rise" style="--d: 0.29s"><em>🔥</em>The crew's streak</li>
+						</ul>
+					</div>
+					<div class="rise" style="--d: 0.1s; justify-self: center">
+						<div class="phone" style="--w: 410px"><img src="shot:08-home" alt="Home" /></div>
+					</div>
+				</div>
+			</section>
+
+			<!-- 6. Create -->
+			<section class="slide">
+				<div class="split" style="grid-template-columns: 1fr 640px">
+					<div>
+						<div class="kicker rise">Create a pact</div>
+						<h2 class="h2 rise" style="--d: 0.05s">One habit. Your colours. A stake.</h2>
+						<div class="swatches rise" style="--d: 0.15s">
+							<i style="background: var(--coral)"></i><i style="background: var(--tangerine)"></i
+							><i style="background: var(--sun)"></i><i style="background: var(--rose)"></i
+							><i style="background: var(--violet)"></i><i style="background: var(--ocean)"></i
+							><i class="on" style="background: var(--sky)"></i>
+						</div>
+						<div class="emojis rise" style="--d: 0.22s">
+							<span>🏃</span><span>🧘</span><span>📚</span><span>💧</span><span>🎸</span
+							><span>✨</span>
+						</div>
+						<div class="chip rise" style="--d: 0.3s; margin-top: 44px">
+							☕ Loser buys the coffees
+						</div>
+					</div>
+					<div class="rise" style="--d: 0.1s; justify-self: center">
+						<div class="phone" style="--w: 410px">
+							<img src="shot:09-create-pact" alt="Create a pact" />
+						</div>
+					</div>
+				</div>
+			</section>
+
+			<!-- 7. Invite -->
+			<section class="slide">
+				<div class="center">
+					<div class="kicker rise">Invite</div>
+					<h2 class="h2 rise" style="--d: 0.05s">One code brings the whole crew.</h2>
+				</div>
+				<div class="trio">
+					<div class="rise" style="--d: 0.15s">
+						<div class="phone" style="--w: 290px">
+							<img src="shot:10-invite-code" alt="The invite code" />
+						</div>
+						<div class="label">In the app</div>
+					</div>
+					<div class="rise" style="--d: 0.25s">
+						<div class="phone" style="--w: 290px">
+							<div class="screen">
+								<div class="webbar"><span>pact · join/STREAK</span></div>
+								<img src="shot:11-join-web" alt="The join page" />
+							</div>
+						</div>
+						<div class="label">On the web</div>
+					</div>
+					<div class="rise chat" style="--d: 0.35s; align-self: center">
+						<div class="bubble">Join our run club? Code <b>STREAK</b> 🏃</div>
+						<div class="preview">
+							<img src="shot:12-join-link-preview" alt="The link preview" />
+							<div><b>6am Run Club on Pact</b><span>2 of 4 in today</span></div>
+						</div>
+						<div class="label">In the chat</div>
+					</div>
+				</div>
+			</section>
+
+			<!-- 8. The daily challenge -->
+			<section class="slide">
+				<div class="split" style="grid-template-columns: 1fr 560px">
+					<div>
+						<div class="kicker rise">The daily challenge</div>
+						<h2 class="h2 rise" style="--d: 0.05s">An old photo can't pass.</h2>
+						<div class="days-list">
+							<div class="day past rise" style="--d: 0.12s">
+								<small>Day 6</small>Make a peace sign<span>✌️</span>
+							</div>
+							<div class="day past rise" style="--d: 0.18s">
+								<small>Day 7</small>Include a shoe<span>👟</span>
+							</div>
+							<div class="day today rise" style="--d: 0.24s">
+								<small>Today</small>Cross your fingers<span>🤞</span>
+							</div>
+							<div class="day next rise" style="--d: 0.3s">
+								<small>Day 9</small>A surprise<span>?</span>
+							</div>
+						</div>
+					</div>
+					<div class="rise" style="--d: 0.1s; justify-self: center">
+						<div class="phone" style="--w: 390px">
+							<img src="shot:02-intro-2" alt="A photo every day, with a twist" />
+						</div>
+					</div>
+				</div>
+			</section>
+
+			<!-- 9. The AI judge -->
+			<section class="slide">
+				<div class="split" style="grid-template-columns: 1fr 800px">
+					<div>
+						<div class="kicker rise">The AI judge</div>
+						<h2 class="h2 rise" style="--d: 0.05s">
+							The AI advises. <span class="green">The crew decides.</span>
+						</h2>
+						<p class="sub rise" style="--d: 0.15s">
+							A verdict and a deadpan caption. It never fails anyone.
+						</p>
+					</div>
+					<div class="verdict">
+						<figure
+							class="polaroid rise"
+							style="left: 30px; top: 70px; width: 440px; margin: 0; --d: 0.15s; rotate: -5deg"
+						>
+							<div class="photo" style="height: 470px">
+								<img
+									src="shot:15-activity-feed"
+									alt="Ben's check-in"
+									style="width: 492px; left: -49px; top: -360px"
+								/>
+							</div>
+							<figcaption>Ben · Day 8</figcaption>
+						</figure>
+						<div
+							class="chip rise"
+							style="position: absolute; left: 0; top: 20px; --d: 0.25s; rotate: -3deg"
+						>
+							🏃 Run for 20 minutes
+						</div>
+						<div
+							class="card vcard pass rise"
+							style="left: 330px; top: 330px; --d: 0.35s; rotate: 2deg"
+						>
+							<div class="tag">✓ Pass</div>
+							<p>“Evidence filed. Carry on.”</p>
+						</div>
+						<div
+							class="card vcard flag rise"
+							style="left: 330px; top: 620px; --d: 0.5s; rotate: -1deg"
+						>
+							<div class="tag">⚠ Suspicious</div>
+							<p>Still counts. Everyone sees the reason.</p>
+						</div>
+					</div>
+				</div>
+			</section>
+
+			<!-- 10. The board -->
+			<section class="slide">
+				<div class="split" style="grid-template-columns: 1fr 760px">
+					<div>
+						<div class="kicker rise">The board</div>
+						<h2 class="h2 rise" style="--d: 0.05s">The clock is ticking. Nudge who's missing.</h2>
+						<div class="chip rise" style="--d: 0.2s; margin-top: 48px">
+							🛟 One saver per pact keeps the chain alive
+						</div>
+					</div>
+					<div style="position: relative; width: 760px; height: 888px">
+						<div class="rise" style="position: absolute; left: 250px; top: 0; --d: 0.1s">
+							<div class="phone" style="--w: 410px">
+								<img src="shot:14-board" alt="The pact board" />
+							</div>
+						</div>
+						<div class="banner rise" style="left: 0; top: 520px; --d: 0.4s">
+							<span class="logo">P</span>
+							<b>Ana nudged you <small>now</small></b>
+							<span>“Dan, the run won't run itself.” 🏃</span>
+						</div>
+					</div>
+				</div>
+			</section>
+
+			<!-- 11. Activity feed -->
+			<section class="slide">
+				<div class="split" style="grid-template-columns: 1fr 700px">
+					<div>
+						<div class="kicker rise">Activity</div>
+						<h2 class="h2 rise" style="--d: 0.05s">The crew's day, in one feed.</h2>
+						<p class="sub rise" style="--d: 0.15s">
+							Every check-in, the AI's one-liner, and reactions.
+						</p>
+					</div>
+					<div style="position: relative; width: 700px; height: 888px">
+						<div class="rise" style="position: absolute; left: 140px; top: 0; --d: 0.1s">
+							<div class="phone" style="--w: 410px">
+								<img src="shot:15-activity-feed" alt="The activity feed" />
+							</div>
+						</div>
+						<div class="react rise" style="left: 40px; top: 300px; --d: 0.35s">🔥<b>3</b></div>
+						<div class="react rise" style="left: 570px; top: 420px; --d: 0.45s">👏<b>2</b></div>
+						<div class="react rise" style="left: 70px; top: 600px; --d: 0.55s">😂<b>1</b></div>
+					</div>
+				</div>
+			</section>
+
+			<!-- 12. The fun layer -->
+			<section class="slide">
+				<div class="kicker rise">The fun layer</div>
+				<h2 class="h2 rise" style="--d: 0.05s">Small moments that feel alive.</h2>
+				<div class="fun">
+					<div class="card rise" style="--d: 0.15s">
+						<div class="flames">
+							<div>
+								<span style="font-size: 50px; filter: grayscale(1); opacity: 0.35">🔥</span>out
+							</div>
+							<div><span style="font-size: 64px">🔥</span>1</div>
+							<div><span style="font-size: 92px">🔥</span>3</div>
+							<div><span style="font-size: 130px">🔥</span>7+</div>
+						</div>
+						<h3>A living streak flame</h3>
+						<p>It grows as the chain does: a spark, burning, blazing.</p>
+					</div>
+					<div class="card rise" style="--d: 0.25s">
+						<div class="burst">
+							<i style="left: 40px; top: 10px; rotate: -18deg">🎉</i
+							><i style="right: 50px; top: 0">🔥</i><i style="left: 10px; bottom: 30px">💪</i
+							><i style="right: 20px; bottom: 40px; rotate: 14deg">✨</i
+							><i style="left: 50%; top: -20px; font-size: 34px">⭐</i>
+							<div class="kept">A whole week!<small>Seven days, nobody missed one.</small></div>
+						</div>
+						<h3>Crew complete</h3>
+						<p>An emoji burst when the last one is in. Milestones at 3, 7 and 14.</p>
+					</div>
+					<div class="card rise" style="--d: 0.35s">
+						<div class="wall">
+							<div class="pol" data-name="Cleo" style="left: 0; top: 30px; rotate: -8deg">
+								<div style="background: #e3e8d8">🏃‍♀️</div>
+							</div>
+							<div class="pol" data-name="Dan" style="left: 250px; top: 40px; rotate: 7deg">
+								<div style="background: #dde9f7">🌅</div>
+							</div>
+							<div
+								class="pol"
+								data-name="Ben"
+								style="left: 125px; top: 0; rotate: -1deg; z-index: 2"
+							>
+								<div>
+									<img
+										src="shot:15-activity-feed"
+										alt=""
+										style="width: 157px; left: -16px; top: -124px"
+									/>
+								</div>
+							</div>
+						</div>
+						<h3>The crew wall</h3>
+						<p>Your photo flies onto today's wall, next to your crew's.</p>
+					</div>
+				</div>
+			</section>
+
+			<!-- 13. The finale -->
+			<section class="slide">
+				<div class="split" style="grid-template-columns: 1fr 1060px; gap: 40px">
+					<div>
+						<div class="kicker rise">The finale</div>
+						<h2 class="h2 rise" style="--d: 0.05s">Dan buys the coffees ☕</h2>
+						<p class="sub rise" style="--d: 0.15s">Results, awards and a card to share.</p>
+						<div class="chip rematch rise" style="--d: 0.25s; margin-top: 44px">
+							Same crew, new pact →
+						</div>
+					</div>
+					<div class="finale">
+						<div class="rise" style="left: 0; top: 70px; --d: 0.1s">
+							<div class="phone" style="--w: 340px">
+								<img src="shot:16-results-awards" alt="The results" />
+							</div>
+						</div>
+						<div class="rise" style="left: 370px; top: 0; --d: 0.2s">
+							<div class="phone" style="--w: 340px">
+								<div class="screen">
+									<div class="webbar"><span>pact · results</span></div>
+									<img src="shot:17-results-web" alt="The results page" />
+								</div>
+							</div>
+						</div>
+						<div class="rise" style="left: 700px; top: 300px; z-index: 2; --d: 0.35s">
+							<div class="sharecard" style="rotate: 4deg">
+								<img src="shot:18-share-card" alt="The share card" />
+							</div>
+						</div>
+					</div>
+				</div>
+			</section>
+
+			<!-- 14. Under the hood -->
+			<section class="slide">
+				<div class="kicker rise">Under the hood</div>
+				<h2 class="h2 rise" style="--d: 0.05s">One data path. The server decides.</h2>
+				<div class="hood">
+					<div class="arch rise" style="--d: 0.15s">
+						<svg width="1040" height="630" viewBox="0 0 1040 630" aria-hidden="true">
+							<defs>
+								<marker
+									id="ah"
+									viewBox="0 0 10 10"
+									refX="9"
+									refY="5"
+									markerWidth="8"
+									markerHeight="8"
+									orient="auto-start-reverse"
+								>
+									<path d="M0 0L10 5L0 10z" fill="#9aa08c" />
+								</marker>
+							</defs>
+							<g stroke="#9aa08c" stroke-width="3" fill="none" marker-end="url(#ah)">
+								<path d="M264 315H384" />
+								<path d="M654 315H774" />
+								<path d="M130 246V136" />
+								<path d="M520 246V136" />
+								<path d="M520 384V494" />
+								<path d="M910 494V384" />
+							</g>
+						</svg>
+						<div class="node" style="left: 0; top: 0; --c: var(--sky)">
+							<b>Supabase Auth</b><span>Email code, identity only</span>
+						</div>
+						<div class="node" style="left: 390px; top: 0; --c: var(--violet)">
+							<b>AI judge</b><span>Groq, Gemini fallback, never blocks</span>
+						</div>
+						<div class="node" style="left: 0; top: 250px; --c: var(--coral)">
+							<b>Expo app</b><span>iOS, React Native</span>
+						</div>
+						<div class="node" style="left: 390px; top: 250px">
+							<b>Next.js API</b><span>/api/app/v1, one Zod contract</span>
+						</div>
+						<div class="node" style="left: 780px; top: 250px; --c: var(--ocean)">
+							<b>Postgres</b><span>Prisma; RLS on, nothing granted</span>
+						</div>
+						<div class="node" style="left: 390px; top: 500px; --c: var(--tangerine)">
+							<b>Public web</b><span>Join, results, share cards</span>
+						</div>
+						<div class="node" style="left: 780px; top: 500px; --c: var(--sun)">
+							<b>The closer</b><span>Closes days, finishes pacts</span>
+						</div>
+						<div class="wire" style="left: 264px; top: 262px; width: 126px">HTTPS<br />bearer</div>
+						<div class="wire" style="left: 654px; top: 262px; width: 126px">Prisma</div>
+						<div class="wire" style="left: 145px; top: 172px">sign-in</div>
+						<div class="wire" style="left: 535px; top: 172px">after()</div>
+					</div>
+					<div class="stats">
+						<div class="card stat rise" style="--d: 0.2s"><b>600+</b><span>tests</span></div>
+						<div class="card stat rise" style="--d: 0.25s"><b>7</b><span>phases, 0 to 6</span></div>
+						<div class="card stat rise" style="--d: 0.3s">
+							<b>119</b><span>commits in 8 days</span>
+						</div>
+						<div class="card stat rise" style="--d: 0.35s">
+							<b>96</b><span>analytics events</span>
+						</div>
+						<div class="card stat rise" style="--d: 0.4s">
+							<b>17/19</b><span>judge eval agreed</span>
+						</div>
+						<div class="card stat rise" style="--d: 0.45s">
+							<b>0</b><span>tables the app touches</span>
+						</div>
+					</div>
+				</div>
+			</section>
+
+			<!-- 15. Decisions & honest limits -->
+			<section class="slide">
+				<div class="kicker rise">Decisions &amp; limits</div>
+				<h2 class="h2 rise" style="--d: 0.05s">What I chose, and what's not there yet.</h2>
+				<div class="cols">
+					<div class="card col rise" style="--d: 0.15s">
+						<h3>Decisions</h3>
+						<ul>
+							<li>
+								<span>🤝</span>
+								<div>
+									The AI never fails anyone<small>A wrong fail hurts more than one fake.</small>
+								</div>
+							</li>
+							<li>
+								<span>🟰</span>
+								<div>A full tie: nobody pays<small>Everybody wins.</small></div>
+							</li>
+							<li>
+								<span>🖼</span>
+								<div>A server-drawn share card<small>Shipped without a new build.</small></div>
+							</li>
+						</ul>
+					</div>
+					<div class="card col limits rise" style="--d: 0.25s">
+						<h3>Honest limits</h3>
+						<ul>
+							<li>
+								<span>💻</span>
+								<div>A localhost-only trial<small>Simulator build, no deploy yet.</small></div>
+							</li>
+							<li>
+								<span>🔔</span>
+								<div>Push is in-app<small>Closed-app push needs a paid Apple account.</small></div>
+							</li>
+							<li>
+								<span>✌️</span>
+								<div>
+									The judge miscounts fingers<small>Both misses on the real-photo eval.</small>
+								</div>
+							</li>
+						</ul>
+					</div>
+				</div>
+			</section>
+
+			<!-- 16. Thank you -->
+			<section class="slide" data-plain>
+				<div class="split" style="grid-template-columns: 1fr 940px; gap: 60px">
+					<div>
+						<h2 class="h1 rise" style="font-size: 150px; margin-top: 0">Thank you.</h2>
+						<div class="kicker rise" style="--d: 0.1s; margin-top: 64px">What's next</div>
+						<ul class="next">
+							<li class="rise" style="--d: 0.15s">A real iPhone and TestFlight</li>
+							<li class="rise" style="--d: 0.2s">Deploy: live link previews, a real cron</li>
+							<li class="rise" style="--d: 0.25s">Push with the app closed</li>
+							<li class="rise" style="--d: 0.3s">A hand pass on the tap-only moments</li>
+						</ul>
+						<p class="by rise" style="--d: 0.35s"><b>Gligorco Gligorov</b> · Pact, for 8x</p>
+					</div>
+					<div class="rise" style="--d: 0.15s">
+						<div class="browser" style="width: 940px">
+							<div class="bar"><i></i><i></i><i></i><b>pact · landing</b></div>
+							<img src="shot:20-landing" alt="The landing page" />
+						</div>
+					</div>
+				</div>
+			</section>
+		</div>
+		<div id="progress"></div>
+
+		<script>
+			;(() => {
+				const deck = document.getElementById('deck')
+				const slides = [...deck.querySelectorAll('.slide')]
+				const progress = document.getElementById('progress')
+				let current = 0
+
+				slides.forEach((slide, i) => {
+					if (slide.hasAttribute('data-plain')) return
+					const foot = document.createElement('div')
+					foot.className = 'foot'
+					foot.innerHTML = `<span class="mark"><span class="logo">P</span>Pact</span><span>${i + 1} / ${slides.length}</span>`
+					slide.appendChild(foot)
+				})
+
+				function fit() {
+					const scale = Math.min(innerWidth / 1920, innerHeight / 1080)
+					deck.style.transform = `translate(-50%, -50%) scale(${scale})`
+				}
+
+				function show(n) {
+					current = Math.max(0, Math.min(slides.length - 1, n))
+					slides.forEach((s, i) => s.classList.toggle('active', i === current))
+					progress.style.width = `${((current + 1) / slides.length) * 100}%`
+					history.replaceState(null, '', `#${current + 1}`)
+				}
+
+				addEventListener('resize', fit)
+				addEventListener('keydown', (e) => {
+					if (e.metaKey || e.ctrlKey || e.altKey) return
+					if (['ArrowRight', 'ArrowDown', 'PageDown', ' ', 'Enter'].includes(e.key))
+						show(current + 1)
+					else if (['ArrowLeft', 'ArrowUp', 'PageUp', 'Backspace'].includes(e.key))
+						show(current - 1)
+					else if (e.key === 'Home') show(0)
+					else if (e.key === 'End') show(slides.length - 1)
+					else if (e.key === 'f' || e.key === 'F') {
+						if (document.fullscreenElement) document.exitFullscreen()
+						else document.documentElement.requestFullscreen()
+					} else return
+					e.preventDefault()
+				})
+				addEventListener('click', (e) =>
+					show(e.clientX < innerWidth * 0.25 ? current - 1 : current + 1)
+				)
+
+				fit()
+				show((parseInt(location.hash.slice(1), 10) || 1) - 1)
+			})()
+		</script>
+	</body>
+</html>
