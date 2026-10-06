@@ -74,12 +74,16 @@ export function PactCard({ pact, myId }: { pact: PactListItem; myId: string | nu
 					<View style={s.eyebrow}>
 						<Text variant="eyebrow" numberOfLines={1} style={[s.eyebrowText, { color: tone.ink }]}>
 							{pact.name}
-							{pact.status === 'active' ? ` · Day ${day}/${total}` : ''}
 						</Text>
 					</View>
 					<Text variant="h2" numberOfLines={2}>
 						{pact.habit}
 					</Text>
+					{pact.status === 'active' ? (
+						<Text variant="caption" tone="tertiary" tabular>
+							{day === total ? 'Last day' : `Day ${day} of ${total}`}
+						</Text>
+					) : null}
 					{chip ? <StateChip label={chip.label} tone={chip.tone} /> : null}
 				</View>
 				{board && board.held_count > 0 ? (

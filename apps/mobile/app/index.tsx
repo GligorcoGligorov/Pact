@@ -2,10 +2,9 @@
  * Welcome — the first thing a new person sees. One promise, a glimpse of the
  * product, one way forward.
  *
- * 🎨 REPLACE: the tagline and description come from lib/constants.ts; the
- * three preview cards below are sample UI standing in for your product's own
- * first screen. Swap their content (or the whole stack) for a real glimpse of
- * your app — it rebrands with the preset either way.
+ * The tagline and description come from lib/constants.ts (the website says the
+ * same); the three dealt cards are a pact's day in miniature: the streak, a
+ * check-in with the AI's caption, and the crew waiting on one person.
  */
 import { useEffect } from 'react'
 import { StyleSheet, View, useWindowDimensions } from 'react-native'
@@ -151,13 +150,13 @@ function DealtCards() {
 		>
 			<DealtCard index={0}>
 				<Text variant="eyebrow" tone="tertiary">
-					This week
+					6am Run Club
 				</Text>
 				<Text variant="number" style={s.bigNumber}>
-					24
+					🔥 7
 				</Text>
 				<Text variant="caption" tone="secondary">
-					items moved forward
+					day streak
 				</Text>
 			</DealtCard>
 			<DealtCard index={1}>
@@ -166,9 +165,9 @@ function DealtCards() {
 						<Check size={16} color={c.successText} strokeWidth={2.4} />
 					</View>
 					<View style={s.flex}>
-						<Text variant="label">Morning review</Text>
+						<Text variant="label">Cleo is in</Text>
 						<Text variant="caption" tone="secondary">
-							Done · 8:40
+							“Zero excuses.”
 						</Text>
 					</View>
 				</View>
@@ -179,13 +178,13 @@ function DealtCards() {
 						<Sparkles size={16} color={c.brandInk} strokeWidth={2} />
 					</View>
 					<View style={s.flex}>
-						<Text variant="label">Your first project</Text>
+						<Text variant="label">3 of 4 in today</Text>
 						<Text variant="caption" tone="secondary">
-							3 of 5 steps
+							Waiting on Dan · 4h left
 						</Text>
 					</View>
 				</View>
-				<ProgressBar value={0.62} />
+				<ProgressBar value={0.75} />
 			</DealtCard>
 		</View>
 	)

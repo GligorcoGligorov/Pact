@@ -3,23 +3,24 @@
 The one "where are we" file. Read it first; update it at the end of every phase.
 Spec: [pact-requirements.md](pact-requirements.md) (R-numbers). Plan: [pact-plan.md](pact-plan.md).
 
-**Last updated:** 2026-10-06, Phase 5 done on branch `feat/phase-5-finale` (five commits, gates
-green). Earlier: 2026-10-05, fun pass steps 0–7 merged (PR #8). Earlier:
+**Last updated:** 2026-10-06, Phase 6 done on branch `feat/phase-6-final`: polish pass, `npm run
+demo:reset`, the showcase ([docs/showcase/](showcase/captions.md)) and the README. **All phases
+done.** Earlier: 2026-10-06, Phase 5 done on branch `feat/phase-5-finale`. Earlier: 2026-10-05, fun pass steps 0–7 merged (PR #8). Earlier:
 2026-10-04, end of Phase 4, on branch `feat/phase-4-web-social` (no CI in
 this trial, see [trial-local-only](memory/trial-local-only.md)). Build traps:
 [device-build-traps](memory/device-build-traps.md).
 
 ## Phases
 
-| Phase                              | State    | Notes                                                                              |
-| ---------------------------------- | -------- | ---------------------------------------------------------------------------------- |
-| 0 — Device path                    | done     | On the simulator, from an EAS cloud build. iPhone only if there's time.            |
-| 1 — Events, schema, day math, seed | done     | `AiUsage` and the AI keys moved to Phase 2, and done there.                        |
-| 2 — API for the slice              | done     | All but the eval's 12 real photos (see open items).                                |
-| 3 — Mobile slice                   | done     | Built and committed 2026-10-03; a hand tap-through on the simulator is still owed. |
-| 4 — Social loop                    | done     | Join page, landing, feed, nudges, crew complete, reminder, safety. 2026-10-04.     |
-| 5 — Closer, results, onboarding    | done     | Closer, results reveal, share card, saver, intro. 2026-10-06. See "The finale".    |
-| 6 — Dogfood and gates              | **next** |                                                                                    |
+| Phase                              | State | Notes                                                                              |
+| ---------------------------------- | ----- | ---------------------------------------------------------------------------------- |
+| 0 — Device path                    | done  | On the simulator, from an EAS cloud build. iPhone only if there's time.            |
+| 1 — Events, schema, day math, seed | done  | `AiUsage` and the AI keys moved to Phase 2, and done there.                        |
+| 2 — API for the slice              | done  | All but the eval's 12 real photos (see open items).                                |
+| 3 — Mobile slice                   | done  | Built and committed 2026-10-03; a hand tap-through on the simulator is still owed. |
+| 4 — Social loop                    | done  | Join page, landing, feed, nudges, crew complete, reminder, safety. 2026-10-04.     |
+| 5 — Closer, results, onboarding    | done  | Closer, results reveal, share card, saver, intro. 2026-10-06. See "The finale".    |
+| 6 — Dogfood and gates              | done  | Polish, `demo:reset`, showcase, README. 2026-10-06. Tap-only shots still owed.     |
 
 ## Fun pass
 
@@ -295,6 +296,9 @@ checks, the ring and the streak; New pact and Join sit behind a "+".
 
 ## Open items
 
+- **Showcase shots that need a tap** (check-in, AI verdict, polaroid, scoreboard, the drumroll in
+  the app, nudge banner, crew complete, milestone, saver card) were not captured: no UI driver
+  here. The list is in [showcase/captions.md](showcase/captions.md#not-captured).
 - **Phase 5, checked on the simulator (2026-10-06):** the results screen (hero, chain, awards,
   idle and revealed states), the board's saver line and urgent card, the share sheet with the
   card attached (Save Image offered), intro pages 1–3, and the web card and preview images.

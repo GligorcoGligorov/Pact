@@ -20,6 +20,7 @@ import { Screen } from '@/components/ui/Screen'
 import { SegmentedControl } from '@/components/ui/SegmentedControl'
 import { Text } from '@/components/ui/Text'
 import { Toggle } from '@/components/ui/Toggle'
+import { useSubscription } from '@/contexts/SubscriptionContext'
 import { useTheme, type ThemePref } from '@/contexts/ThemeContext'
 import { useToast } from '@/contexts/ToastContext'
 import { AccountDeletionError, deleteAccount } from '@/lib/account'
@@ -49,6 +50,7 @@ const DELETE_ACCOUNT_MESSAGE =
 
 export default function SettingsScreen() {
 	const { pref, setPref } = useTheme()
+	const { isPremium } = useSubscription()
 	const { showToast } = useToast()
 	const [haptics, setHaptics] = useState(hapticsPreference())
 	const [confirmDelete, setConfirmDelete] = useState(false)
@@ -151,14 +153,17 @@ export default function SettingsScreen() {
 				</Section>
 			)}
 
-			<Section title="Subscription">
-				<ListRow
-					icon={CreditCard}
-					title="Manage subscription"
-					subtitle={`Change or cancel in ${STORE_NAME}`}
-					onPress={() => Linking.openURL(MANAGE_SUBSCRIPTIONS_URL)}
-				/>
-			</Section>
+			{/* Pact sells nothing yet; the row is for anyone who did subscribe through the store. */}
+			{isPremium ? (
+				<Section title="Subscription">
+					<ListRow
+						icon={CreditCard}
+						title="Manage subscription"
+						subtitle={`Change or cancel in ${STORE_NAME}`}
+						onPress={() => Linking.openURL(MANAGE_SUBSCRIPTIONS_URL)}
+					/>
+				</Section>
+			) : null}
 
 			<BlockedPeople />
 

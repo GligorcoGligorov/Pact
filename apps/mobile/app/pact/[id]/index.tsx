@@ -3,6 +3,7 @@ import { RefreshControl, StyleSheet, View } from 'react-native'
 import { router, useLocalSearchParams } from 'expo-router'
 import { useQueryClient } from '@tanstack/react-query'
 import { Camera, Check, ScanEye, SearchX, Settings2, UserPlus } from 'lucide-react-native'
+import { Avatar, displayName } from '@/components/pact/Avatars'
 import { Chain, chainTiles } from '@/components/pact/Chain'
 import { Countdown } from '@/components/pact/Countdown'
 import { EmojiBurst } from '@/components/pact/EmojiBurst'
@@ -11,6 +12,7 @@ import { CrewBadge } from '@/components/pact/CrewTheme'
 import { MemberRow } from '@/components/pact/MemberRow'
 import { Ring } from '@/components/pact/Ring'
 import { SaverCard } from '@/components/pact/SaverCard'
+import { StateChip } from '@/components/pact/StateChip'
 import { StreakFlame } from '@/components/pact/StreakFlame'
 import { QueryErrorState } from '@/components/QueryError'
 import { FadeSlideIn } from '@/components/motion/FadeSlideIn'
@@ -303,36 +305,43 @@ function Board({
 						{members
 							.filter((m) => !m.left_day)
 							.map((m) => (
-								<Text key={m.user_id} variant="body" style={s.memberName}>
-									{(m.display_name?.trim() || 'A member') + (m.user_id === myId ? ' (you)' : '')}
-									{m.role === 'owner' ? ' · owner' : ''}
-								</Text>
+								<View key={m.user_id} style={s.member}>
+									<Avatar userId={m.user_id} name={displayName(m)} size={40} />
+									<Text variant="label" style={s.memberName} numberOfLines={1}>
+										{displayName(m)}
+										{m.user_id === myId ? ' (you)' : ''}
+									</Text>
+									{m.role === 'owner' ? <StateChip label="Owner" tone="brand" /> : null}
+								</View>
 							))}
 					</Card>
 				</FadeSlideIn>
 			) : null}
 
-			<FadeSlideIn index={3}>
-				<Card padding="spacious" style={s.streakCard}>
-					<View style={s.streakTop}>
-						<View style={s.streak}>
-							<StreakFlame streak={progress.current_streak} size={34} />
-							<View>
-								<Text variant="display" tabular>
-									{progress.current_streak}
-								</Text>
-								<Text variant="caption" tone="secondary">
-									day streak · best {progress.best_streak}
-								</Text>
+			{/* Before day one there's no streak or chain to show. */}
+			{pact.status !== 'lobby' ? (
+				<FadeSlideIn index={3}>
+					<Card padding="spacious" style={s.streakCard}>
+						<View style={s.streakTop}>
+							<View style={s.streak}>
+								<StreakFlame streak={progress.current_streak} size={34} />
+								<View>
+									<Text variant="display" tabular>
+										{progress.current_streak}
+									</Text>
+									<Text variant="caption" tone="secondary">
+										day streak · best {progress.best_streak}
+									</Text>
+								</View>
 							</View>
+							<Text variant="caption" tone="tertiary" tabular>
+								{doneDays} of {totalDays} days
+							</Text>
 						</View>
-						<Text variant="caption" tone="tertiary" tabular>
-							{doneDays} of {totalDays} days
-						</Text>
-					</View>
-					<Chain tiles={tiles} />
-				</Card>
-			</FadeSlideIn>
+						<Chain tiles={tiles} />
+					</Card>
+				</FadeSlideIn>
+			) : null}
 
 			{pact.stake ? (
 				<FadeSlideIn index={4}>
@@ -443,7 +452,8 @@ const s = StyleSheet.create({
 		justifyContent: 'center'
 	},
 	challengeText: { flex: 1, gap: 3 },
-	memberName: { paddingVertical: 8 },
+	member: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 8 },
+	memberName: { flex: 1 },
 	streakCard: { gap: 16 },
 	streakTop: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' },
 	streak: { flexDirection: 'row', alignItems: 'center', gap: 10 },
