@@ -36,6 +36,7 @@
 		"db:run-once": "node scripts/run-once-sql.mjs",
 		"seed:demo": "npm run seed:demo --workspace=@app/web --",
 		"pacts:close": "npm run pacts:close --workspace=@app/web --",
+		"demo:reset": "npm run demo:clean --workspace=@app/web && npm run seed:demo -- --finished && npm run pacts:close",
 		"prepare": "git config core.hooksPath .githooks || true"
 	},
 	"engines": {
