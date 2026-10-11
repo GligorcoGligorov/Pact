@@ -12,14 +12,15 @@ this trial, see [trial-local-only](memory/trial-local-only.md)). Build traps:
 
 ## UI revamp (2026-10-11, branch `feat/ui-revamp`)
 
-[design/ui-revamp/](design/ui-revamp/plan.md) has the audit, the plan with both revisions, and
-before/after shots. Now: dark first, the **Crew Wall** of real photos as the signature (new
-`GET pacts/:id/wall`), **the signed pact** on create and join (new `POST pacts/:id/signature`,
-migration `20261011012142_pact_signature`, events `pact_sign_viewed`, `pact_signed`,
-`wall_photo_opened`, `pact_result_story_viewed`), a full-screen daily challenge, and results as
-stories. Done on mobile: board, signing, home, check-in, verdict, results. To do: onboarding
-(intro, welcome), the activity feed and settings screens, and the web (landing, join page,
-results page, share card), which still wear the earlier look. Demo: `npm run demo:photos`, then
+[design/ui-revamp/](design/ui-revamp/plan.md): the audit, the plan with both revisions, and
+before/after shots in `shots/`. Dark first; the **Crew Wall** of real photos is the signature
+(`GET pacts/:id/wall`); **the signed pact** on create and join (`POST pacts/:id/signature`,
+migration `20261011012142_pact_signature`); a full-screen daily challenge; results as stories.
+Events added: `pact_sign_viewed`, `pact_signed`, `wall_photo_opened`, `pact_result_story_viewed`.
+Done: every mobile screen (onboarding, home, board, signing, check-in, verdict, results,
+activity, pact settings) and the web (landing, join page and its preview, results page, share
+card). The public pages show the wall as presence only, never photos (R25, R27), plus the
+signatures (pinned by `join-page.test.mts`). Demo: `npm run demo:photos`, then
 `npm run seed:demo -- --finished`. `app.json`'s splash is the near-black ground; it shows from
 the next binary.
 
