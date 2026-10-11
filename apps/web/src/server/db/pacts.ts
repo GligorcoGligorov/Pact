@@ -42,7 +42,14 @@ export type PactRecord = Pick<
 
 export type MemberRecord = Pick<
 	PactMember,
-	'userId' | 'role' | 'joinedDay' | 'leftDay' | 'saverUsedDay' | 'createdAt'
+	| 'userId'
+	| 'role'
+	| 'joinedDay'
+	| 'leftDay'
+	| 'saverUsedDay'
+	| 'signature'
+	| 'signedAt'
+	| 'createdAt'
 > & { displayName: string | null }
 
 export type CheckInRecord = Pick<
@@ -119,6 +126,8 @@ const MEMBER = {
 	joinedDay: true,
 	leftDay: true,
 	saverUsedDay: true,
+	signature: true,
+	signedAt: true,
 	createdAt: true,
 	profile: { select: { displayName: true } }
 } as const satisfies Prisma.PactMemberSelect
@@ -293,6 +302,28 @@ export function createPactStore(client: PrismaClient, codes: () => string = newI
 			])
 			const { members, ...rest } = pact
 			return { pact: rest, members: members.map(toMember), checkIns, marks }
+		},
+
+		/**
+		 * The signed pact: sets the member's signature once (a conditional update where it is
+		 * still empty), for a current member only. `signed` with the member; `already` when they
+		 * had signed; null when they aren't a current member.
+		 */
+		async sign(
+			pactId: string,
+			userId: string,
+			signature: string
+		): Promise<{ outcome: 'signed' | 'already'; member: MemberRecord } | null> {
+			const { count } = await client.pactMember.updateMany({
+				where: { pactId, userId, leftDay: null, signature: null },
+				data: { signature, signedAt: new Date() }
+			})
+			const row = await client.pactMember.findFirst({
+				where: { pactId, userId, leftDay: null },
+				select: MEMBER
+			})
+			if (!row) return null
+			return { outcome: count === 1 ? 'signed' : 'already', member: toMember(row) }
 		},
 
 		/**

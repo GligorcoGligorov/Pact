@@ -120,3 +120,32 @@ export function stakeLine(loserNames: readonly string[], stake: string | null): 
 	}
 	return `${who} ${plural ? 'owe' : 'owes'}: ${stake.trim()}`
 }
+
+/**
+ * The signed pact's sentence, in the signer's own voice: "I, Ana, will run for 20 minutes
+ * every day for 21 days. If I break it, I buy the coffees." A stake that doesn't start with
+ * "loser" reads "If I break it, I owe: a round of pizza"; no stake, "If I break it, my crew
+ * will know."
+ */
+export function pledgeLine(
+	name: string,
+	habit: string,
+	cadence: 'daily' | 'weekdays',
+	days: number,
+	stake: string | null
+): string {
+	const what = habit.trim().replace(/[.!]+$/, '')
+	const doing = lowerFirst(what)
+	const when = cadence === 'daily' ? 'every day' : 'every weekday'
+	const promise = `I, ${name}, will ${doing} ${when} for ${days} days.`
+	if (!stake) return `${promise} If I break it, my crew will know.`
+	const match = /^(?:the\s+)?losers?\s+(\S+)(.*)$/i.exec(stake.trim())
+	const cost = match
+		? `I ${pluralVerb(match[1] ?? '')}${(match[2] ?? '').replace(/[.!]+$/, '')}`
+		: `I owe: ${lowerFirst(stake.trim().replace(/[.!]+$/, ''))}`
+	return `${promise} If I break it, ${cost}.`
+}
+
+function lowerFirst(text: string): string {
+	return text.charAt(0).toLowerCase() + text.slice(1)
+}

@@ -78,7 +78,8 @@ export default function JoinPreviewScreen() {
 				onSuccess: ({ pact }) => {
 					haptic.success()
 					track('pact_joined', { source, pact_id: pact.id })
-					router.replace(`/pact/${pact.id}`)
+					// A new member signs the pact before they see the board.
+					router.replace({ pathname: '/pact/[id]/sign', params: { id: pact.id, source: 'join' } })
 				},
 				onError: (error) => {
 					haptic.error()

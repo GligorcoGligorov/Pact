@@ -84,6 +84,16 @@ export function useWall(id: string) {
 	})
 }
 
+/** The signed pact: saves the caller's signature once, then refreshes the pact. */
+export function useSignPact(pactId: string) {
+	const queryClient = useQueryClient()
+	return useMutation({
+		mutationFn: (signature: string) =>
+			api('signPact', { params: { id: pactId }, body: { signature } }),
+		onSuccess: () => queryClient.invalidateQueries({ queryKey: pactKeys.detail(pactId) })
+	})
+}
+
 export function useCreatePact() {
 	const queryClient = useQueryClient()
 	return useMutation({

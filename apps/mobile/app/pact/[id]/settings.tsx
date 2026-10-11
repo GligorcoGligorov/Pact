@@ -5,6 +5,7 @@ import { LogOut, SearchX, UserMinus } from 'lucide-react-native'
 import type { PactMember } from '@app/contract'
 import { Avatar, displayName } from '@/components/pact/Avatars'
 import { StateChip } from '@/components/pact/StateChip'
+import { Signature } from '@/components/sign/Signature'
 import { QueryErrorState } from '@/components/QueryError'
 import { PressableScale } from '@/components/motion/PressableScale'
 import { AlertModal } from '@/components/ui/AppModal'
@@ -119,10 +120,38 @@ export default function PactSettingsScreen() {
 							return (
 								<View key={member.user_id} style={s.member}>
 									<Avatar userId={member.user_id} name={displayName(member)} size={40} />
-									<Text variant="label" style={s.name} numberOfLines={1}>
-										{displayName(member)}
-										{me ? ' (you)' : ''}
-									</Text>
+									<View style={s.name}>
+										<Text variant="label" numberOfLines={1}>
+											{displayName(member)}
+											{me ? ' (you)' : ''}
+										</Text>
+										{member.signature ? (
+											<Signature path={member.signature} ink={c.textPrimary} width={110} />
+										) : me ? (
+											<PressableScale
+												scaleTo="button"
+												onPress={() =>
+													router.push({
+														pathname: '/pact/[id]/sign',
+														params: {
+															id: detail.pact.id,
+															source: 'join',
+															next: `/pact/${detail.pact.id}/settings`
+														}
+													})
+												}
+												accessibilityRole="button"
+											>
+												<Text variant="mono" tone="brand">
+													Not signed · sign now
+												</Text>
+											</PressableScale>
+										) : (
+											<Text variant="mono" tone="tertiary">
+												Not signed
+											</Text>
+										)}
+									</View>
 									{member.role === 'owner' ? (
 										<StateChip label="Owner" tone="brand" style={s.chip} />
 									) : null}

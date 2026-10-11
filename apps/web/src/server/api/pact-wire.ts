@@ -66,7 +66,9 @@ export function toWireMember(member: MemberRecord): PactMember {
 		display_name: member.displayName,
 		role: member.role,
 		joined_day: dayFromDate(member.joinedDay),
-		left_day: member.leftDay ? dayFromDate(member.leftDay) : null
+		left_day: member.leftDay ? dayFromDate(member.leftDay) : null,
+		signature: member.signature,
+		signed_at: member.signedAt?.toISOString() ?? null
 	}
 }
 

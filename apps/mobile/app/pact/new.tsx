@@ -86,7 +86,11 @@ export default function NewPactScreen() {
 					emoji,
 					theme_source: picked.color || picked.emoji ? 'picked' : 'suggested'
 				})
-				router.replace(`/pact/${pact.id}/invite`)
+				// Sign the pact first, then bring the crew.
+				router.replace({
+					pathname: '/pact/[id]/sign',
+					params: { id: pact.id, source: 'create', next: `/pact/${pact.id}/invite` }
+				})
 			},
 			onError: () => haptic.error()
 		})

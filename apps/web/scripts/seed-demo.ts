@@ -85,6 +85,47 @@ const CAPTIONS = [
 	'Evidence filed. Carry on.'
 ]
 
+/**
+ * A demo signature as SVG path data in the 300×120 signature box: a few connected loops whose
+ * size, slant and rhythm come from the name, ending in a flick, so each member's looks like a
+ * different hand. The same name always signs the same way.
+ */
+function demoSignature(name: string): string {
+	// FNV-1a, then a xorshift: names that differ by a letter still sign very differently.
+	let seed = 2166136261
+	for (const ch of name) seed = Math.imul(seed ^ ch.charCodeAt(0), 16777619) >>> 0
+	const rand = () => {
+		seed ^= seed << 13
+		seed ^= seed >>> 17
+		seed ^= seed << 5
+		seed >>>= 0
+		return (seed % 10_000) / 10_000
+	}
+	const f = (n: number) => n.toFixed(1)
+	const base = 74 + rand() * 12
+	let x = 18 + rand() * 14
+	// The capital: one tall loop, leaning.
+	const capH = 50 + rand() * 25
+	const lean = 8 + rand() * 18
+	let d = `M${f(x)} ${f(base)} C${f(x + lean)} ${f(base - capH)} ${f(x + lean + 26)} ${f(base - capH - 6)} ${f(x + 18)} ${f(base - 8)}`
+	x += 22 + rand() * 10
+	// The rest: small letters of varying height, width and roundness.
+	const letters = name.length + 1 + Math.floor(rand() * 3)
+	for (let i = 0; i < letters; i++) {
+		const w = 10 + rand() * 14
+		const h = 10 + rand() * (i % 3 === 0 ? 30 : 16)
+		const round = 0.3 + rand() * 0.6
+		d += ` C${f(x + w * round)} ${f(base - h)} ${f(x + w)} ${f(base - h)} ${f(x + w * 0.8)} ${f(base)}`
+		x += w * (0.75 + rand() * 0.3)
+	}
+	// A finish: an underline back under the name, or an upward flick.
+	d +=
+		rand() > 0.5
+			? ` Q${f(x + 20)} ${f(base + 10)} ${f(Math.max(x - 60 - rand() * 40, 20))} ${f(base + 14)}`
+			: ` L${f(Math.min(x + 30 + rand() * 30, 292))} ${f(base - 26 - rand() * 20)}`
+	return d
+}
+
 function fail(message: string): never {
 	process.stderr.write(`seed:demo: ${message}\n`)
 	process.exit(1)
@@ -259,6 +300,12 @@ async function main() {
 		update: pactFields
 	})
 
+	// Ben, Cleo and Dan signed when they joined; Ana's card is left for the demo to sign.
+	const signed = (m: DemoMember) =>
+		m.key === 'ana'
+			? { signature: null, signedAt: null }
+			: { signature: demoSignature(m.name), signedAt: new Date(Date.now() - 8 * 24 * HOUR_MS) }
+
 	const plan = checkInPlan()
 	const demo = await demoPhotos('run')
 	const real = demo.length > 0 ? demo : await realRunPhotos()
@@ -333,14 +380,16 @@ async function main() {
 					userId: idOf(m.key),
 					role: m.key === 'ana' ? 'owner' : 'member',
 					joinedDay: dateFromDay(startDay),
-					saverUsedDay: m.key === 'cleo' ? dateFromDay(addDays(startDay, CLEO_SAVER_OFFSET)) : null
+					saverUsedDay: m.key === 'cleo' ? dateFromDay(addDays(startDay, CLEO_SAVER_OFFSET)) : null,
+					...signed(m)
 				},
 				update: {
 					role: m.key === 'ana' ? 'owner' : 'member',
 					joinedDay: dateFromDay(startDay),
 					leftAt: null,
 					leftDay: null,
-					saverUsedDay: m.key === 'cleo' ? dateFromDay(addDays(startDay, CLEO_SAVER_OFFSET)) : null
+					saverUsedDay: m.key === 'cleo' ? dateFromDay(addDays(startDay, CLEO_SAVER_OFFSET)) : null,
+					...signed(m)
 				}
 			})
 		),
@@ -469,7 +518,9 @@ async function seedFinished(ids: Map<DemoMember['key'], string>) {
 				joinedDay: dateFromDay(startDay),
 				leftAt: null,
 				leftDay: null,
-				saverUsedDay
+				saverUsedDay,
+				signature: demoSignature(m.name),
+				signedAt: new Date(closesAt(timezone!, addDays(startDay, -1)).getTime() - HOUR_MS)
 			}
 			return db.pactMember.upsert({
 				where: { pactId_userId: { pactId: pact.id, userId: idOf(m.key) } },
