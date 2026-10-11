@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Pressable, StyleSheet, View } from 'react-native'
+import { Image } from 'expo-image'
 import Animated, { FadeIn, FadeInDown, Keyframe } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Share, X } from 'lucide-react-native'
@@ -28,8 +29,10 @@ export type Slide = (typeof SLIDES)[number]
 
 /** A tap on the left third goes back, anywhere else forward. */
 const BACK_ZONE = 0.33
-/** The results' wall: every day of the pact, in small tiles. */
-const WALL_TILE = 30
+/** An award's winner photos. */
+const AWARD_FACE = 56
+/** The loser's own days: this many tiles a row. */
+const DAYS_PER_ROW = 7
 
 /** Each drumroll beat's number drops in and settles inside the beat. */
 const beatIn = new Keyframe({
@@ -139,7 +142,7 @@ export function Stories({
 		}
 	}
 
-	const loud = slide === 'awards' || slide === 'loser'
+	const loud = slide === 'awards' || slide === 'loser' || slide === 'signatures'
 	const ground = loud ? tone.fill : slide === 'drumroll' ? c.bg : tone.deep
 	const ink = loud ? tone.onFill : c.textPrimary
 	const pad = (n: number) => String(n).padStart(2, '0')
@@ -193,9 +196,7 @@ export function Stories({
 								color={ink}
 								muted={c.textTertiary}
 							/>
-							{wall ? (
-								<WallGrid wall={wall} myId={myId} tone={tone} mini maxTile={WALL_TILE} />
-							) : null}
+							{wall ? <WallFill wall={wall} myId={myId} tone={tone} /> : null}
 							<Text variant="mono" tone="secondary">
 								Best run {pad(result.best_streak)} days · {wall?.members.length ?? 0} people
 							</Text>
@@ -210,13 +211,23 @@ export function Stories({
 									<Animated.View
 										key={row.kind}
 										entering={reduced ? undefined : FadeInDown.delay(i * 60).duration(280)}
+										style={s.award}
 									>
-										<OnFill tone={tone} variant="mono" muted>
-											{pad(i + 1)} / {row.title}
-										</OnFill>
-										<OnFill tone={tone} variant="h1">
-											{row.names}
-										</OnFill>
+										<Faces
+											ids={row.ids}
+											wall={wall}
+											detail={detail}
+											size={AWARD_FACE}
+											tone={tone}
+										/>
+										<View style={s.flex}>
+											<OnFill tone={tone} variant="mono" muted>
+												{pad(i + 1)} / {row.title}
+											</OnFill>
+											<OnFill tone={tone} variant="h2">
+												{row.names}
+											</OnFill>
+										</View>
 									</Animated.View>
 								))}
 							</View>
@@ -234,9 +245,9 @@ export function Stories({
 							</Animated.View>
 						</View>
 					) : slide === 'loser' ? (
-						<Loser detail={detail} tone={tone} myId={myId} />
+						<Loser detail={detail} tone={tone} myId={myId} wall={wall} />
 					) : (
-						<Signatures detail={detail} pact={pact} roundTwo={roundTwo} />
+						<Signatures detail={detail} pact={pact} roundTwo={roundTwo} tone={tone} />
 					)}
 				</Animated.View>
 			</Pressable>
@@ -295,26 +306,90 @@ function awardRows(detail: PactResultDetail, myId: string | null) {
 			.sort((a, b) => Number(b.user_id === myId) - Number(a.user_id === myId))
 			.map((m) => (m.user_id === myId ? 'You' : displayName(m)))
 		return names.length > 0
-			? [{ kind: award.kind, title: meta.title, names: joinNames(names) }]
+			? [{ kind: award.kind, title: meta.title, names: joinNames(names), ids: award.user_ids }]
 			: []
 	})
 }
 
-/** Who pays: their face, the stake said about them, and a line on their side. */
+/** A member's photos on the wall, newest first, with how much the crew reacted to each. */
+function photosOf(wall: Wall | null, userId: string) {
+	if (!wall) return []
+	return wall.days.flatMap((day) => {
+		const checkIn = day.cells.find((cell) => cell.user_id === userId)?.check_in
+		if (!checkIn?.photo_url) return []
+		const { fire, clap, laugh } = checkIn.reactions.counts
+		return [{ day: day.day, url: checkIn.photo_url, cheers: fire + clap + laugh }]
+	})
+}
+
+/** Their best photo: the one the crew reacted to most, the latest on a tie. */
+function bestPhoto(wall: Wall | null, userId: string): string | null {
+	const photos = photosOf(wall, userId)
+	if (photos.length === 0) return null
+	return photos.reduce((best, p) => (p.cheers > best.cheers ? p : best), photos[0]!).url
+}
+
+/** Each winner's best photo, overlapping; their avatar when they have none. */
+function Faces({
+	ids,
+	wall,
+	detail,
+	size,
+	tone
+}: {
+	ids: string[]
+	wall: Wall | null
+	detail: PactResultDetail
+	size: number
+	tone: CrewTone
+}) {
+	const names = new Map(detail.result.members.map((m) => [m.user_id, displayName(m)]))
+	return (
+		<View style={s.faces}>
+			{ids.slice(0, 3).map((id, i) => {
+				const url = bestPhoto(wall, id)
+				return (
+					<View
+						key={id}
+						style={[
+							s.face,
+							{ width: size, height: size, borderColor: tone.fill },
+							i > 0 && { marginLeft: -size * 0.35 }
+						]}
+					>
+						{url ? (
+							<Image source={{ uri: url }} style={StyleSheet.absoluteFill} contentFit="cover" />
+						) : (
+							<Avatar userId={id} name={names.get(id) ?? ''} size={size - 4} />
+						)}
+					</View>
+				)
+			})}
+		</View>
+	)
+}
+
+/**
+ * Who pays: their own photo, big, the stake said about them and a line on their side, then
+ * their pact day by day: a photo for each day they kept, an empty tile for each they missed.
+ */
 function Loser({
 	detail,
 	tone,
-	myId
+	myId,
+	wall
 }: {
 	detail: PactResultDetail
 	tone: CrewTone
 	myId: string | null
+	wall: Wall | null
 }) {
+	const c = useColors()
+	const [width, setWidth] = useState(0)
 	const { result, pact } = detail
 	const losers = result.members.filter((m) => m.is_loser)
 	const nobody = result.outcome !== 'loser' || losers.length === 0
 	const names = losers.map((m) => (m.user_id === myId ? 'You' : displayName(m)))
-	const faces = nobody ? result.members : losers
 	const said = nobody ? 'Nobody pays.' : stakeLine(names, pact.stake)
 	const headline = /[\p{L}\p{N}]$/u.test(said) ? `${said}.` : said
 	const first = losers[0]
@@ -323,24 +398,101 @@ function Loser({
 		: losers.length > 1
 			? `Tied at the bottom: ${joinNames(names)} split it.`
 			: `${first?.days_done} of ${first?.days_held} days. Next round is ${names[0] === 'You' ? 'yours' : `${names[0]}’s`}.`
+	const photo = first && !nobody ? bestPhoto(wall, first.user_id) : null
+	// Their days, oldest first: what they kept and what they missed.
+	const days =
+		first && !nobody && wall
+			? [...wall.days].reverse().map((day) => {
+					const cell = day.cells.find((x) => x.user_id === first.user_id)
+					return { day: day.day, held: !!cell?.held, checkIn: cell?.check_in ?? null }
+				})
+			: []
+	const tile = width > 0 ? (width - GAP_DAYS * (DAYS_PER_ROW - 1)) / DAYS_PER_ROW : 0
+
 	return (
 		<View style={s.loser}>
 			<OnFill tone={tone} variant="mono" muted>
 				{nobody ? 'Everybody wins' : 'Pays'}
 			</OnFill>
-			<View style={s.faces}>
-				{faces.map((m, i) => (
-					<View key={m.user_id} style={i > 0 ? s.overlap : undefined}>
-						<Avatar userId={m.user_id} name={displayName(m)} size={nobody ? 64 : 112} />
-					</View>
-				))}
+			{photo ? (
+				<CornerMarks color={tone.onFill} style={s.loserPhoto}>
+					<Image source={{ uri: photo }} style={s.fill} contentFit="cover" />
+				</CornerMarks>
+			) : (
+				<View style={s.faces}>
+					{(nobody ? result.members : losers).map((m, i) => (
+						<View key={m.user_id} style={i > 0 ? s.overlap : undefined}>
+							<Avatar userId={m.user_id} name={displayName(m)} size={nobody ? 64 : 112} />
+						</View>
+					))}
+				</View>
+			)}
+			<View>
+				<OnFill tone={tone} variant="display">
+					{headline}
+				</OnFill>
+				<OnFill tone={tone} variant="h2" muted>
+					{line}
+				</OnFill>
 			</View>
-			<OnFill tone={tone} variant="display">
-				{headline}
-			</OnFill>
-			<OnFill tone={tone} variant="h2" muted>
-				{line}
-			</OnFill>
+			{days.length > 0 ? (
+				<View style={s.days} onLayout={(e) => setWidth(e.nativeEvent.layout.width)}>
+					{days.map((d) =>
+						d.checkIn?.photo_url ? (
+							<Image
+								key={d.day}
+								source={{ uri: d.checkIn.photo_url }}
+								style={[s.dayTile, { width: tile, height: tile }]}
+								contentFit="cover"
+							/>
+						) : d.checkIn ? (
+							<View
+								key={d.day}
+								style={[
+									s.dayTile,
+									{ width: tile, height: tile, backgroundColor: tone.onFillTrack }
+								]}
+							/>
+						) : (
+							<View
+								key={d.day}
+								accessibilityLabel={`Missed ${d.day}`}
+								style={[
+									s.dayTile,
+									s.missed,
+									{ width: tile, height: tile, borderColor: d.held ? tone.onFill : c.borderSoft }
+								]}
+							/>
+						)
+					)}
+				</View>
+			) : null}
+		</View>
+	)
+}
+
+/**
+ * The results' wall, filling what the slide has left: tiles as wide as the columns allow and as
+ * tall as the rows allow, the rows arriving one by one.
+ */
+function WallFill({ wall, myId, tone }: { wall: Wall; myId: string | null; tone: CrewTone }) {
+	const [height, setHeight] = useState(0)
+	const rows = Math.max(wall.days.length, 1)
+	// Each mini row is its tiles plus the frame (3) on both sides and a 1pt gap above.
+	const tileHeight = height > 0 ? Math.max(height / rows - 7, 12) : 0
+	return (
+		<View style={s.wallFill} onLayout={(e) => setHeight(e.nativeEvent.layout.height)}>
+			{height > 0 ? (
+				<WallGrid
+					wall={wall}
+					myId={myId}
+					tone={tone}
+					mini
+					maxTile={999}
+					tileHeight={tileHeight}
+					cascade
+				/>
+			) : null}
 		</View>
 	)
 }
@@ -349,11 +501,13 @@ function Loser({
 function Signatures({
 	detail,
 	pact,
-	roundTwo
+	roundTwo,
+	tone
 }: {
 	detail: PactResultDetail
 	pact: PactDetail | null
 	roundTwo: ReactNode
+	tone: CrewTone
 }) {
 	const c = useColors()
 	const info = detail.pact
@@ -361,7 +515,15 @@ function Signatures({
 	const days = detail.result.total_days
 	return (
 		<View style={s.signatures}>
-			<CornerMarks>
+			<View>
+				<OnFill tone={tone} variant="display">
+					Signed.
+				</OnFill>
+				<OnFill tone={tone} variant="display" muted>
+					{signed.length === (pact?.members.length ?? 0) ? 'Every one of you.' : 'Kept, mostly.'}
+				</OnFill>
+			</View>
+			<CornerMarks color={tone.onFill}>
 				<View style={[s.card, { backgroundColor: c.inkOnArt }]}>
 					<Text variant="mono" style={{ color: c.hero }}>
 						The pact · {info.name}
@@ -391,6 +553,8 @@ function Signatures({
 	)
 }
 
+const GAP_DAYS = 4
+
 const s = StyleSheet.create({
 	root: { flex: 1, paddingHorizontal: 16 },
 	ticks: { flexDirection: 'row', gap: 4 },
@@ -402,14 +566,29 @@ const s = StyleSheet.create({
 		paddingVertical: 14
 	},
 	body: { flex: 1 },
-	slide: { flex: 1, gap: 24, paddingTop: 8 },
-	awards: { gap: 20 },
+	slide: { flex: 1, gap: 20, paddingTop: 4 },
+	flex: { flex: 1 },
+	fill: { width: '100%', height: '100%', borderRadius: 4 },
+	wallFill: { flex: 1 },
+	awards: { flex: 1, justifyContent: 'space-around', paddingBottom: 8 },
+	award: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+	faces: { flexDirection: 'row' },
+	face: {
+		borderRadius: 6,
+		borderWidth: 2,
+		overflow: 'hidden',
+		alignItems: 'center',
+		justifyContent: 'center'
+	},
 	center: { flex: 1, justifyContent: 'center', gap: 16 },
 	beat: { fontSize: 140, lineHeight: 140 },
-	loser: { flex: 1, justifyContent: 'center', gap: 16 },
-	faces: { flexDirection: 'row' },
+	loser: { flex: 1, justifyContent: 'space-between', gap: 16 },
+	loserPhoto: { flex: 1, minHeight: 160 },
+	days: { flexDirection: 'row', flexWrap: 'wrap', gap: GAP_DAYS },
+	dayTile: { borderRadius: 3 },
+	missed: { borderWidth: 1.5, borderStyle: 'dashed' },
 	overlap: { marginLeft: -14 },
-	signatures: { gap: 20 },
+	signatures: { flex: 1, justifyContent: 'space-evenly', gap: 20 },
 	card: { borderRadius: 6, padding: 20, gap: 18 },
 	signed: { flexDirection: 'row', flexWrap: 'wrap', gap: 14 },
 	signer: { gap: 4 },

@@ -85,12 +85,30 @@ const CAPTIONS = [
 	'Evidence filed. Carry on.'
 ]
 
+/** How each demo member signs, so the four signatures look like four different hands. */
+type Hand = 'cursive' | 'angular' | 'tall' | 'print'
+const HANDS: Record<DemoMember['key'], Hand> = {
+	ana: 'cursive',
+	ben: 'angular',
+	cleo: 'tall',
+	dan: 'print'
+}
+
+/** Printed capitals for the printed hand, in a 30×60 box with the baseline at y = 0. */
+const PRINTED: Record<string, string> = {
+	D: 'M0 0 L0 -60 C40 -60 40 0 0 0',
+	A: 'M0 0 L15 -60 L30 0 M6 -24 L24 -24',
+	B: 'M0 0 L0 -60 C34 -60 34 -30 0 -30 C38 -30 38 0 0 0',
+	C: 'M30 -54 C10 -66 0 -44 0 -30 C0 -12 12 6 30 -6',
+	default: 'M0 -60 L30 -60 M15 -60 L15 0'
+}
+
 /**
- * A demo signature as SVG path data in the 300×120 signature box: a few connected loops whose
- * size, slant and rhythm come from the name, ending in a flick, so each member's looks like a
- * different hand. The same name always signs the same way.
+ * A demo signature as SVG path data in the 300×120 signature box, in one of four hands: a
+ * looping cursive, a fast angular scrawl, a tall narrow slant, or printed initials with a
+ * flourish. Proportions come from the name, so the same name always signs the same way.
  */
-function demoSignature(name: string): string {
+function demoSignature(name: string, hand: Hand): string {
 	// FNV-1a, then a xorshift: names that differ by a letter still sign very differently.
 	let seed = 2166136261
 	for (const ch of name) seed = Math.imul(seed ^ ch.charCodeAt(0), 16777619) >>> 0
@@ -102,27 +120,54 @@ function demoSignature(name: string): string {
 		return (seed % 10_000) / 10_000
 	}
 	const f = (n: number) => n.toFixed(1)
-	const base = 74 + rand() * 12
-	let x = 18 + rand() * 14
-	// The capital: one tall loop, leaning.
-	const capH = 50 + rand() * 25
-	const lean = 8 + rand() * 18
-	let d = `M${f(x)} ${f(base)} C${f(x + lean)} ${f(base - capH)} ${f(x + lean + 26)} ${f(base - capH - 6)} ${f(x + 18)} ${f(base - 8)}`
-	x += 22 + rand() * 10
-	// The rest: small letters of varying height, width and roundness.
-	const letters = name.length + 1 + Math.floor(rand() * 3)
-	for (let i = 0; i < letters; i++) {
-		const w = 10 + rand() * 14
-		const h = 10 + rand() * (i % 3 === 0 ? 30 : 16)
-		const round = 0.3 + rand() * 0.6
-		d += ` C${f(x + w * round)} ${f(base - h)} ${f(x + w)} ${f(base - h)} ${f(x + w * 0.8)} ${f(base)}`
-		x += w * (0.75 + rand() * 0.3)
+	const base = 80 + rand() * 8
+	let x = 16 + rand() * 12
+	let d = ''
+
+	if (hand === 'cursive') {
+		// A big looped capital, then round joined letters, then an underline swept back.
+		d = `M${f(x)} ${f(base)} C${f(x - 6)} ${f(base - 70)} ${f(x + 46)} ${f(base - 72)} ${f(x + 22)} ${f(base - 6)}`
+		d += ` C${f(x + 14)} ${f(base + 8)} ${f(x + 4)} ${f(base - 30)} ${f(x + 34)} ${f(base - 26)}`
+		x += 34
+		for (let i = 0; i < name.length + 3; i++) {
+			const w = 12 + rand() * 8
+			d += ` C${f(x + 2)} ${f(base - 24)} ${f(x + w)} ${f(base - 24)} ${f(x + w * 0.7)} ${f(base)}`
+			x += w * 0.9
+		}
+		d += ` Q${f(x + 30)} ${f(base + 14)} ${f(30)} ${f(base + 16)}`
+	} else if (hand === 'angular') {
+		// A quick scrawl of sharp peaks, uneven, ending in a long rising tail.
+		d = `M${f(x)} ${f(base - 10)} L${f(x + 10)} ${f(base - 56)} L${f(x + 18)} ${f(base)}`
+		x += 18
+		for (let i = 0; i < name.length + 5; i++) {
+			const w = 8 + rand() * 9
+			const h = 14 + rand() * (i % 2 ? 34 : 18)
+			d += ` L${f(x + w / 2)} ${f(base - h)} L${f(x + w)} ${f(base - 2 * rand())}`
+			x += w
+		}
+		d += ` L${f(Math.min(x + 70, 294))} ${f(base - 44)}`
+	} else if (hand === 'tall') {
+		// Narrow, upright, steeply slanted strokes with tall ascenders, and a dot.
+		for (let i = 0; i < name.length + 4; i++) {
+			const h = i === 0 ? 86 : 22 + rand() * (i % 3 === 0 ? 48 : 18)
+			const w = 7 + rand() * 5
+			d += `${d ? ' ' : ''}M${f(x)} ${f(base)} Q${f(x + 12)} ${f(base - h)} ${f(x + w + 10)} ${f(base - h * 0.15)}`
+			x += w + 6
+		}
+		d += ` M${f(x + 10)} ${f(base - 50)} L${f(x + 11)} ${f(base - 49)}`
+		d += ` M${f(18)} ${f(base + 10)} Q${f(x / 2)} ${f(base + 4)} ${f(x + 16)} ${f(base + 12)}`
+	} else {
+		// The initial printed big and boxy, then the rest of the name as a fast flourish.
+		const initial = PRINTED[name.charAt(0).toUpperCase()] ?? PRINTED.default!
+		d = initial.replace(
+			/(-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?)/g,
+			(_, px: string, py: string) => `${f(Number(px) + x)} ${f(Number(py) + base)}`
+		)
+		x += 44
+		d += ` M${f(x)} ${f(base - 16)} C${f(x + 26)} ${f(base - 48)} ${f(x + 44)} ${f(base + 6)} ${f(x + 70)} ${f(base - 20)}`
+		d += ` C${f(x + 86)} ${f(base - 36)} ${f(x + 100)} ${f(base - 4)} ${f(x + 128)} ${f(base - 30)}`
+		d += ` M${f(10)} ${f(base + 12)} L${f(Math.min(x + 140, 294))} ${f(base + 4)}`
 	}
-	// A finish: an underline back under the name, or an upward flick.
-	d +=
-		rand() > 0.5
-			? ` Q${f(x + 20)} ${f(base + 10)} ${f(Math.max(x - 60 - rand() * 40, 20))} ${f(base + 14)}`
-			: ` L${f(Math.min(x + 30 + rand() * 30, 292))} ${f(base - 26 - rand() * 20)}`
 	return d
 }
 
@@ -304,7 +349,10 @@ async function main() {
 	const signed = (m: DemoMember) =>
 		m.key === 'ana'
 			? { signature: null, signedAt: null }
-			: { signature: demoSignature(m.name), signedAt: new Date(Date.now() - 8 * 24 * HOUR_MS) }
+			: {
+					signature: demoSignature(m.name, HANDS[m.key]),
+					signedAt: new Date(Date.now() - 8 * 24 * HOUR_MS)
+				}
 
 	const plan = checkInPlan()
 	const demo = await demoPhotos('run')
@@ -519,7 +567,7 @@ async function seedFinished(ids: Map<DemoMember['key'], string>) {
 				leftAt: null,
 				leftDay: null,
 				saverUsedDay,
-				signature: demoSignature(m.name),
+				signature: demoSignature(m.name, HANDS[m.key]),
 				signedAt: new Date(closesAt(timezone!, addDays(startDay, -1)).getTime() - HOUR_MS)
 			}
 			return db.pactMember.upsert({

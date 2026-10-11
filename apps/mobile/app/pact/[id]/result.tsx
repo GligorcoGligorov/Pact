@@ -96,13 +96,13 @@ function Results({ detail }: { detail: PactResultDetail }) {
 				track('pact_result_revealed', { pact_id: pact.id, outcome: result.outcome })
 			}}
 			onClose={goBack}
-			roundTwo={<RoundTwo detail={detail} />}
+			roundTwo={<RoundTwo detail={detail} ink={crewTone(c, pact.color).onFillMuted} />}
 		/>
 	)
 }
 
 /** Round 2: the same crew, the same habit, from tomorrow. */
-function RoundTwo({ detail }: { detail: PactResultDetail }) {
+function RoundTwo({ detail, ink }: { detail: PactResultDetail; ink?: string }) {
 	const { showToast } = useToast()
 	const rematch = useRematch(detail.pact.id)
 
@@ -147,7 +147,7 @@ function RoundTwo({ detail }: { detail: PactResultDetail }) {
 					})
 				}}
 			/>
-			<Text variant="caption" tone="secondary" style={s.center}>
+			<Text variant="caption" tone="secondary" style={[s.center, ink ? { color: ink } : null]}>
 				Same habit, same crew, same stakes. Everyone&apos;s in, starting tomorrow.
 			</Text>
 		</View>

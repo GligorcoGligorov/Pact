@@ -5,6 +5,7 @@ import Animated, {
 	cancelAnimation,
 	Easing,
 	FadeIn,
+	FadeInDown,
 	Keyframe,
 	useAnimatedStyle,
 	useSharedValue,
@@ -31,6 +32,8 @@ const PULSE_MS = 1600
 /** Rows fade in one after another on open, capped so a long pact doesn't wait. */
 const ROW_STAGGER_MS = 40
 const STAGGER_CAP = 8
+/** The results' wall: one row after another, this far apart. */
+const CASCADE_MS = 55
 /** A photo landing in its tile: a little big, then snapped into place, inside 300ms. */
 const pop = new Keyframe({
 	0: { opacity: 0, transform: [{ scale: 1.35 }] },
@@ -72,6 +75,8 @@ export function WallGrid({
 	pending,
 	landed,
 	maxTile,
+	tileHeight,
+	cascade,
 	onOpen
 }: {
 	wall: Wall
@@ -91,6 +96,10 @@ export function WallGrid({
 	landed?: string | null
 	/** A cap on tile width for a mini wall that must fit many days (the results' wall). */
 	maxTile?: number
+	/** A fixed tile height: a wall that fills a given height (the results' wall). */
+	tileHeight?: number
+	/** Rows arrive one by one, top to bottom, however many there are (the results' reveal). */
+	cascade?: boolean
 	onOpen?: (tile: OpenTile) => void
 }) {
 	const c = useColors()
@@ -117,7 +126,7 @@ export function WallGrid({
 	const inner = width - label - FRAME * 2 - (label > 0 ? GAP : 0)
 	const fit = width > 0 ? (inner - GAP * (n - 1)) / n : 0
 	const tileW = mini ? Math.min(fit, maxTile ?? MINI_MAX) : fit
-	const tileH = mini ? tileW : tileW * (4 / 3)
+	const tileH = tileHeight ?? (mini ? tileW : tileW * (4 / 3))
 	const total = wall.days.length
 	const look: Look = onFill
 		? {
@@ -159,7 +168,11 @@ export function WallGrid({
 						return (
 							<Animated.View
 								key={day.day}
-								entering={FadeIn.delay(Math.min(i, STAGGER_CAP) * ROW_STAGGER_MS).duration(240)}
+								entering={
+									cascade
+										? FadeInDown.delay(i * CASCADE_MS).duration(260)
+										: FadeIn.delay(Math.min(i, STAGGER_CAP) * ROW_STAGGER_MS).duration(240)
+								}
 								style={[
 									s.row,
 									{ marginTop: i === 0 && mini ? 0 : (mini && maxTile ? 4 : ROW_GAP) - FRAME }
