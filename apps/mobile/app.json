@@ -21,7 +21,7 @@
 		"splash": {
 			"image": "./assets/splash-icon.png",
 			"resizeMode": "contain",
-			"backgroundColor": "#f8faed"
+			"backgroundColor": "#f2efe9"
 		},
 		"ios": {
 			"supportsTablet": false,
@@ -52,7 +52,7 @@
 			"package": "com.gligorcogligorov.pact",
 			"adaptiveIcon": {
 				"foregroundImage": "./assets/icon.png",
-				"backgroundColor": "#f8faed"
+				"backgroundColor": "#f2efe9"
 			},
 			"permissions": [],
 			"blockedPermissions": [
@@ -62,7 +62,7 @@
 			],
 			"androidStatusBar": {
 				"barStyle": "dark-content",
-				"backgroundColor": "#f8faed",
+				"backgroundColor": "#f2efe9",
 				"translucent": true
 			},
 			"predictiveBackGestureEnabled": false,
@@ -88,7 +88,7 @@
 			[
 				"expo-splash-screen",
 				{
-					"backgroundColor": "#f8faed",
+					"backgroundColor": "#f2efe9",
 					"image": "./assets/splash-icon.png",
 					"imageWidth": 200
 				}

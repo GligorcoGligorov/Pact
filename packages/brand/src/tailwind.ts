@@ -95,7 +95,8 @@ export function webPreset(sample: Palette) {
 				outlineColor: { accent: cssColor('brand-ink') },
 				fontFamily: {
 					sans: ['var(--font-text)'],
-					display: ['var(--font-display)']
+					display: ['var(--font-display)'],
+					mono: ['var(--font-mono)']
 				},
 				borderRadius: {
 					sm: 'var(--radius-sm)',

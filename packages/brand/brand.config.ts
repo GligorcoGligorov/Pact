@@ -41,7 +41,7 @@ export const brandConfig: {
 	// 🎨 BRAND: 'dusk' | 'daylight'
 	preset: 'daylight',
 	// 🎨 BRAND: '#rrggbb', or 'default' for the preset's own accent
-	accent: '#2f7d3d',
+	accent: 'default',
 	// 🎨 BRAND: app name (mobile) and site name (web). Keep them the same word
 	// unless the site deliberately goes by another name: the website shows the
 	// app's own screens, so two names read as two products.

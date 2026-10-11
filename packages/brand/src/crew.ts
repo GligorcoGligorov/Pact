@@ -32,8 +32,10 @@ export interface CrewTone {
 	onFillMuted: string
 	/** An empty ring track on `fill`. */
 	onFillTrack: string
-	/** The colour as text or a thin line on any ground. */
+	/** The colour as text on any ground (AA). */
 	ink: string
+	/** The colour as a graphic line on any ground (3:1): the chain's links. */
+	line: string
 	/** A low-alpha wash: card accents, the feed stripe's chip. */
 	dim: string
 	/** The ring's empty track, tinted toward the crew. */

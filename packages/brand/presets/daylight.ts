@@ -1,19 +1,14 @@
 /**
- * daylight — light, warm, confident.
+ * daylight — Pact's world: warm paper and near-black ink (docs/design/ui-revamp/plan.md).
  *
- * Pact: the light scheme's ground and ink follow docs/design/pact-ui-brief.md (the
- * "Moe" reference): a warm off-white #f8faed and near-black #232323, under the
- * deep green accent set in brand.config.ts, with white text on its fills.
+ * The ground is a warm paper off-white, the ink near-black, and the accent in brand.config.ts
+ * is the ink itself: buttons are ink pills. The only colour in the product is each crew's own,
+ * used sparingly (the chain's closed links, the crew's mark). Headlines are Inter Tight, big and
+ * tight; metadata is IBM Plex Mono in caps. Hairlines separate, nothing floats: one shadow style
+ * (`overlay`, for sheets and modals), the rest flat.
  *
- * A warm stone-paper ground (not stark white, and not cream-plus-terracotta:
- * the accent is a marigold FILL carrying dark ink, never a coral text colour),
- * graphite ink, a bold grotesque display at 800 with tight tracking, warm
- * brand-tinted shadows and crisp motion. Opens light; also ships a dark
- * "espresso" scheme built as its own warm ladder, not an inversion.
- *
- * Neutrals are authored here (OKLCH source in each comment) and pinned by the
- * contrast test. Accent roles are never written here — packages/brand derives
- * them from the single accent in brand.config.ts.
+ * Neutrals are authored here and pinned by the contrast test. Accent roles are never written
+ * here — packages/brand derives them from the single accent in brand.config.ts.
  */
 
 import type { Preset } from '../src/types'
@@ -21,26 +16,26 @@ import type { Preset } from '../src/types'
 export const daylight: Preset = {
 	name: 'daylight',
 	primaryScheme: 'light',
-	// Marigold — oklch(0.80 0.158 72). A fill with graphite ink on it.
-	defaultAccent: '#fbab2f',
+	// Ink: Pact's buttons are ink pills, and colour belongs to the crews.
+	defaultAccent: '#151412',
 
 	schemes: {
 		light: {
 			scheme: 'light',
 			name: 'daylight',
 			ground: {
-				bg: '#f8faed', //       Pact off-white (brief)
-				well: '#eef1e0', //     a step darker, same hue
-				surface: '#ffffff', //  cards sit on white above the paper
-				surface2: '#f3f5e8', // chips, inputs on cards
-				surface3: '#e6ead5' //  pressed rows, segmented tracks
+				bg: '#f2efe9', //       warm paper
+				well: '#e9e5dd', //     a step darker, same hue
+				surface: '#f7f5f0', //  a sheet of lighter paper, never white
+				surface2: '#ebe7df', // chips, inputs
+				surface3: '#e6e2d9' //  pressed rows, segmented tracks
 			},
 			text: {
-				primary: '#232323', //   Pact near-black (brief)
-				body: '#2f302c', //
-				secondary: '#484a44', //
-				tertiary: '#5e6159', //
-				disabled: '#989b92' //
+				primary: '#151412', //   ink
+				body: '#262521', //
+				secondary: '#4f4c46', //
+				tertiary: '#5f5b54', //  the muted second line of a two-tone headline
+				disabled: '#a29e95' //
 			},
 			semantic: {
 				success: { solid: '#23773d', text: '#236436' },
@@ -49,14 +44,12 @@ export const daylight: Preset = {
 				error: { solid: '#c52c2a', text: '#a92321' },
 				info: { solid: '#036eae', text: '#025c93' }
 			},
-			// Pact: white on the deep green fills (#2f7d3d, 5.1:1), the developer's call.
-			onFill: { ink: '#232323', paper: '#ffffff' },
-			shadowTint: '#2c3322', // deep olive, never black
-			// The near-black floating bar and countdown panels of the brief.
-			hero: { bg: '#232323', text: '#f8faed', textSecondary: '#c3c6b8' },
+			onFill: { ink: '#151412', paper: '#f2efe9' },
+			shadowTint: '#1a1814',
+			hero: { bg: '#151412', text: '#f2efe9', textSecondary: '#a29e95' },
 			alpha: {
-				hairline: 0.09,
-				soft: 0.13,
+				hairline: 0.12,
+				soft: 0.18,
 				active: 0.24,
 				glass: 0.65,
 				brandDim: 0.18,
@@ -73,20 +66,20 @@ export const daylight: Preset = {
 		},
 		dark: {
 			scheme: 'dark',
-			name: 'espresso',
+			name: 'ink',
 			ground: {
-				bg: '#1e1511', //       oklch(0.205 0.018 42)
-				well: '#241915', //     oklch(0.226 0.019 43)
-				surface: '#2a1f1a', //  oklch(0.250 0.020 45)
-				surface2: '#332721', // oklch(0.285 0.021 47)
-				surface3: '#3e312a' //  oklch(0.325 0.022 50)
+				bg: '#121110', //       ink, the paper inverted
+				well: '#171614', //
+				surface: '#1c1b18', //
+				surface2: '#24231f', //
+				surface3: '#2e2c28' //
 			},
 			text: {
-				primary: '#efece6', //   oklch(0.945 0.009 85) — never pure white
-				body: '#d9d3cb', //      oklch(0.870 0.013 80)
-				secondary: '#bfb8ae', // oklch(0.785 0.016 75)
-				tertiary: '#a79e94', //  oklch(0.705 0.018 70)
-				disabled: '#685e58' //   oklch(0.490 0.016 60)
+				primary: '#f2efe9', //   paper, never pure white
+				body: '#dcd8d0', //
+				secondary: '#b5b0a6', //
+				tertiary: '#a39d92', //
+				disabled: '#5d5a53' //
 			},
 			semantic: {
 				success: { solid: '#23773d', text: '#79d28d' },
@@ -94,9 +87,9 @@ export const daylight: Preset = {
 				error: { solid: '#c12e2b', text: '#f49287' },
 				info: { solid: '#036eae', text: '#89c1f1' }
 			},
-			onFill: { ink: '#1c1915', paper: '#efece6' },
-			shadowTint: '#060302', // oklch(0.100 0.012 45)
-			hero: { bg: '#232323', text: '#f8faed', textSecondary: '#c3c6b8' },
+			onFill: { ink: '#151412', paper: '#f2efe9' },
+			shadowTint: '#000000',
+			hero: { bg: '#151412', text: '#f2efe9', textSecondary: '#a29e95' },
 			alpha: {
 				hairline: 0.08,
 				soft: 0.12,
@@ -118,9 +111,9 @@ export const daylight: Preset = {
 
 	fonts: {
 		display: {
-			name: 'Bricolage Grotesque',
+			name: 'Inter Tight',
 			fallback: 'system-ui, -apple-system, sans-serif',
-			files: { 700: 'BricolageGrotesque_700Bold', 800: 'BricolageGrotesque_800ExtraBold' }
+			files: { 500: 'InterTight_500Medium', 600: 'InterTight_600SemiBold' }
 		},
 		text: {
 			name: 'Inter',
@@ -132,73 +125,78 @@ export const daylight: Preset = {
 				700: 'Inter_700Bold',
 				800: 'Inter_800ExtraBold'
 			}
+		},
+		mono: {
+			name: 'IBM Plex Mono',
+			fallback: 'ui-monospace, Menlo, monospace',
+			files: { 500: 'IBMPlexMono_500Medium' }
 		}
 	},
 
-	// Grotesque at 800 for headlines, 700 for titles, tracked tight; labels a
-	// weight heavier than dusk's so the warm world reads confident.
+	// One grotesque, set big and tight: Inter Tight at 600 for headlines (500 for the largest,
+	// where weight comes from size). Metadata is mono caps. No eyebrows in a brand colour.
 	type: {
 		displayHero: {
 			family: 'display',
-			weight: 800,
-			size: 52,
+			weight: 500,
+			size: 56,
 			lineHeight: 54,
-			tracking: -0.035,
+			tracking: -0.05,
 			maxScale: 1.2
 		},
 		display: {
 			family: 'display',
-			weight: 800,
-			size: 40,
+			weight: 600,
+			size: 42,
 			lineHeight: 42,
-			tracking: -0.032,
+			tracking: -0.045,
 			maxScale: 1.25
 		},
 		h1: {
 			family: 'display',
-			weight: 800,
-			size: 30,
-			lineHeight: 34,
-			tracking: -0.028,
+			weight: 600,
+			size: 32,
+			lineHeight: 33,
+			tracking: -0.04,
 			maxScale: 1.3
 		},
 		h2: {
 			family: 'display',
-			weight: 700,
+			weight: 600,
 			size: 24,
-			lineHeight: 29,
-			tracking: -0.02,
+			lineHeight: 27,
+			tracking: -0.03,
 			maxScale: 1.35
 		},
 		h3: {
 			family: 'display',
-			weight: 700,
-			size: 19,
-			lineHeight: 24,
-			tracking: -0.012,
+			weight: 600,
+			size: 18,
+			lineHeight: 23,
+			tracking: -0.015,
 			maxScale: 1.5
 		},
 		title: {
 			family: 'display',
-			weight: 800,
-			size: 26,
+			weight: 600,
+			size: 28,
 			lineHeight: 30,
-			tracking: -0.026,
+			tracking: -0.04,
 			maxScale: 1.35
 		},
 		question: {
 			family: 'display',
-			weight: 700,
+			weight: 600,
 			size: 26,
-			lineHeight: 32,
-			tracking: -0.02,
+			lineHeight: 30,
+			tracking: -0.03,
 			maxScale: 1.35
 		},
 		lead: {
 			family: 'text',
 			weight: 400,
-			size: 18,
-			lineHeight: 27,
+			size: 17,
+			lineHeight: 25,
 			tracking: -0.012,
 			maxScale: 1.8
 		},
@@ -212,70 +210,85 @@ export const daylight: Preset = {
 			maxScale: 2
 		},
 		caption: { family: 'text', weight: 500, size: 13, lineHeight: 18, tracking: 0, maxScale: 2 },
+		// The old tracked-caps eyebrow is now a mono micro-label: "DAY 08 / 21".
 		eyebrow: {
-			family: 'text',
-			weight: 700,
+			family: 'mono',
+			weight: 500,
 			size: 11,
-			lineHeight: 16,
-			tracking: 0.12,
+			lineHeight: 14,
+			tracking: 0.06,
 			uppercase: true,
-			maxScale: 1.6
+			tabular: true,
+			maxScale: 1.4
 		},
 		label: {
 			family: 'text',
-			weight: 700,
+			weight: 600,
 			size: 15,
 			lineHeight: 20,
 			tracking: -0.012,
 			maxScale: 1.6
 		},
 		labelTracked: {
-			family: 'text',
-			weight: 700,
-			size: 13,
-			lineHeight: 18,
-			tracking: 0.14,
+			family: 'mono',
+			weight: 500,
+			size: 12,
+			lineHeight: 16,
+			tracking: 0.06,
 			uppercase: true,
-			maxScale: 1.5
+			tabular: true,
+			maxScale: 1.4
 		},
 		number: {
-			family: 'text',
-			weight: 800,
-			size: 32,
+			family: 'display',
+			weight: 500,
+			size: 34,
 			lineHeight: 36,
-			tracking: -0.03,
+			tracking: -0.04,
 			tabular: true,
 			maxScale: 1.3
+		},
+		mono: {
+			family: 'mono',
+			weight: 500,
+			size: 11,
+			lineHeight: 14,
+			tracking: 0.06,
+			uppercase: true,
+			tabular: true,
+			maxScale: 1.4
 		}
 	},
 
+	// Engineered, not soft: small radii on cards and inputs, pills only for buttons.
 	radii: {
-		sm: 8,
-		md: 12,
-		lg: 14,
-		xl: 18,
-		'2xl': 24,
-		'3xl': 32,
-		'4xl': 40,
+		sm: 2,
+		md: 4,
+		lg: 6,
+		xl: 8,
+		'2xl': 10,
+		'3xl': 14,
+		'4xl': 20,
 		pill: 999,
-		button: 16,
-		input: 14,
-		chip: 999,
-		row: 18,
-		card: 24,
-		sheet: 32
+		button: 999,
+		input: 6,
+		chip: 4,
+		row: 6,
+		card: 8,
+		sheet: 20
 	},
 
 	art: { scrim: 'rgba(12,6,4,0.84)', ink: '#efece6' },
 
-	// Warm umber shadows, shorter and crisper than dusk's.
+	// One shadow style: `overlay`, for what sits above the page (sheets, modals, toasts).
+	// Everything on the page is flat and separated by hairlines.
 	elevation: {
 		flat: { y: 0, blur: 0, spread: 0, light: 0, dark: 0, android: 0 },
-		soft: { y: 2, blur: 8, spread: 0, light: 0.07, dark: 0.24, android: 1 },
-		card: { y: 4, blur: 16, spread: -4, light: 0.1, dark: 0.34, android: 3 },
-		raised: { y: 10, blur: 26, spread: -8, light: 0.14, dark: 0.42, android: 6 },
-		overlay: { y: 16, blur: 40, spread: -10, light: 0.2, dark: 0.55, android: 12 },
-		cta: { y: 6, blur: 18, spread: -6, light: 0.24, dark: 0.45, android: 4 }
+		soft: { y: 0, blur: 0, spread: 0, light: 0, dark: 0, android: 0 },
+		card: { y: 0, blur: 0, spread: 0, light: 0, dark: 0, android: 0 },
+		raised: { y: 0, blur: 0, spread: 0, light: 0, dark: 0, android: 0 },
+		overlay: { y: 12, blur: 32, spread: -8, light: 0.16, dark: 0.5, android: 10 },
+		cta: { y: 0, blur: 0, spread: 0, light: 0, dark: 0, android: 0 }
 	},
 
 	// Crisp: stiffer springs. Snappy and settle are damped to about 0.65 and

@@ -7,8 +7,8 @@
  * Both presets' display faces are registered here so switching `preset` in
  * brand.config.ts needs no code change; only the active preset's files are
  * LOADED at startup (see presetFonts). A play that settles on one preset can
- * delete the other preset's two imports (Source Serif ~0.66 MB, Bricolage
- * ~0.18 MB) from the bundle.
+ * delete the other preset's two imports (Source Serif ~0.66 MB) from the
+ * bundle.
  *
  * JavaScript and font assets only — no native code — so this ships OTA.
  */
@@ -20,9 +20,10 @@ import { Inter_800ExtraBold } from '@expo-google-fonts/inter/800ExtraBold'
 // dusk display
 import { SourceSerif4_400Regular } from '@expo-google-fonts/source-serif-4/400Regular'
 import { SourceSerif4_600SemiBold } from '@expo-google-fonts/source-serif-4/600SemiBold'
-// daylight display
-import { BricolageGrotesque_700Bold } from '@expo-google-fonts/bricolage-grotesque/700Bold'
-import { BricolageGrotesque_800ExtraBold } from '@expo-google-fonts/bricolage-grotesque/800ExtraBold'
+// daylight display (Pact) and the mono micro-labels
+import { InterTight_500Medium } from '@expo-google-fonts/inter-tight/500Medium'
+import { InterTight_600SemiBold } from '@expo-google-fonts/inter-tight/600SemiBold'
+import { IBMPlexMono_500Medium } from '@expo-google-fonts/ibm-plex-mono/500Medium'
 import { theme } from '@app/brand'
 
 type FontSource = number
@@ -35,13 +36,14 @@ const FONT_FILES: Record<string, FontSource> = {
 	Inter_800ExtraBold,
 	SourceSerif4_400Regular,
 	SourceSerif4_600SemiBold,
-	BricolageGrotesque_700Bold,
-	BricolageGrotesque_800ExtraBold
+	InterTight_500Medium,
+	InterTight_600SemiBold,
+	IBMPlexMono_500Medium
 }
 
 /** The files the active preset uses, ready for useFonts(). */
 export const presetFonts: Record<string, FontSource> = Object.fromEntries(
-	[theme.fonts.text, theme.fonts.display]
+	[theme.fonts.text, theme.fonts.display, theme.fonts.mono]
 		.flatMap((family) => Object.values(family.files))
 		.map((key) => {
 			const file = FONT_FILES[key]
