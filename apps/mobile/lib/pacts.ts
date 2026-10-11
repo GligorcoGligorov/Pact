@@ -16,7 +16,8 @@ import {
 	type JoinSource,
 	type Reaction,
 	type ReportReason,
-	type ReactionState
+	type ReactionState,
+	type Wall
 } from '@app/contract'
 import { api, ApiError, type ResponseOf } from './api'
 import { supabase } from './supabase'
@@ -31,6 +32,8 @@ export type InviteDetail = ResponseOf<'getInvite'>['invite']
 export const pactKeys = {
 	all: ['pacts'] as const,
 	detail: (id: string) => ['pacts', id] as const,
+	/** Under the pact's key, so anything that refreshes the pact refreshes its wall. */
+	wall: (id: string) => ['pacts', id, 'wall'] as const,
 	invite: (code: string) => ['invites', code] as const,
 	checkIn: (id: string) => ['check-ins', id] as const,
 	feed: ['feed'] as const,
@@ -57,6 +60,22 @@ export function usePact(id: string) {
 			if (!pactParams.safeParse({ id }).success) return null
 			try {
 				return await api('getPact', { params: { id }, signal })
+			} catch (error) {
+				if (error instanceof ApiError && error.code === 'not_found') return null
+				throw error
+			}
+		}
+	})
+}
+
+/** The Crew Wall: every pact day so far by every member, newest first, with signed photo URLs. */
+export function useWall(id: string) {
+	return useQuery<Wall | null>({
+		queryKey: pactKeys.wall(id),
+		queryFn: async ({ signal }) => {
+			if (!pactParams.safeParse({ id }).success) return null
+			try {
+				return await api('getPactWall', { params: { id }, signal })
 			} catch (error) {
 				if (error instanceof ApiError && error.code === 'not_found') return null
 				throw error
@@ -364,6 +383,17 @@ export function addIsoDays(iso: string, days: number): string {
 	const date = new Date(`${iso}T00:00:00Z`)
 	date.setUTCDate(date.getUTCDate() + days)
 	return date.toISOString().slice(0, 10)
+}
+
+const WEEKEND = new Set([0, 6])
+
+/** How many pact days run from `start` through `end` ("DAY 08 / 21"): weekdays-only skips weekends. */
+export function pactDayCount(start: string, end: string, cadence: 'daily' | 'weekdays'): number {
+	let count = 0
+	for (let day = start; day <= end; day = addIsoDays(day, 1)) {
+		if (cadence === 'daily' || !WEEKEND.has(new Date(`${day}T12:00:00Z`).getUTCDay())) count++
+	}
+	return count
 }
 
 /** Whole days from `from` to `to`, both `YYYY-MM-DD`. */

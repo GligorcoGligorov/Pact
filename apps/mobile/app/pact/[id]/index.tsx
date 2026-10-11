@@ -5,13 +5,14 @@ import { router, useLocalSearchParams } from 'expo-router'
 import { useQueryClient } from '@tanstack/react-query'
 import { Camera, Check, SearchX, Settings2, UserPlus } from 'lucide-react-native'
 import { displayName } from '@/components/pact/Avatars'
-import { Chain, chainTiles } from '@/components/pact/Chain'
 import { ClockLeft } from '@/components/pact/Countdown'
 import { KeptLine, useFirstKeptView, useFirstMilestoneView } from '@/components/pact/KeptCard'
-import { CrewLinks } from '@/components/pact/CrewLinks'
 import { CrewHero, OnFill } from '@/components/pact/CrewHero'
 import { SaverCard } from '@/components/pact/SaverCard'
 import { QueryErrorState } from '@/components/QueryError'
+import { PhotoViewer } from '@/components/wall/PhotoViewer'
+import { Waiting } from '@/components/wall/Waiting'
+import { WallGrid, type OpenTile } from '@/components/wall/WallGrid'
 import { CountUp } from '@/components/motion/CountUp'
 import { FadeSlideIn } from '@/components/motion/FadeSlideIn'
 import { Button } from '@/components/ui/Button'
@@ -31,11 +32,13 @@ import { haptic } from '@/lib/haptics'
 import {
 	daysBetween,
 	localIsoDate,
+	pactDayCount,
 	pactKeys,
 	shortDay,
 	useMyUserId,
 	useNudge,
 	usePact,
+	useWall,
 	type PactDetail
 } from '@/lib/pacts'
 
@@ -86,6 +89,7 @@ export default function PactBoardScreen() {
 	return (
 		<View style={s.root}>
 			<Screen
+				ground={detail ? crewTone(c, detail.pact.color).deep : undefined}
 				header={<PageHeader right={detail ? invite : undefined} />}
 				gap={32}
 				refreshControl={
@@ -166,22 +170,23 @@ function Board({
 		})
 	}
 	const { pact, today, progress, members } = detail
-	const tiles = chainTiles(progress.chain, pact.start_day, pact.end_day, pact.cadence)
+	const totalDays = pactDayCount(pact.start_day, pact.end_day, pact.cadence)
+	const wall = useWall(pact.id)
+	const [open, setOpen] = useState<OpenTile | null>(null)
 	const dayNumber = progress.chain.length
 	// The crew's colour: the hero's fill, and the line of each member's link below it.
 	const tone = crewTone(c, pact.color)
 	const live = !!today && today.held_count > 0
 	const milestone = kept ? milestoneFor(progress.current_streak) : null
-	const chainColors = { ink: tone.onFill, track: tone.onFillTrack, glow: tone.glow }
 
 	return (
 		<>
-			<CrewHero tone={tone}>
+			<CrewHero tone={tone} glow compact>
 				<View style={s.metaRow}>
 					<OnFill tone={tone} muted variant="mono">
 						{pact.status === 'lobby'
-							? `${pad(tiles.length)} days`
-							: `Day ${pad(dayNumber)} / ${pad(tiles.length)}`}
+							? `${pad(totalDays)} days`
+							: `Day ${pad(dayNumber)} / ${pad(totalDays)}`}
 					</OnFill>
 					{live && !kept ? (
 						<ClockLeft closesAt={today.closes_at} style={{ color: tone.onFill }} />
@@ -200,12 +205,6 @@ function Board({
 						{pact.habit}
 					</OnFill>
 				</View>
-
-				<Chain
-					tiles={tiles}
-					colors={chainColors}
-					today={live ? { in: today.in_count, held: today.held_count } : undefined}
-				/>
 
 				{pact.status === 'lobby' || !live ? (
 					<OnFill tone={tone} muted variant="bodySm">
@@ -230,20 +229,34 @@ function Board({
 				</FadeSlideIn>
 			) : null}
 
-			{today && today.members.length > 0 ? (
+			{wall.data && wall.data.days.length > 0 ? (
 				<FadeSlideIn index={1}>
-					<Section label={`The crew · ${today.in_count} / ${today.held_count} in`}>
-						<CrewLinks
-							members={today.members}
-							myId={myId}
-							color={tone.line}
-							nudgeFor={(member) => ({
-								sent: member.nudged_by_me || sentTo.has(member.user_id),
-								sending: nudge.isPending && nudge.variables === member.user_id,
-								onPress: () => sendNudge(member)
-							})}
-						/>
+					<Section
+						label={
+							today && today.held_count > 0
+								? `The wall · ${today.in_count} / ${today.held_count} in today`
+								: 'The wall'
+						}
+					>
+						<WallGrid wall={wall.data} myId={myId} tone={tone} onOpen={setOpen} />
+						{today ? (
+							<Waiting
+								members={today.members}
+								myId={myId}
+								nudgeFor={(member) => ({
+									sent: member.nudged_by_me || sentTo.has(member.user_id),
+									sending: nudge.isPending && nudge.variables === member.user_id,
+									onPress: () => sendNudge(member)
+								})}
+							/>
+						) : null}
 					</Section>
+					<PhotoViewer
+						pactId={pact.id}
+						tile={open}
+						own={open?.cell.user_id === myId}
+						onClose={() => setOpen(null)}
+					/>
 				</FadeSlideIn>
 			) : !today ? (
 				<FadeSlideIn index={1}>
@@ -456,7 +469,7 @@ const s = StyleSheet.create({
 	stat: { gap: 4 },
 	statValue: { flexDirection: 'row', alignItems: 'baseline' },
 	section: { borderTopWidth: StyleSheet.hairlineWidth * 2, paddingTop: 12, gap: 12 },
-	sectionBody: { gap: 0 },
+	sectionBody: { gap: 16 },
 	member: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
 	memberName: { flex: 1 },
 	footerNote: { textAlign: 'center' },

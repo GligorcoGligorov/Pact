@@ -15,7 +15,8 @@ import type { Preset } from '../src/types'
 
 export const daylight: Preset = {
 	name: 'daylight',
-	primaryScheme: 'light',
+	// Pact at night: dark first, the crews' colours glowing on near-black. Light still works.
+	primaryScheme: 'dark',
 	// Ink: Pact's buttons are ink pills, and colour belongs to the crews.
 	defaultAccent: '#151412',
 
@@ -68,11 +69,11 @@ export const daylight: Preset = {
 			scheme: 'dark',
 			name: 'ink',
 			ground: {
-				bg: '#121110', //       ink, the paper inverted
-				well: '#171614', //
-				surface: '#1c1b18', //
-				surface2: '#24231f', //
-				surface3: '#2e2c28' //
+				bg: '#0b0b0a', //       near-black, not grey
+				well: '#10100e', //
+				surface: '#161614', //
+				surface2: '#1e1e1b', //
+				surface3: '#282824' //
 			},
 			text: {
 				primary: '#f2efe9', //   paper, never pure white

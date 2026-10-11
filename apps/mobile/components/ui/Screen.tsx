@@ -23,7 +23,8 @@ export function Screen({
 	gap = 16,
 	refreshControl,
 	contentStyle,
-	footer
+	footer,
+	ground
 }: {
 	/** A PageHeader; when present the content starts under it. */
 	header?: ReactNode
@@ -36,6 +37,8 @@ export function Screen({
 	contentStyle?: StyleProp<ViewStyle>
 	/** Pinned below the scroll area (a CTA shelf), inside the gutter and above the home indicator. */
 	footer?: ReactNode
+	/** The screen's background, when it isn't the scheme's ground: a pact's crew tint. */
+	ground?: string
 }) {
 	const insets = useSafeAreaInsets()
 	const { colors: c, layout } = useTheme()
@@ -48,7 +51,7 @@ export function Screen({
 	}
 
 	return (
-		<View style={{ flex: 1, backgroundColor: c.bg }}>
+		<View style={{ flex: 1, backgroundColor: ground ?? c.bg }}>
 			{header}
 			{scroll ? (
 				<ScrollView
@@ -75,7 +78,7 @@ export function Screen({
 						left: 0,
 						right: 0,
 						height: insets.top,
-						backgroundColor: c.bg
+						backgroundColor: ground ?? c.bg
 					}}
 				/>
 			) : null}

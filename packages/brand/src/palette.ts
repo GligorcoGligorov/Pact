@@ -208,8 +208,11 @@ function crewTone(
 		// A graphic, not text: the chain's links clear the non-text bar (3:1) on every ground,
 		// which keeps the crew's own hue where `ink` would darken it toward an error red.
 		line: ensureContrast(fill, grounds, AA_NON_TEXT + 0.05, away),
-		// The chain's halo on the crew's own fill: the same hue, lifted toward white.
-		glow: mix(fill, '#ffffff', 0.55),
+		// A halo on the ground: the crew's own colour, a touch lifted, for glows and kept rows.
+		glow: mix(fill, '#ffffff', 0.18),
+		// A pact screen's whole background: the crew colour sunk deep into the ground, dark or
+		// light, keeping the scheme's text readable on it.
+		deep: mix(spec.ground.bg, fill, spec.scheme === 'dark' ? 0.16 : 0.12),
 		dim,
 		track: withAlpha(fill, A.track + 0.08)
 	}

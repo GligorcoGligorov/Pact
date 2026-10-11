@@ -25,6 +25,7 @@ export function CrewHero({
 	accessibilityLabel,
 	compact,
 	marks = true,
+	glow,
 	style
 }: {
 	tone: CrewTone
@@ -36,6 +37,8 @@ export function CrewHero({
 	compact?: boolean
 	/** The corner marks; off for a block that isn't the screen's main one. */
 	marks?: boolean
+	/** A soft halo in the crew's own colour, for the block on a dark ground. */
+	glow?: boolean
 	style?: StyleProp<ViewStyle>
 }) {
 	const reduced = useReducedMotion()
@@ -43,6 +46,12 @@ export function CrewHero({
 		s.block,
 		compact && s.compact,
 		{ backgroundColor: tone.fill },
+		glow && {
+			shadowColor: tone.fill,
+			shadowOpacity: 0.5,
+			shadowRadius: 28,
+			shadowOffset: { width: 0, height: 8 }
+		},
 		style
 	] as StyleProp<ViewStyle>
 	const body = onPress ? (
