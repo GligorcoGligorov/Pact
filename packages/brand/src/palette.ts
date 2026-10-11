@@ -198,6 +198,8 @@ function crewTone(
 		// A graphic, not text: the chain's links clear the non-text bar (3:1) on every ground,
 		// which keeps the crew's own hue where `ink` would darken it toward an error red.
 		line: ensureContrast(fill, grounds, AA_NON_TEXT + 0.05, away),
+		// The chain's halo on the crew's own fill: the same hue, lifted toward white.
+		glow: mix(fill, '#ffffff', 0.55),
 		dim,
 		track: withAlpha(fill, A.track + 0.08)
 	}

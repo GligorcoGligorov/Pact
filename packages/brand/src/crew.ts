@@ -36,6 +36,8 @@ export interface CrewTone {
 	ink: string
 	/** The colour as a graphic line on any ground (3:1): the chain's links. */
 	line: string
+	/** A soft halo around the chain when it sits on `fill`. */
+	glow: string
 	/** A low-alpha wash: card accents, the feed stripe's chip. */
 	dim: string
 	/** The ring's empty track, tinted toward the crew. */

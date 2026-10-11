@@ -1,30 +1,18 @@
 import { useEffect, useRef, useState } from 'react'
 import { StyleSheet, View } from 'react-native'
-import Animated, {
-	cancelAnimation,
-	Easing,
-	useAnimatedStyle,
-	useSharedValue,
-	withRepeat,
-	withTiming
-} from 'react-native-reanimated'
 import { AlertModal } from '@/components/ui/AppModal'
 import { Button } from '@/components/ui/Button'
-import { Card } from '@/components/ui/Card'
 import { Text } from '@/components/ui/Text'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useToast } from '@/contexts/ToastContext'
 import { track } from '@/lib/analytics'
 import { errorCode, errorMessage } from '@/lib/api'
 import { haptic } from '@/lib/haptics'
-import { useReducedMotion } from '@/lib/motion'
 import { useSaver } from '@/lib/pacts'
 
 /** "About to break": the last three hours before the day closes, when the reminder fires too. */
 export const SAVER_URGENT_MS = 3 * 60 * 60 * 1000
 const TICK_MS = 60_000
-/** One slow bob of the ring buoy: calm, never an alarm. */
-const BOB_MS = 1400
 
 /** Hours and minutes left, "2h 15m" or "40m". */
 function left(ms: number): string {
@@ -35,8 +23,8 @@ function left(ms: number): string {
 
 /**
  * R17 on the board, while the caller still owes today: their one streak saver. All day it's a
- * quiet line ("can't make it today?"); in the last three hours it becomes the card that says the
- * day is about to break, with the buoy bobbing. Using it asks once, because there's only one.
+ * quiet line ("can't make it today?"); in the last three hours it becomes the outlined block
+ * that says the day is about to break. Using it asks once, because there's only one.
  * Once it's spent, the line says so. Crew colour stays off it: the saver is an action.
  */
 export function SaverCard({
@@ -49,7 +37,7 @@ export function SaverCard({
 	/** R17: one per pact; false once used. */
 	available: boolean
 }) {
-	const { colors: c, elevation } = useTheme()
+	const { colors: c } = useTheme()
 	const { showToast } = useToast()
 	const saver = useSaver(pactId)
 	const [confirming, setConfirming] = useState(false)
@@ -76,7 +64,7 @@ export function SaverCard({
 			onSuccess: () => {
 				haptic.success()
 				track('check_in_submitted', { kind: 'saver', pact_id: pactId })
-				showToast('Saved 🛟 The chain lives on.', 'success')
+				showToast('Saved. The chain holds.', 'success')
 			},
 			onError: (error) => {
 				haptic.error()
@@ -95,8 +83,8 @@ export function SaverCard({
 
 	if (!available) {
 		return (
-			<Text variant="caption" tone="tertiary" style={s.center}>
-				🛟 Your saver is used for this pact. Today needs a photo.
+			<Text variant="mono" tone="tertiary">
+				Saver used · today needs a photo
 			</Text>
 		)
 	}
@@ -104,23 +92,15 @@ export function SaverCard({
 	return (
 		<>
 			{urgent ? (
-				<Card
-					padding="normal"
-					style={[
-						s.card,
-						elevation.card,
-						{ backgroundColor: c.warningSoft, borderColor: c.warning }
-					]}
-				>
-					<View style={s.row}>
-						<Buoy />
-						<View style={s.text}>
-							<Text variant="h3">The day&apos;s about to break</Text>
-							<Text variant="bodySm" tone="secondary">
-								{left(remaining)} left. Your saver keeps the chain alive, no photo needed. One per
-								pact.
-							</Text>
-						</View>
+				<View style={[s.urgent, { borderColor: c.warning }]}>
+					<Text variant="mono" tone="warning">
+						{left(remaining)} left · 1 saver
+					</Text>
+					<View>
+						<Text variant="h2">The day’s about to break.</Text>
+						<Text variant="h2" tone="tertiary">
+							Your saver keeps the chain closed, no photo needed.
+						</Text>
 					</View>
 					<Button
 						label="Use your saver"
@@ -129,11 +109,11 @@ export function SaverCard({
 						loading={saver.isPending}
 						onPress={() => setConfirming(true)}
 					/>
-				</Card>
+				</View>
 			) : (
 				<View style={s.quiet}>
 					<Text variant="bodySm" tone="secondary" style={s.quietText}>
-						🛟 Can&apos;t make it today? Your one saver keeps the chain alive.
+						Can’t make it today? Your one saver keeps the chain closed.
 					</Text>
 					<Button
 						label="Use saver"
@@ -146,7 +126,7 @@ export function SaverCard({
 			)}
 			<AlertModal
 				visible={confirming}
-				title="Use your saver? 🛟"
+				title="Use your saver?"
 				message="It keeps today without a photo, and your crew sees you used it. You get one per pact, so this is it."
 				buttons={[
 					{ text: 'Use it', onPress: use },
@@ -158,35 +138,8 @@ export function SaverCard({
 	)
 }
 
-/** 🛟, bobbing gently. Still under Reduce Motion. */
-function Buoy() {
-	const reduced = useReducedMotion()
-	const t = useSharedValue(0)
-	useEffect(() => {
-		if (reduced) return
-		t.value = withRepeat(
-			withTiming(1, { duration: BOB_MS / 2, easing: Easing.inOut(Easing.sin) }),
-			-1,
-			true
-		)
-		return () => cancelAnimation(t)
-	}, [reduced, t])
-	const style = useAnimatedStyle(() => ({
-		transform: [{ translateY: -3 * t.value }, { rotate: `${-6 + 12 * t.value}deg` }]
-	}))
-	return (
-		<Animated.Text style={[s.buoy, style]} allowFontScaling={false} accessibilityElementsHidden>
-			🛟
-		</Animated.Text>
-	)
-}
-
 const s = StyleSheet.create({
-	card: { gap: 14, borderWidth: 1.5 },
-	row: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-	text: { flex: 1, gap: 3 },
-	buoy: { fontSize: 40, lineHeight: 48 },
-	quiet: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 4 },
-	quietText: { flex: 1 },
-	center: { textAlign: 'center' }
+	urgent: { gap: 16, padding: 16, borderWidth: StyleSheet.hairlineWidth * 2, borderRadius: 8 },
+	quiet: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+	quietText: { flex: 1 }
 })
