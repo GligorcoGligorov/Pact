@@ -5,7 +5,32 @@ call stays where it is). The slop it answers: [audit.md](audit.md). References:
 [refs/](refs/) (karma.business, 8xresearch.com, first viewport of each; both reveal the rest
 on scroll, so a full-page capture is blank).
 
-## Revision, 2026-10-11: louder
+## Revision 2, 2026-10-11: real content is the hero
+
+The chain is gone everywhere. The signature is **the Crew Wall**
+(`components/wall/WallGrid.tsx`, `GET /api/app/v1/pacts/:id/wall`): the crew's real check-in
+photos, one column per member, one row per day, newest on top. A full row is a kept day (a
+frame in the crew's colour and a glow); a missing photo is a dashed tile with initials,
+breathing on today's row; a tap opens the photo full screen with the caption and reactions
+(`PhotoViewer`). It is the board's hero, home's mini grid (last three days), the verdict's
+landing (your tile pops in, the row lights up if it closed the day) and the first results
+slide (the whole pact).
+
+**The signed pact** (`app/pact/[id]/sign.tsx`, `POST /api/app/v1/pacts/:id/signature`,
+`pact_members.signature`): on create and join each member signs a contract card with a finger
+("I, Ana, promise: run for 20 minutes, every day for 21 days. If I break it, I buy the
+coffees."; `pledgeLine` in the contract). Signatures show on the pact details and the last
+results slide.
+
+**Dark first:** near-black ground, each pact screen on its crew's deep tint
+(`CrewTone.deep`), the crew colour saturated on the hero with a glow (`CrewTone.glow`).
+**The daily challenge** is a full-screen moment before the camera
+(`components/pact/ChallengeMoment.tsx`). **Results are stories** you tap through
+(`components/results/Stories.tsx`): wall → awards → drumroll → who pays → the signatures, a
+share button on every slide. Demo photos: `npm run demo:photos` (Unsplash via Lorem Picsum,
+gitignored) before `npm run seed:demo`.
+
+## Revision 1, 2026-10-11: louder
 
 After the first board ("the editorial base is right, but too quiet"): each screen gets **one
 loud block in the crew's solid colour** (`components/pact/CrewHero.tsx`), its text and chain in

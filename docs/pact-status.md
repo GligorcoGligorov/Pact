@@ -12,12 +12,16 @@ this trial, see [trial-local-only](memory/trial-local-only.md)). Build traps:
 
 ## UI revamp (2026-10-11, branch `feat/ui-revamp`)
 
-A visual pass only, no features or events: [design/ui-revamp/](design/ui-revamp/plan.md)
-(audit, plan, before/after shots). Paper and ink, Inter Tight and IBM Plex Mono, one loud
-crew-colour block per screen, the chain (`components/pact/Chain.tsx`) as the signature. Done:
-foundation, board, home, verdict, results. To do: onboarding (intro, welcome) and the web
-(landing, join page, results page, share card, OG images). `app.json`'s splash colour moved to
-the new paper; it shows from the next binary.
+[design/ui-revamp/](design/ui-revamp/plan.md) has the audit, the plan with both revisions, and
+before/after shots. Now: dark first, the **Crew Wall** of real photos as the signature (new
+`GET pacts/:id/wall`), **the signed pact** on create and join (new `POST pacts/:id/signature`,
+migration `20261011012142_pact_signature`, events `pact_sign_viewed`, `pact_signed`,
+`wall_photo_opened`, `pact_result_story_viewed`), a full-screen daily challenge, and results as
+stories. Done on mobile: board, signing, home, check-in, verdict, results. To do: onboarding
+(intro, welcome), the activity feed and settings screens, and the web (landing, join page,
+results page, share card), which still wear the earlier look. Demo: `npm run demo:photos`, then
+`npm run seed:demo -- --finished`. `app.json`'s splash is the near-black ground; it shows from
+the next binary.
 
 ## Phases
 
