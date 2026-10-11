@@ -4,15 +4,13 @@ import { router, useLocalSearchParams } from 'expo-router'
 import { LogOut, SearchX, UserMinus } from 'lucide-react-native'
 import type { PactMember } from '@app/contract'
 import { Avatar, displayName } from '@/components/pact/Avatars'
-import { StateChip } from '@/components/pact/StateChip'
 import { Signature } from '@/components/sign/Signature'
 import { QueryErrorState } from '@/components/QueryError'
 import { PressableScale } from '@/components/motion/PressableScale'
 import { AlertModal } from '@/components/ui/AppModal'
-import { Card } from '@/components/ui/Card'
 import { EmptyState } from '@/components/ui/EmptyState'
-import { ListGroup, ListRow, SectionHeader } from '@/components/ui/List'
-import { PageHeader, ScreenTitle } from '@/components/ui/PageHeader'
+import { ListGroup, ListRow } from '@/components/ui/List'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { Screen } from '@/components/ui/Screen'
 import { CardSkeleton } from '@/components/ui/Skeleton'
 import { Text } from '@/components/ui/Text'
@@ -20,6 +18,7 @@ import { useColors } from '@/contexts/ThemeContext'
 import { useToast } from '@/contexts/ToastContext'
 import { track } from '@/lib/analytics'
 import { errorMessage } from '@/lib/api'
+import { crewTone } from '@/lib/crew'
 import { haptic } from '@/lib/haptics'
 import { shortDay, useLeavePact, useMyUserId, usePact, useRemoveMember } from '@/lib/pacts'
 
@@ -72,7 +71,11 @@ export default function PactSettingsScreen() {
 	}
 
 	return (
-		<Screen header={<PageHeader />} gap={20}>
+		<Screen
+			header={<PageHeader />}
+			gap={28}
+			ground={detail ? crewTone(c, detail.pact.color).deep : undefined}
+		>
 			{detail === undefined && query.isError ? (
 				<QueryErrorState
 					error={query.error}
@@ -93,14 +96,19 @@ export default function PactSettingsScreen() {
 				/>
 			) : (
 				<>
-					<ScreenTitle
-						variant="h1"
-						eyebrow="Pact settings"
-						title={detail.pact.name}
-						subtitle={detail.pact.habit}
-					/>
+					<View>
+						<Text variant="mono" tone="secondary">
+							The pact · {detail.pact.invite_code}
+						</Text>
+						<Text variant="display" accessibilityRole="header">
+							{detail.pact.name}
+						</Text>
+						<Text variant="display" tone="tertiary">
+							{detail.pact.habit}
+						</Text>
+					</View>
 
-					<Card padding="normal" style={s.facts}>
+					<View style={[s.facts, { borderTopColor: c.textPrimary }]}>
 						<Fact
 							label="Runs"
 							value={`${shortDay(detail.pact.start_day)} – ${shortDay(detail.pact.end_day)}`}
@@ -111,10 +119,12 @@ export default function PactSettingsScreen() {
 						/>
 						<Fact label="Invite code" value={detail.pact.invite_code} />
 						{detail.pact.stake ? <Fact label="The stake" value={detail.pact.stake} /> : null}
-					</Card>
+					</View>
 
-					<SectionHeader title={`The crew · ${members.length}`} />
-					<Card padding="compact">
+					<View style={[s.facts, { borderTopColor: c.textPrimary }]}>
+						<Text variant="mono" tone="secondary">
+							The crew · {members.length}
+						</Text>
 						{members.map((member) => {
 							const me = member.user_id === myId
 							return (
@@ -153,7 +163,9 @@ export default function PactSettingsScreen() {
 										)}
 									</View>
 									{member.role === 'owner' ? (
-										<StateChip label="Owner" tone="brand" style={s.chip} />
+										<Text variant="mono" tone="secondary">
+											Owner
+										</Text>
 									) : null}
 									{isOwner && !me ? (
 										<PressableScale
@@ -162,7 +174,7 @@ export default function PactSettingsScreen() {
 											onPress={() => setConfirm({ kind: 'remove', member })}
 											accessibilityRole="button"
 											accessibilityLabel={`Remove ${displayName(member)}`}
-											style={[s.remove, { backgroundColor: c.errorSoft }]}
+											style={[s.remove, { borderColor: c.errorText }]}
 										>
 											<UserMinus size={16} color={c.errorText} />
 										</PressableScale>
@@ -170,7 +182,7 @@ export default function PactSettingsScreen() {
 								</View>
 							)
 						})}
-					</Card>
+					</View>
 
 					<ListGroup>
 						<ListRow
@@ -221,7 +233,7 @@ export default function PactSettingsScreen() {
 function Fact({ label, value }: { label: string; value: string }) {
 	return (
 		<View style={s.fact}>
-			<Text variant="bodySm" tone="secondary">
+			<Text variant="mono" tone="secondary">
 				{label}
 			</Text>
 			<Text variant="label" style={s.factValue} numberOfLines={2}>
@@ -232,16 +244,16 @@ function Fact({ label, value }: { label: string; value: string }) {
 }
 
 const s = StyleSheet.create({
-	facts: { gap: 12 },
-	fact: { flexDirection: 'row', justifyContent: 'space-between', gap: 16 },
+	facts: { gap: 14, paddingTop: 12, borderTopWidth: StyleSheet.hairlineWidth * 2 },
+	fact: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 16 },
 	factValue: { flexShrink: 1, textAlign: 'right' },
 	member: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 8 },
 	name: { flex: 1 },
-	chip: { alignSelf: 'center' },
 	remove: {
 		width: 36,
 		height: 36,
 		borderRadius: 18,
+		borderWidth: 1.5,
 		alignItems: 'center',
 		justifyContent: 'center'
 	}
