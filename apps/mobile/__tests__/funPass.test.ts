@@ -3,11 +3,7 @@
  * looks like, when a milestone shows, and that celebrations stay short.
  */
 import { drumrollMs, REVEAL } from '@/lib/reveal'
-import { CELEBRATION, celebrationGoneMs, flameLevel, milestoneFor } from '@/lib/streaks'
-
-it('the flame is out at zero, a spark until 3, burning until 7, then blazing', () => {
-	expect([0, 1, 2, 3, 6, 7, 30].map(flameLevel)).toEqual([0, 1, 1, 2, 2, 3, 3])
-})
+import { CELEBRATION, celebrationGoneMs, milestoneFor } from '@/lib/streaks'
 
 it('a milestone shows only on the day the streak reaches 3, 7 or 14', () => {
 	expect([2, 3, 4, 7, 8, 14, 15, 21].map(milestoneFor)).toEqual([

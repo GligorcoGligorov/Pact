@@ -112,7 +112,7 @@ function pluralVerb(word: string): string {
 export function stakeLine(loserNames: readonly string[], stake: string | null): string {
 	const who = joinNames(loserNames)
 	const plural = loserNames.length > 1 || loserNames[0] === 'You'
-	if (!stake) return `${who} ${plural ? 'owe' : 'owes'} the crew a high five 🙌`
+	if (!stake) return `${who} ${plural ? 'owe' : 'owes'} the crew a high five`
 	const match = /^(?:the\s+)?losers?\s+(\S+)(.*)$/i.exec(stake.trim())
 	if (match) {
 		const [, verb = '', rest = ''] = match

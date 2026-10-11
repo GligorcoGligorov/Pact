@@ -25,7 +25,7 @@ test('a "loser …" stake reads as who owes it, with the verb agreeing', () => {
 
 test('any other stake, and no stake at all', () => {
 	assert.equal(stakeLine(['Dan'], 'A round of pizza'), 'Dan owes: A round of pizza')
-	assert.equal(stakeLine(['Dan', 'Ben'], null), 'Dan and Ben owe the crew a high five 🙌')
+	assert.equal(stakeLine(['Dan', 'Ben'], null), 'Dan and Ben owe the crew a high five')
 })
 
 test('an award this build does not know reads as null', () => {

@@ -54,7 +54,9 @@ const CUT = 0.07
 const SIZES = {
 	/** Links on show, links before today, the largest link, stroke over width. */
 	hero: { count: 9, back: 5, maxW: 76, stroke: 0.11 },
-	small: { count: 9, back: 5, maxW: 50, stroke: 0.12 }
+	small: { count: 9, back: 5, maxW: 50, stroke: 0.12 },
+	/** Every day of the pact in one row: the results. */
+	full: { count: 999, back: 0, maxW: 56, stroke: 0.12 }
 } as const
 
 /** The entrance: each link draws in this long, this far after the one before. */
@@ -121,12 +123,11 @@ export function Chain({
 	const stroke = Math.max(2, w * spec.stroke)
 	const firstFuture = shown.findIndex((t) => t.status === 'future')
 
-	// Links alternate face-on and edge-on, phased so today's link faces the viewer; today's and a
-	// broken link always do, since their state is the point.
+	// Links alternate face-on and edge-on, phased so today's link faces the viewer. A broken link
+	// keeps its place in the rhythm: edge-on, its cut shows as a gap in the bar.
 	const openAt = shown.findIndex((t) => t.status === 'open')
 	const phase = openAt >= 0 ? openAt % 2 : 0
-	const edgeAt = (i: number) =>
-		(i + phase) % 2 === 1 && shown[i]?.status !== 'open' && shown[i]?.status !== 'broken'
+	const edgeAt = (i: number) => (i + phase) % 2 === 1
 
 	// The halo pulses once, with a haptic, when today's link closes while the board is open.
 	const fraction = today && today.held > 0 ? today.in / today.held : 0
@@ -291,8 +292,9 @@ function Link({
 				/>
 			)
 		case 'broken': {
-			// Cut through at the top and the bottom: two halves that no longer hold.
-			const gap = p * CUT
+			// Cut through at the top and the bottom: two halves that no longer hold. Edge-on, the cut
+			// is wider so the gap in the bar reads.
+			const gap = p * (edge ? CUT * 2.2 : CUT)
 			const topCentre = (w - lh) / 2
 			return (
 				<AnimatedRect

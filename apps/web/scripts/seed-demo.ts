@@ -377,7 +377,7 @@ async function seedFinished(ids: Map<DemoMember['key'], string>) {
 		timezone: timezone!,
 		startDay: dateFromDay(startDay),
 		endDay: dateFromDay(endDay),
-		stake: 'Loser buys the coffees ☕',
+		stake: 'Loser buys the coffees',
 		cancelledAt: null,
 		closedThrough: null
 	}

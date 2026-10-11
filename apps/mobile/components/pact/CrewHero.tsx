@@ -66,7 +66,10 @@ export function CrewHero({
 	)
 }
 
-/** Text on the crew fill: `onFill`, or its muted step for the second line of a headline. */
+/** Roles big enough for WCAG's large-text bar, where the muted line can lean further. */
+const LARGE = new Set(['displayHero', 'display', 'h1', 'h2', 'title'])
+
+/** Text on the crew fill: `onFill`, or its muted step (further for a headline's second line). */
 export function OnFill({
 	tone,
 	muted,
@@ -84,7 +87,13 @@ export function OnFill({
 		<Text
 			variant={variant}
 			numberOfLines={numberOfLines}
-			style={{ color: muted ? tone.onFillMuted : tone.onFill }}
+			style={{
+				color: muted
+					? LARGE.has(variant ?? '')
+						? tone.onFillLarge
+						: tone.onFillMuted
+					: tone.onFill
+			}}
 		>
 			{children}
 		</Text>

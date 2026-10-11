@@ -1,34 +1,28 @@
 import { StyleSheet, View } from 'react-native'
 import { awardOf, joinNames, type PactResult } from '@app/contract'
 import { FadeSlideIn } from '@/components/motion/FadeSlideIn'
-import { Pop } from '@/components/motion/Pop'
 import { displayName } from '@/components/pact/Avatars'
-import { Card } from '@/components/ui/Card'
 import { Text } from '@/components/ui/Text'
-import { useTheme } from '@/contexts/ThemeContext'
-import { crewTone } from '@/lib/crew'
+import { useColors } from '@/contexts/ThemeContext'
 
 /**
- * The awards, one card each: the emoji on the crew's wash, what it's for, and who earned it.
- * Every award is earned from real check-ins (the server's results.ts); an award this build
- * doesn't know is skipped.
+ * The awards as a numbered list on paper, one hairline row each: "01 / IRON STREAK" in mono,
+ * who earned it, and what for. Every award is earned from real check-ins (the server's
+ * results.ts); an award this build doesn't know is skipped.
  */
 export function Awards({
 	result,
-	color,
 	myId,
 	base = 0
 }: {
 	result: PactResult
-	color: string
 	myId: string | null
 	/** Where this group starts in the screen's entrance stagger. */
 	base?: number
 }) {
-	const { colors: c, elevation } = useTheme()
-	const tone = crewTone(c, color)
+	const c = useColors()
 	const members = new Map(result.members.map((m) => [m.user_id, m]))
-	const cards = result.awards.flatMap((award) => {
+	const rows = result.awards.flatMap((award) => {
 		const meta = awardOf(award.kind)
 		if (!meta) return []
 		// You first: "You and Cleo", never "Cleo and You".
@@ -42,48 +36,37 @@ export function Awards({
 			award.kind === 'iron_streak'
 				? `${winners[0].best_streak} days in a row, no breaks`
 				: meta.blurb
-		return [{ kind: award.kind, ...meta, blurb, names }]
+		return [{ kind: award.kind, title: meta.title, blurb, names }]
 	})
-	if (cards.length === 0) return null
+	if (rows.length === 0) return null
 
 	return (
-		<View style={s.list}>
-			{cards.map((card, i) => (
-				<FadeSlideIn key={card.kind} index={base + i}>
-					<Card padding="normal" style={[s.card, elevation.card]}>
-						<Pop delay={120 + i * 60}>
-							<View style={[s.medal, { backgroundColor: tone.dim }]}>
-								<Text style={s.emoji}>{card.emoji}</Text>
-							</View>
-						</Pop>
-						<View style={s.text}>
-							<Text variant="eyebrow" style={{ color: tone.ink }}>
-								{card.title}
-							</Text>
-							<Text variant="h3">{joinNames(card.names)}</Text>
-							<Text variant="caption" tone="secondary">
-								{card.blurb}
-							</Text>
-						</View>
-					</Card>
+		<View>
+			{rows.map((row, i) => (
+				<FadeSlideIn key={row.kind} index={base + i}>
+					<View
+						style={[
+							s.row,
+							i > 0 && {
+								borderTopColor: c.borderHairline,
+								borderTopWidth: StyleSheet.hairlineWidth
+							}
+						]}
+					>
+						<Text variant="mono" tone="tertiary">
+							{String(i + 1).padStart(2, '0')} / {row.title}
+						</Text>
+						<Text variant="h2">{joinNames(row.names)}</Text>
+						<Text variant="bodySm" tone="secondary">
+							{row.blurb}
+						</Text>
+					</View>
 				</FadeSlideIn>
 			))}
 		</View>
 	)
 }
 
-const MEDAL = 52
-
 const s = StyleSheet.create({
-	list: { gap: 10 },
-	card: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-	medal: {
-		width: MEDAL,
-		height: MEDAL,
-		borderRadius: MEDAL / 2,
-		alignItems: 'center',
-		justifyContent: 'center'
-	},
-	emoji: { fontSize: 28, lineHeight: 34 },
-	text: { flex: 1, gap: 2 }
+	row: { gap: 4, paddingVertical: 14 }
 })

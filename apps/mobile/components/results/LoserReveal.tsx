@@ -1,54 +1,48 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { StyleSheet, View } from 'react-native'
-import Animated, {
-	cancelAnimation,
-	Easing,
-	useAnimatedStyle,
-	useSharedValue,
-	withRepeat,
-	withSequence,
-	withTiming
-} from 'react-native-reanimated'
+import Animated, { Keyframe } from 'react-native-reanimated'
 import { joinNames, stakeLine, type PactResult } from '@app/contract'
 import { FadeSlideIn } from '@/components/motion/FadeSlideIn'
 import { Pop } from '@/components/motion/Pop'
 import { Avatar, displayName } from '@/components/pact/Avatars'
 import { Button } from '@/components/ui/Button'
-import { Card } from '@/components/ui/Card'
 import { Text } from '@/components/ui/Text'
-import { useTheme } from '@/contexts/ThemeContext'
-import { crewTone } from '@/lib/crew'
+import { useColors } from '@/contexts/ThemeContext'
 import { haptic } from '@/lib/haptics'
 import { useReducedMotion } from '@/lib/motion'
 import { drumrollMs, REVEAL } from '@/lib/reveal'
 
 export type RevealPhase = 'idle' | 'rolling' | 'revealed'
 
+/** Each beat's number drops in and settles inside the beat. */
+const beatIn = new Keyframe({
+	0: { opacity: 0, transform: [{ translateY: -16 }, { scale: 1.12 }] },
+	100: { opacity: 1, transform: [{ translateY: 0 }, { scale: 1 }] }
+}).duration(REVEAL.beatUpMs)
+
 /**
- * The loser reveal: a card that asks who's on the hook, a short drumroll (a few quick beats,
- * each a light tap), then the answer: the loser's face and the stake said about them ("Dan buys
- * the coffees ☕"), or "Nobody pays, everybody wins". Playful, never mean: the line after it
- * is always on their side. Reduce Motion skips the drumroll and shows the answer at once.
+ * The loser reveal, on paper inside an ink rule: who's on the hook, then a short drumroll (the
+ * beats counting down in big tabular numbers, each a light tap), then the answer: the loser's
+ * face and the stake said about them ("Dan buys the coffees"), or "Nobody pays". Playful, never
+ * mean: the line after it is always on their side. Reduce Motion skips the drumroll.
  */
 export function LoserReveal({
 	result,
 	stake,
-	color,
 	myId,
 	phase,
 	onPhase
 }: {
 	result: PactResult
 	stake: string | null
-	color: string
 	myId: string | null
 	phase: RevealPhase
 	onPhase: (phase: RevealPhase) => void
 }) {
-	const { colors: c, elevation } = useTheme()
-	const tone = crewTone(c, color)
+	const c = useColors()
 	const reduceMotion = useReducedMotion()
 	const timers = useRef<ReturnType<typeof setTimeout>[]>([])
+	const [beat, setBeat] = useState(0)
 
 	useEffect(() => () => timers.current.forEach(clearTimeout), [])
 
@@ -58,8 +52,13 @@ export function LoserReveal({
 			return onPhase('revealed')
 		}
 		onPhase('rolling')
-		for (let beat = 0; beat < REVEAL.beats; beat++) {
-			timers.current.push(setTimeout(() => haptic.press(), beat * REVEAL.beatMs))
+		for (let b = 0; b < REVEAL.beats; b++) {
+			timers.current.push(
+				setTimeout(() => {
+					setBeat(b)
+					haptic.press()
+				}, b * REVEAL.beatMs)
+			)
 		}
 		timers.current.push(
 			setTimeout(() => {
@@ -69,18 +68,30 @@ export function LoserReveal({
 		)
 	}
 
+	const frame = [s.block, { borderColor: c.textPrimary }]
+
 	if (phase !== 'revealed') {
 		return (
-			<Card padding="spacious" style={[s.card, elevation.card]}>
-				<Drum rolling={phase === 'rolling'} />
-				<Text variant="h2" style={s.center}>
-					{phase === 'rolling' ? 'Drumroll…' : stake ? "Who's on the hook?" : 'Who came last?'}
+			<View style={frame}>
+				<Text variant="mono" tone="secondary">
+					{phase === 'rolling' ? 'Drumroll' : 'The stake'}
 				</Text>
-				{stake ? (
-					<Text variant="body" tone="secondary" style={s.center}>
-						The stake: {stake}
-					</Text>
-				) : null}
+				{phase === 'rolling' ? (
+					<Animated.View key={beat} entering={beatIn}>
+						<Text variant="displayHero" tabular>
+							{String(REVEAL.beats - beat).padStart(2, '0')}
+						</Text>
+					</Animated.View>
+				) : (
+					<View>
+						<Text variant="h1">{stake ? 'Who’s on the hook?' : 'Who came last?'}</Text>
+						{stake ? (
+							<Text variant="h1" tone="tertiary">
+								{stake}
+							</Text>
+						) : null}
+					</View>
+				)}
 				<Button
 					label={phase === 'rolling' ? 'And it’s…' : 'Reveal'}
 					size="lg"
@@ -90,7 +101,7 @@ export function LoserReveal({
 					onPress={reveal}
 					accessibilityHint="Shows who owes the stake"
 				/>
-			</Card>
+			</View>
 		)
 	}
 
@@ -103,80 +114,44 @@ export function LoserReveal({
 	let headline: string
 	let line: string
 	if (nobody) {
-		headline = 'Nobody pays, everybody wins 🎉'
+		headline = 'Nobody pays.'
 		line = perfect
 			? 'Every single day, kept by every single one of you. Frame this.'
 			: 'All tied up. Nobody can claim the high ground, so nobody pays.'
 	} else {
 		const you = names.length === 1 && names[0] === 'You'
-		headline = stakeLine(names, stake)
+		const said = stakeLine(names, stake)
+		headline = /[\p{L}\p{N}]$/u.test(said) ? `${said}.` : said
 		line =
 			losers.length > 1
-				? `Tied at the bottom: ${joinNames(names)} split it, fair and square 🤝`
-				: `${losers[0].days_done} of ${losers[0].days_held} days. Next round is ${you ? 'yours' : `${names[0]}'s`} 💪`
+				? `Tied at the bottom: ${joinNames(names)} split it, fair and square.`
+				: `${losers[0].days_done} of ${losers[0].days_held} days. Next round is ${you ? 'yours' : `${names[0]}’s`}.`
 	}
 
 	return (
-		<Card
-			padding="spacious"
-			style={[s.card, elevation.card, { borderColor: tone.fill, borderWidth: 2 }]}
-			accessibilityLiveRegion="polite"
-		>
+		<View style={frame} accessibilityLiveRegion="polite">
+			<Text variant="mono" tone="secondary">
+				{nobody ? 'Everybody wins' : losers.length > 1 ? 'They pay' : 'Pays'}
+			</Text>
 			<View style={s.faces}>
 				{faces.map((m, i) => (
 					<Pop key={m.user_id} delay={i * 50} style={i > 0 ? s.overlap : undefined}>
-						<Avatar userId={m.user_id} name={displayName(m)} size={nobody ? 56 : 84} />
-						{nobody ? null : (
-							// A sticker, slapped on a beat after the face lands.
-							<Pop delay={180 + i * 50} style={s.sticker}>
-								<Text style={s.stickerEmoji} accessibilityElementsHidden>
-									😅
-								</Text>
-							</Pop>
-						)}
+						<Avatar userId={m.user_id} name={displayName(m)} size={nobody ? 48 : 72} />
 					</Pop>
 				))}
 			</View>
 			<FadeSlideIn index={1}>
-				<Text variant="h1" style={s.center}>
-					{headline}
-				</Text>
-			</FadeSlideIn>
-			<FadeSlideIn index={2}>
-				<Text variant="body" tone="secondary" style={s.center}>
+				<Text variant="h1">{headline}</Text>
+				<Text variant="h2" tone="tertiary">
 					{line}
 				</Text>
 			</FadeSlideIn>
-		</Card>
-	)
-}
-
-/** 🥁, hit on every beat while rolling; still otherwise. */
-function Drum({ rolling }: { rolling: boolean }) {
-	const hit = useSharedValue(0)
-	useEffect(() => {
-		if (!rolling) return
-		const up = { duration: REVEAL.beatUpMs, easing: Easing.out(Easing.quad) }
-		const down = { duration: REVEAL.beatMs - REVEAL.beatUpMs, easing: Easing.in(Easing.quad) }
-		hit.value = withRepeat(withSequence(withTiming(1, up), withTiming(0, down)), REVEAL.beats)
-		return () => cancelAnimation(hit)
-	}, [hit, rolling])
-	const style = useAnimatedStyle(() => ({
-		transform: [{ scale: 1 + 0.18 * hit.value }, { rotate: `${-8 * hit.value}deg` }]
-	}))
-	return (
-		<Animated.Text style={[s.drum, style]} allowFontScaling={false} accessibilityElementsHidden>
-			🥁
-		</Animated.Text>
+		</View>
 	)
 }
 
 const s = StyleSheet.create({
-	card: { alignItems: 'center', gap: 14 },
-	center: { textAlign: 'center' },
-	drum: { fontSize: 56, lineHeight: 68 },
-	faces: { flexDirection: 'row', justifyContent: 'center', marginBottom: 4 },
-	overlap: { marginLeft: -12 },
-	sticker: { position: 'absolute', right: -10, top: -6, transform: [{ rotate: '14deg' }] },
-	stickerEmoji: { fontSize: 34, lineHeight: 42 }
+	block: { gap: 20, padding: 20, borderWidth: StyleSheet.hairlineWidth * 3, borderRadius: 8 },
+	faces: { flexDirection: 'row' },
+	overlap: { marginLeft: -10 }
 })

@@ -30,6 +30,8 @@ export interface CrewTone {
 	onFill: string
 	/** Secondary text on `fill`: a step softer than `onFill`, still AA. */
 	onFillMuted: string
+	/** The muted second line of a headline on `fill`: large text, so 3:1. */
+	onFillLarge: string
 	/** An empty ring track on `fill`. */
 	onFillTrack: string
 	/** The colour as text on any ground (AA). */

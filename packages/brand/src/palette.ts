@@ -184,10 +184,20 @@ function crewTone(
 	const onFill = onColor(fill, spec.onFill)
 	// Muted text leans toward the fill, but never below AA: if the lean would cost that, it doesn't.
 	const leaned = mix(onFill, fill, 0.22)
+	// Headlines are large text (WCAG 3:1), so their muted line can lean much further.
+	let large = onFill
+	for (let t = 0.6; t > 0; t -= 0.04) {
+		const candidate = mix(onFill, fill, t)
+		if (contrast(candidate, fill) >= AA_NON_TEXT + 0.05) {
+			large = candidate
+			break
+		}
+	}
 	return {
 		fill,
 		onFill,
 		onFillMuted: contrast(leaned, fill) >= DERIVE_TARGET ? leaned : onFill,
+		onFillLarge: large,
 		onFillTrack: withAlpha(onFill, 0.2),
 		ink: ensureContrast(
 			fill,

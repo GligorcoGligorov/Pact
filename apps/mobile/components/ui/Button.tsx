@@ -75,7 +75,8 @@ export function Button({
 		? { bg: c.well, border: c.borderHairline, text: c.textTertiary }
 		: {
 				primary: { bg: c.brandFill, border: 'transparent', text: c.onBrand },
-				secondary: { bg: c.brandDim, border: c.brandBorder, text: c.brandInk },
+				// An ink outline: the screen's one filled pill stays the primary.
+				secondary: { bg: 'transparent', border: c.textPrimary, text: c.textPrimary },
 				outline: { bg: 'transparent', border: c.borderActive, text: c.textPrimary },
 				ghost: { bg: 'transparent', border: 'transparent', text: c.textSecondary },
 				destructive: { bg: c.errorSoft, border: c.errorBorder, text: c.errorText }
