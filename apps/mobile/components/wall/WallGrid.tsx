@@ -71,6 +71,7 @@ export function WallGrid({
 	onFill,
 	pending,
 	landed,
+	maxTile,
 	onOpen
 }: {
 	wall: Wall
@@ -88,6 +89,8 @@ export function WallGrid({
 	pending?: string | null
 	/** The member whose photo just landed on today's row: only their tile pops in. */
 	landed?: string | null
+	/** A cap on tile width for a mini wall that must fit many days (the results' wall). */
+	maxTile?: number
 	onOpen?: (tile: OpenTile) => void
 }) {
 	const c = useColors()
@@ -113,7 +116,7 @@ export function WallGrid({
 	// Every row reserves the frame, kept or not, so the columns line up.
 	const inner = width - label - FRAME * 2 - (label > 0 ? GAP : 0)
 	const fit = width > 0 ? (inner - GAP * (n - 1)) / n : 0
-	const tileW = mini ? Math.min(fit, MINI_MAX) : fit
+	const tileW = mini ? Math.min(fit, maxTile ?? MINI_MAX) : fit
 	const tileH = mini ? tileW : tileW * (4 / 3)
 	const total = wall.days.length
 	const look: Look = onFill
@@ -157,7 +160,10 @@ export function WallGrid({
 							<Animated.View
 								key={day.day}
 								entering={FadeIn.delay(Math.min(i, STAGGER_CAP) * ROW_STAGGER_MS).duration(240)}
-								style={[s.row, { marginTop: i === 0 && mini ? 0 : ROW_GAP - FRAME }]}
+								style={[
+									s.row,
+									{ marginTop: i === 0 && mini ? 0 : (mini && maxTile ? 4 : ROW_GAP) - FRAME }
+								]}
 							>
 								{label > 0 ? (
 									<View style={[s.label, { width: label, marginRight: GAP }]}>
@@ -254,7 +260,14 @@ function Tile({
 				style={[s.tile, s.center, box, { backgroundColor: look.ground }]}
 				accessibilityLabel={`${name}: ${checkIn.kind === 'saver' ? 'saver' : 'photo hidden'}`}
 			>
-				<Text variant="mono" tone="secondary">
+				<Text
+					variant="mono"
+					tone="secondary"
+					numberOfLines={1}
+					adjustsFontSizeToFit
+					minimumFontScale={0.5}
+					style={s.tileLabel}
+				>
 					{checkIn.kind === 'saver' ? 'Saver' : 'Hidden'}
 				</Text>
 			</View>
@@ -353,6 +366,7 @@ const s = StyleSheet.create({
 	},
 	tile: { borderRadius: 4, overflow: 'hidden' },
 	center: { alignItems: 'center', justifyContent: 'center' },
+	tileLabel: { paddingHorizontal: 2 },
 	dashed: { borderWidth: 1.5, borderStyle: 'dashed' },
 	flag: { position: 'absolute', left: 4, top: 4, borderRadius: 2, paddingHorizontal: 3 }
 })

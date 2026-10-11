@@ -122,28 +122,31 @@ export function stakeLine(loserNames: readonly string[], stake: string | null): 
 }
 
 /**
- * The signed pact's sentence, in the signer's own voice: "I, Ana, will run for 20 minutes
- * every day for 21 days. If I break it, I buy the coffees." A stake that doesn't start with
- * "loser" reads "If I break it, I owe: a round of pizza"; no stake, "If I break it, my crew
- * will know."
+ * The signed pact's sentence, in the signer's own voice, grammatical for any habit (habits are
+ * free text: "Run for 20 minutes", "Ten minutes of yoga"): "I, Ana, promise: run for 20
+ * minutes, every day for 21 days. If I break it, I buy the coffees." A stake that doesn't start
+ * with "loser" reads "If I break it, I owe: a round of pizza"; no stake, "If I break it, my crew
+ * will know." `name` null is the whole crew: "We promise: …".
  */
 export function pledgeLine(
-	name: string,
+	name: string | null,
 	habit: string,
 	cadence: 'daily' | 'weekdays',
 	days: number,
 	stake: string | null
 ): string {
-	const what = habit.trim().replace(/[.!]+$/, '')
-	const doing = lowerFirst(what)
+	const we = name === null
+	const what = lowerFirst(habit.trim().replace(/[.!]+$/, ''))
 	const when = cadence === 'daily' ? 'every day' : 'every weekday'
-	const promise = `I, ${name}, will ${doing} ${when} for ${days} days.`
-	if (!stake) return `${promise} If I break it, my crew will know.`
+	const promise = `${we ? 'We' : `I, ${name},`} promise: ${what}, ${when} for ${days} days.`
+	const breakIt = we ? 'If we break it,' : 'If I break it,'
+	if (!stake) return `${promise} ${breakIt} ${we ? 'the crew' : 'my crew'} will know.`
 	const match = /^(?:the\s+)?losers?\s+(\S+)(.*)$/i.exec(stake.trim())
+	const who = we ? 'whoever slips' : 'I'
 	const cost = match
-		? `I ${pluralVerb(match[1] ?? '')}${(match[2] ?? '').replace(/[.!]+$/, '')}`
-		: `I owe: ${lowerFirst(stake.trim().replace(/[.!]+$/, ''))}`
-	return `${promise} If I break it, ${cost}.`
+		? `${who} ${we ? (match[1] ?? '') : pluralVerb(match[1] ?? '')}${(match[2] ?? '').replace(/[.!]+$/, '')}`
+		: `${who} ${we ? 'owes' : 'owe'}: ${lowerFirst(stake.trim().replace(/[.!]+$/, ''))}`
+	return `${promise} ${breakIt} ${cost}.`
 }
 
 function lowerFirst(text: string): string {
