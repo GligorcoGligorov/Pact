@@ -1,4 +1,10 @@
-import type { JoinPageDay } from '@/server/pacts/join-page'
+/** One row of the public wall: who was held and who was in that day. */
+export type PresenceDay = {
+	day: string
+	open?: boolean
+	kept: boolean
+	cells: { userId: string; held: boolean; in: boolean }[]
+}
 
 type Member = { userId: string; name: string | null }
 
@@ -15,16 +21,24 @@ function initials(name: string | null): string {
 export function PresenceWall({
 	days,
 	members,
-	label
+	label,
+	compact
 }: {
-	days: JoinPageDay[]
+	days: PresenceDay[]
 	members: Member[]
 	/** Each row's label, newest first: "NOW", "07"… */
-	label: (day: JoinPageDay, index: number) => string
+	label: (day: PresenceDay, index: number) => string
+	/** Thin rows, for a whole pact at once. */
+	compact?: boolean
 }) {
+	const tile = compact ? 'h-4' : 'h-9'
 	const names = new Map(members.map((m) => [m.userId, m.name]))
 	return (
-		<div className="space-y-2" role="img" aria-label="Who was in, day by day">
+		<div
+			className={compact ? 'space-y-1' : 'space-y-2'}
+			role="img"
+			aria-label="Who was in, day by day"
+		>
 			<div
 				className="grid gap-1 pl-12 font-mono text-[11px] uppercase tracking-[0.06em] text-ink-secondary"
 				style={{ gridTemplateColumns: `repeat(${members.length}, minmax(0, 1fr))` }}
@@ -50,15 +64,18 @@ export function PresenceWall({
 					>
 						{day.cells.map((cell) =>
 							!cell.held ? (
-								<span key={cell.userId} className="h-9" />
+								<span key={cell.userId} className={tile} />
 							) : cell.in ? (
-								<span key={cell.userId} className="h-9 rounded-[4px] bg-[color:var(--crew-fill)]" />
+								<span
+									key={cell.userId}
+									className={`${tile} rounded-[4px] bg-[color:var(--crew-fill)]`}
+								/>
 							) : (
 								<span
 									key={cell.userId}
-									className={`border-line grid h-9 place-items-center rounded-[4px] border-[1.5px] border-dashed font-mono text-[11px] text-ink-secondary ${day.open ? 'animate-pulse motion-reduce:animate-none' : ''}`}
+									className={`border-line grid ${tile} place-items-center rounded-[4px] border-[1.5px] border-dashed font-mono text-[11px] text-ink-secondary ${day.open ? 'animate-pulse motion-reduce:animate-none' : ''}`}
 								>
-									{initials(names.get(cell.userId) ?? null)}
+									{compact ? null : initials(names.get(cell.userId) ?? null)}
 								</span>
 							)
 						)}

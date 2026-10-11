@@ -41,7 +41,7 @@ beforeEach(() => {
 test('a finished pact: the stake said about the loser, the chain, best first', async () => {
 	fakeStore(resultStore, 'forPublic', () => row(DAYS[2], [DAYS[1]]))
 	const page = await getResultPage(PACT_ID)
-	assert.equal(page?.headline, 'Dan buys coffee')
+	assert.equal(page?.headline, 'Dan buys coffee.')
 	assert.equal(page?.nobodyPays, false)
 	assert.deepEqual(
 		page?.chain.map((d) => d.status),
@@ -58,7 +58,7 @@ test('a finished pact: the stake said about the loser, the chain, best first', a
 
 test('everyone perfect: nobody pays', async () => {
 	fakeStore(resultStore, 'forPublic', () => row(DAYS[2]))
-	assert.equal((await getResultPage(PACT_ID))?.headline, 'Nobody pays, everybody wins 🎉')
+	assert.equal((await getResultPage(PACT_ID))?.headline, 'Nobody pays.')
 })
 
 test('no page for a running pact, an unknown one, or an id that is not one', async () => {
