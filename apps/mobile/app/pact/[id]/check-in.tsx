@@ -6,6 +6,7 @@ import type * as ImagePicker from 'expo-image-picker'
 import { useQueryClient } from '@tanstack/react-query'
 import { CameraOff, CircleCheck, ScanEye, SearchX } from 'lucide-react-native'
 import { CHECK_IN_NOTE_MAX, type CheckIn, type Verdict } from '@app/contract'
+import { chainTiles } from '@/components/pact/Chain'
 import { VerdictView, type VerdictProgress } from '@/components/pact/VerdictView'
 import { QueryErrorState } from '@/components/QueryError'
 import { Button } from '@/components/ui/Button'
@@ -357,7 +358,16 @@ function Judged({
 		streakBefore,
 		streakAfter: fresh?.progress.current_streak ?? streakBefore,
 		board,
-		myId: myId ?? null
+		myId: myId ?? null,
+		color: pact.data?.pact.color ?? null,
+		tiles: pact.data
+			? chainTiles(
+					pact.data.progress.chain,
+					pact.data.pact.start_day,
+					pact.data.pact.end_day,
+					pact.data.pact.cadence
+				)
+			: []
 	}
 
 	const viewed = useRef(false)
@@ -388,8 +398,8 @@ const s = StyleSheet.create({
 	row: { flexDirection: 'row', gap: 10 },
 	flex: { flex: 1 },
 	grow: { flex: 2 },
-	photoWrap: { borderRadius: 24, padding: 8 },
-	photo: { width: '100%', aspectRatio: 3 / 4, borderRadius: 18 },
+	photoWrap: { borderRadius: 8, padding: 8 },
+	photo: { width: '100%', aspectRatio: 3 / 4, borderRadius: 4 },
 	tag: {
 		alignSelf: 'center',
 		alignItems: 'center',
