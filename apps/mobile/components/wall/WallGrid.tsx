@@ -5,6 +5,7 @@ import Animated, {
 	cancelAnimation,
 	Easing,
 	FadeIn,
+	Keyframe,
 	useAnimatedStyle,
 	useSharedValue,
 	withRepeat,
@@ -30,6 +31,13 @@ const PULSE_MS = 1600
 /** Rows fade in one after another on open, capped so a long pact doesn't wait. */
 const ROW_STAGGER_MS = 40
 const STAGGER_CAP = 8
+/** A photo landing in its tile: a little big, then snapped into place, inside 300ms. */
+const pop = new Keyframe({
+	0: { opacity: 0, transform: [{ scale: 1.35 }] },
+	60: { opacity: 1, transform: [{ scale: 0.96 }] },
+	100: { opacity: 1, transform: [{ scale: 1 }] }
+}).duration(280)
+
 /** Home's mini wall: small square tiles, never wider than this. */
 const MINI_MAX = 52
 
@@ -61,6 +69,8 @@ export function WallGrid({
 	mini,
 	rows,
 	onFill,
+	pending,
+	landed,
 	onOpen
 }: {
 	wall: Wall
@@ -71,13 +81,33 @@ export function WallGrid({
 	rows?: number
 	/** Drawn on the crew's own fill (home's loud card): frames and dashes in its ink. */
 	onFill?: boolean
+	/**
+	 * The verdict's landing: this member's tile on today's row shows as still waiting (and the
+	 * row as not yet kept) until the photo lands, then pops in.
+	 */
+	pending?: string | null
+	/** The member whose photo just landed on today's row: only their tile pops in. */
+	landed?: string | null
 	onOpen?: (tile: OpenTile) => void
 }) {
 	const c = useColors()
 	const [width, setWidth] = useState(0)
 	const onLayout = (e: LayoutChangeEvent) => setWidth(Math.round(e.nativeEvent.layout.width))
 
-	const days = rows ? wall.days.slice(0, rows) : wall.days
+	const shownDays = rows ? wall.days.slice(0, rows) : wall.days
+	const days = pending
+		? shownDays.map((day) =>
+				day.status === 'open'
+					? {
+							...day,
+							kept: false,
+							cells: day.cells.map((cell) =>
+								cell.user_id === pending ? { ...cell, check_in: null } : cell
+							)
+						}
+					: day
+			)
+		: shownDays
 	const n = Math.max(wall.members.length, 1)
 	const label = mini ? 0 : LABEL_W
 	// Every row reserves the frame, kept or not, so the columns line up.
@@ -161,6 +191,7 @@ export function WallGrid({
 											width={tileW}
 											height={tileH}
 											last={j === day.cells.length - 1}
+											popIn={day.status === 'open' && cell.user_id === landed}
 											look={look}
 											onPress={
 												onOpen && cell.check_in?.photo_url
@@ -193,6 +224,7 @@ function Tile({
 	height,
 	last,
 	look,
+	popIn,
 	onPress
 }: {
 	cell: WallCell
@@ -202,9 +234,11 @@ function Tile({
 	height: number
 	last: boolean
 	look: Look
+	popIn?: boolean
 	onPress?: () => void
 }) {
 	const c = useColors()
+	const reduced = useReducedMotion()
 	const box = { width, height, marginRight: last ? 0 : GAP }
 	const checkIn = cell.check_in
 
@@ -228,7 +262,10 @@ function Tile({
 	}
 
 	const photo = (
-		<View style={[s.tile, box, { backgroundColor: look.ground }]}>
+		<Animated.View
+			entering={popIn && !reduced ? pop : undefined}
+			style={[s.tile, box, { backgroundColor: look.ground }]}
+		>
 			<Image
 				source={{ uri: checkIn.photo_url }}
 				style={StyleSheet.absoluteFill}
@@ -243,7 +280,7 @@ function Tile({
 					</Text>
 				</View>
 			) : null}
-		</View>
+		</Animated.View>
 	)
 	return onPress ? (
 		<PressableScale

@@ -6,7 +6,6 @@ import type * as ImagePicker from 'expo-image-picker'
 import { useQueryClient } from '@tanstack/react-query'
 import { CameraOff, CircleCheck, ScanEye, SearchX } from 'lucide-react-native'
 import { CHECK_IN_NOTE_MAX, type CheckIn, type Verdict } from '@app/contract'
-import { chainTiles } from '@/components/pact/Chain'
 import { ChallengeMoment } from '@/components/pact/ChallengeMoment'
 import { VerdictView, type VerdictProgress } from '@/components/pact/VerdictView'
 import { QueryErrorState } from '@/components/QueryError'
@@ -32,6 +31,7 @@ import {
 	useCheckIn,
 	useMyUserId,
 	usePact,
+	useWall,
 	type CheckInFailure
 } from '@/lib/pacts'
 import { ensureNotificationPermission } from '@/lib/notifications'
@@ -357,6 +357,7 @@ function Judged({
 }) {
 	const query = useCheckIn(initial.id)
 	const pact = usePact(pactId)
+	const wall = useWall(pactId)
 	const { data: myId } = useMyUserId()
 	// The pact as it was read after the check-in, not the cached copy from before it.
 	const fresh = pact.data && pact.dataUpdatedAt >= sentAt ? pact.data : null
@@ -379,14 +380,7 @@ function Judged({
 		board,
 		myId: myId ?? null,
 		color: pact.data?.pact.color ?? null,
-		tiles: pact.data
-			? chainTiles(
-					pact.data.progress.chain,
-					pact.data.pact.start_day,
-					pact.data.pact.end_day,
-					pact.data.pact.cadence
-				)
-			: []
+		wall: wall.data ?? null
 	}
 
 	const viewed = useRef(false)
