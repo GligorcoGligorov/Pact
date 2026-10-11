@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { RefreshControl, StyleSheet } from 'react-native'
+import { RefreshControl, StyleSheet, View } from 'react-native'
 import { router } from 'expo-router'
 import { useQueryClient } from '@tanstack/react-query'
 import { Ban, Camera, Flag } from 'lucide-react-native'
@@ -10,8 +10,7 @@ import { LoadMore, QueryErrorState } from '@/components/QueryError'
 import { FadeSlideIn } from '@/components/motion/FadeSlideIn'
 import { ActionSheet, AlertModal } from '@/components/ui/AppModal'
 import { EmptyState } from '@/components/ui/EmptyState'
-import { SectionHeader } from '@/components/ui/List'
-import { ScreenTitle } from '@/components/ui/PageHeader'
+import { Text } from '@/components/ui/Text'
 import { Screen } from '@/components/ui/Screen'
 import { CardSkeleton } from '@/components/ui/Skeleton'
 import { useColors } from '@/contexts/ThemeContext'
@@ -118,7 +117,7 @@ export default function ActivityScreen() {
 	return (
 		<Screen
 			tabs
-			gap={14}
+			gap={28}
 			refreshControl={
 				<RefreshControl
 					refreshing={refreshing}
@@ -129,11 +128,14 @@ export default function ActivityScreen() {
 				/>
 			}
 		>
-			<ScreenTitle
-				variant="display"
-				title="Activity"
-				subtitle="Your crews’ check-ins, newest first."
-			/>
+			<View style={s.masthead}>
+				<Text variant="display" accessibilityRole="header">
+					The crews.
+				</Text>
+				<Text variant="display" tone="tertiary">
+					As it lands.
+				</Text>
+			</View>
 
 			{feed.data === undefined && feed.isError ? (
 				<QueryErrorState
@@ -149,8 +151,7 @@ export default function ActivityScreen() {
 			) : entries.length === 0 ? (
 				<EmptyState
 					icon={Camera}
-					emoji={['📸', '👏', '😂']}
-					title="Quiet in here…"
+					title="Quiet in here."
 					body="Every check-in from your crews lands here. Go first and set the pace."
 					action={{ label: 'Go to your pacts', onPress: () => router.navigate('/') }}
 				/>
@@ -158,7 +159,11 @@ export default function ActivityScreen() {
 				<>
 					{groups.map((group, g) => (
 						<FadeSlideIn key={group.day} index={Math.min(g, 3)} style={s.group}>
-							<SectionHeader title={dayLabel(group.day, today)} />
+							<View style={[s.day, { borderTopColor: c.textPrimary }]}>
+								<Text variant="mono" tone="secondary">
+									{dayLabel(group.day, today)}
+								</Text>
+							</View>
 							{group.entries.map((entry) => (
 								<FeedCard
 									key={entry.id}
@@ -222,5 +227,7 @@ export default function ActivityScreen() {
 }
 
 const s = StyleSheet.create({
-	group: { gap: 14 }
+	masthead: { paddingTop: 4 },
+	group: { gap: 20 },
+	day: { borderTopWidth: StyleSheet.hairlineWidth * 2, paddingTop: 12 }
 })

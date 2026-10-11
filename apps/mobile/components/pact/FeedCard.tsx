@@ -8,14 +8,13 @@ import Animated, {
 	withSpring,
 	withTiming
 } from 'react-native-reanimated'
-import { EyeOff, MoreHorizontal, ShieldCheck, TriangleAlert } from 'lucide-react-native'
+import { EyeOff, MoreHorizontal, ShieldCheck } from 'lucide-react-native'
 import { REACTIONS, type FeedEntry, type Reaction } from '@app/contract'
 import { PressableScale } from '@/components/motion/PressableScale'
 import { Text } from '@/components/ui/Text'
 import { useTheme } from '@/contexts/ThemeContext'
 import { crewTone } from '@/lib/crew'
-import { Avatar, displayName } from './Avatars'
-import { CrewBadge } from './CrewTheme'
+import { displayName } from './Avatars'
 
 /** The reactions' faces: the data says fire, clap, laugh; the person sees the emoji. */
 export const REACTION_EMOJI: Record<Reaction, string> = { fire: '🔥', clap: '👏', laugh: '😂' }
@@ -39,8 +38,9 @@ export function timeAgo(iso: string, now = Date.now()): string {
 }
 
 /**
- * A crew member's check-in in the feed: who, which pact, when; the photo in its card; the AI's
- * caption, and a suspicious one's flag and reason (R15); and the crew's quick reactions.
+ * A crew member's check-in in the feed, photo first: the photo full width, a mono line on it
+ * (who, which pact in its colour, when), the AI's line under it big, a suspicious one's flag and
+ * reason (R15), and the crew's quick reactions.
  */
 export function FeedCard({
 	entry,
@@ -54,46 +54,33 @@ export function FeedCard({
 	/** Report or block, for someone else's check-in. */
 	onMore?: () => void
 }) {
-	const { colors: c, elevation } = useTheme()
+	const { colors: c } = useTheme()
 	const name = displayName(entry)
 	const mine = entry.user_id === myId
 	const flagged = entry.verdict === 'suspicious'
 	const tone = crewTone(c, entry.pact_color)
+	const who = mine ? 'You' : name.split(' ')[0]
 
 	return (
-		<View
-			style={[
-				s.card,
-				{ backgroundColor: c.surface, borderColor: c.borderHairline },
-				elevation.card
-			]}
-		>
+		<View style={s.card}>
 			<PressableScale
 				scaleTo="card"
 				haptic={false}
 				onPress={() => router.push(`/pact/${entry.pact_id}`)}
 				accessibilityRole="button"
-				accessibilityLabel={`${mine ? 'You' : name} in ${entry.pact_name}`}
+				accessibilityLabel={`${who} in ${entry.pact_name}`}
 				style={s.header}
 			>
-				<View>
-					<Avatar userId={entry.user_id} name={name} size={38} />
-					{/* Which crew it's for, at a glance: the crew's mark on the face. */}
-					<View style={[s.crewMark, { borderColor: c.surface }]}>
-						<CrewBadge color={entry.pact_color} emoji={entry.pact_emoji} size={16} />
-					</View>
-				</View>
-				<View style={s.who}>
-					<Text variant="label" numberOfLines={1}>
-						{mine ? 'You' : name}
+				<View style={[s.swatch, { backgroundColor: tone.fill }]} />
+				<Text variant="mono" numberOfLines={1} style={s.who}>
+					{who} ·{' '}
+					<Text variant="mono" style={{ color: tone.line }}>
+						{entry.pact_name}
 					</Text>
-					<Text variant="caption" tone="tertiary" numberOfLines={1}>
-						<Text variant="caption" style={{ color: tone.ink }}>
-							{entry.pact_name}
-						</Text>
-						{` · ${timeAgo(entry.created_at)}`}
-					</Text>
-				</View>
+				</Text>
+				<Text variant="mono" tone="tertiary">
+					{timeAgo(entry.created_at)}
+				</Text>
 				{!mine && onMore ? (
 					<PressableScale
 						scaleTo="button"
@@ -102,18 +89,17 @@ export function FeedCard({
 						hitSlop={10}
 						accessibilityRole="button"
 						accessibilityLabel={`More for ${name}'s check-in`}
-						style={s.more}
 					>
-						<MoreHorizontal size={22} color={c.textTertiary} />
+						<MoreHorizontal size={20} color={c.textTertiary} />
 					</PressableScale>
 				) : null}
 			</PressableScale>
 
 			{entry.reported_by_me ? (
-				<View style={[s.saver, { backgroundColor: c.surface2 }]}>
+				<View style={[s.empty, { borderColor: c.borderSoft }]}>
 					<EyeOff size={20} color={c.textTertiary} />
-					<Text variant="bodySm" tone="secondary" style={s.flagText}>
-						You reported this photo, so it’s hidden for you. Thanks for keeping the crew honest.
+					<Text variant="bodySm" tone="secondary" style={s.flex}>
+						You reported this photo, so it’s hidden for you.
 					</Text>
 				</View>
 			) : entry.photo_url ? (
@@ -125,27 +111,20 @@ export function FeedCard({
 					accessibilityLabel={`${name}'s check-in photo for ${entry.habit}`}
 				/>
 			) : entry.kind === 'saver' ? (
-				<View style={[s.saver, { backgroundColor: c.infoSoft }]}>
-					<ShieldCheck size={22} color={c.infoText} />
-					<Text variant="label" tone="info">
-						Used the streak saver today
+				<View style={[s.empty, { borderColor: c.borderSoft }]}>
+					<ShieldCheck size={20} color={c.textSecondary} />
+					<Text variant="mono" tone="secondary">
+						Saver used · the day holds
 					</Text>
 				</View>
 			) : null}
 
-			{entry.ai_caption ? (
-				<Text variant="body" tone="body" style={s.caption}>
-					“{entry.ai_caption}”
-				</Text>
-			) : null}
+			{entry.ai_caption ? <Text variant="h2">“{entry.ai_caption}”</Text> : null}
 
 			{flagged ? (
-				<View style={[s.flag, { backgroundColor: c.warningSoft, borderColor: c.warningBorder }]}>
-					<TriangleAlert size={16} color={c.warningText} />
-					<Text variant="caption" tone="warning" style={s.flagText}>
-						{entry.ai_reason ?? 'The AI judge has doubts about this one.'} It still counts.
-					</Text>
-				</View>
+				<Text variant="bodySm" tone="warning">
+					Flagged · {entry.ai_reason ?? 'The AI judge has doubts about this one.'} It still counts.
+				</Text>
 			) : null}
 
 			<View style={s.reactions}>
@@ -197,14 +176,14 @@ function ReactionButton({
 			style={[
 				s.reaction,
 				{
-					backgroundColor: selected ? c.brandDim : c.surface2,
-					borderColor: selected ? c.brandBorder : c.borderHairline
+					backgroundColor: selected ? c.surface2 : 'transparent',
+					borderColor: selected ? c.textPrimary : c.borderSoft
 				}
 			]}
 		>
 			<Animated.Text style={[s.emoji, pop]}>{REACTION_EMOJI[reaction]}</Animated.Text>
 			{count > 0 ? (
-				<Text variant="label" tabular tone={selected ? 'brand' : 'secondary'}>
+				<Text variant="mono" tone={selected ? 'primary' : 'secondary'}>
 					{count}
 				</Text>
 			) : null}
@@ -213,31 +192,22 @@ function ReactionButton({
 }
 
 const s = StyleSheet.create({
-	card: { borderRadius: 26, borderWidth: StyleSheet.hairlineWidth, padding: 14, gap: 12 },
-	header: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-	who: { flex: 1, gap: 1 },
-	crewMark: { position: 'absolute', right: -7, bottom: -5, borderRadius: 10, borderWidth: 2 },
-	more: { padding: 6 },
-	photo: { width: '100%', aspectRatio: 4 / 5, borderRadius: 18 },
-	saver: {
+	card: { gap: 12 },
+	header: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+	swatch: { width: 10, height: 10, borderRadius: 2 },
+	who: { flex: 1 },
+	flex: { flex: 1 },
+	photo: { width: '100%', aspectRatio: 4 / 5, borderRadius: 6 },
+	empty: {
 		flexDirection: 'row',
 		alignItems: 'center',
 		gap: 10,
-		borderRadius: 18,
+		borderRadius: 6,
+		borderWidth: 1.5,
+		borderStyle: 'dashed',
 		paddingHorizontal: 16,
-		paddingVertical: 18
+		paddingVertical: 28
 	},
-	caption: { fontStyle: 'italic', paddingHorizontal: 4 },
-	flag: {
-		flexDirection: 'row',
-		gap: 8,
-		alignItems: 'flex-start',
-		borderRadius: 14,
-		borderWidth: StyleSheet.hairlineWidth,
-		paddingHorizontal: 12,
-		paddingVertical: 10
-	},
-	flagText: { flex: 1 },
 	reactions: { flexDirection: 'row', gap: 8, paddingHorizontal: 2 },
 	reaction: {
 		flexDirection: 'row',
