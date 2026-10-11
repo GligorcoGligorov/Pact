@@ -53,14 +53,14 @@ export function useFirstMilestoneView(pactId: string, milestone: Milestone | nul
 }
 
 const MILESTONE_COPY: Record<Milestone, { title: string; body: string }> = {
-	3: { title: 'Three in a row.', body: 'The habit’s catching. Keep the chain going.' },
+	3: { title: 'Three in a row.', body: 'The habit’s catching. Keep the rows coming.' },
 	7: { title: 'A whole week.', body: 'Seven days, nobody missed one.' },
 	14: { title: 'Two weeks strong.', body: 'Fourteen days straight. This is just who you are now.' }
 }
 
 /**
- * The board's line once everyone is in, under the chain whose link for today just closed: the
- * day kept by the whole crew, or the milestone it reached. Two-tone, no card: the chain is the
+ * The board's line once everyone is in, under the wall whose row for today just filled: the
+ * day kept by the whole crew, or the milestone it reached. Two-tone, no card: the full row is the
  * celebration, this only names it.
  */
 export function KeptLine({

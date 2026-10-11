@@ -60,7 +60,7 @@ export default function PactResultScreen() {
 					<EmptyState
 						icon={Hourglass}
 						title="Still going strong"
-						body="The results land the day after the last day. Keep the chain alive till then."
+						body="The results land the day after the last day. Keep the wall full till then."
 						action={{ label: 'Back to the pact', onPress: () => router.replace(`/pact/${id}`) }}
 					/>
 				) : null}

@@ -41,8 +41,8 @@ const pop = new Keyframe({
 	100: { opacity: 1, transform: [{ scale: 1 }] }
 }).duration(280)
 
-/** Home's mini wall: small square tiles, never wider than this. */
-const MINI_MAX = 52
+/** Home's mini wall: full-width tiles, a little wider than tall, so three rows stay compact. */
+const MINI_ASPECT = 0.75
 
 /** How the wall draws on its ground: paper-dark, or the crew's own fill. */
 type Look = {
@@ -63,7 +63,8 @@ export type OpenTile = { day: WallDay; cell: WallCell; name: string; dayNumber: 
  * tile with their initials, breathing on today's row ("waiting on"). A saver is an ink tile.
  * Tap a photo to open it.
  *
- * `mini` is home's card: the last few days, small square tiles, no names, no taps.
+ * `mini` is home's card: the last few days, tiles stretched to the card's width, no names, no
+ * taps.
  */
 export function WallGrid({
 	wall,
@@ -125,8 +126,9 @@ export function WallGrid({
 	// Every row reserves the frame, kept or not, so the columns line up.
 	const inner = width - label - FRAME * 2 - (label > 0 ? GAP : 0)
 	const fit = width > 0 ? (inner - GAP * (n - 1)) / n : 0
-	const tileW = mini ? Math.min(fit, maxTile ?? MINI_MAX) : fit
-	const tileH = tileHeight ?? (mini ? tileW : tileW * (4 / 3))
+	// Tiles stretch to the full width; a cap only when the caller asks for one.
+	const tileW = maxTile ? Math.min(fit, maxTile) : fit
+	const tileH = tileHeight ?? (mini ? tileW * MINI_ASPECT : tileW * (4 / 3))
 	const total = wall.days.length
 	const look: Look = onFill
 		? {

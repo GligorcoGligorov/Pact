@@ -25,7 +25,7 @@ export const AWARDS: Record<AwardKind, { emoji: string; title: string; blurb: st
 	iron_streak: { emoji: '🔥', title: 'Iron streak', blurb: 'The longest run of the pact' },
 	never_missed: { emoji: '💯', title: 'Never missed', blurb: 'Every single day, with proof' },
 	comeback_kid: { emoji: '🦸', title: 'Comeback kid', blurb: 'Missed one, came back swinging' },
-	clutch_save: { emoji: '🛟', title: 'Clutch save', blurb: 'Their saver held the chain' },
+	clutch_save: { emoji: '🛟', title: 'Clutch save', blurb: 'Their saver kept the day whole' },
 	early_bird: { emoji: '🌅', title: 'Early bird', blurb: 'In before 9am, most days' },
 	night_owl: { emoji: '🦉', title: 'Night owl', blurb: 'Living dangerously after 9pm' }
 }

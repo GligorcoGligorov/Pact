@@ -15,7 +15,7 @@ const grow = new Keyframe({
 }).duration(GROW_MS)
 
 /**
- * The one loud block a screen gets: solid crew colour, text and chain in its `onFill`, crosshair
+ * The one loud block a screen gets: solid crew colour, its text in the crew's `onFill`, crosshair
  * corner marks outside it on the paper. Everything else on the screen stays paper and ink.
  */
 export function CrewHero({

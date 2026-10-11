@@ -43,10 +43,9 @@ import {
 } from '@/lib/pacts'
 
 /**
- * R18, R19: today's board. One loud block in the crew's colour (the countdown, the chain with
- * today's link closing as people check in, the streak), then the crew, the challenge and the
- * stake on paper. The check-in button is the screen's one
- * primary action, while the caller still owes today.
+ * R18, R19: today's board, on the crew's deep tint. One loud block in the crew's colour (the
+ * countdown, the streak), then the Crew Wall of everyone's photos, the challenge and the stake.
+ * The check-in button is the screen's one primary action, while the caller still owes today.
  */
 export default function PactBoardScreen() {
 	const c = useColors()
@@ -82,7 +81,7 @@ export default function PactBoardScreen() {
 	const today = detail?.today ?? null
 	const kept = !!today && today.held_count >= MIN_CREW && today.in_count === today.held_count
 	// The first view of a kept day or a milestone: the haptic and the event, once per device.
-	// The celebration itself is the chain's link for today drawing closed.
+	// The celebration itself is today's row on the wall filling up.
 	useFirstKeptView(id, today?.day ?? '', kept)
 	useFirstMilestoneView(id, kept && detail ? milestoneFor(detail.progress.current_streak) : null)
 
@@ -137,7 +136,7 @@ function Board({
 }: {
 	detail: PactDetail
 	myId: string | null
-	/** Everyone held today is in: the chain's link for today is closed. */
+	/** Everyone held today is in: today's row on the wall is full. */
 	kept: boolean
 }) {
 	const c = useColors()

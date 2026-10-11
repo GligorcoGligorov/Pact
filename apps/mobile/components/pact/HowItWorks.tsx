@@ -17,7 +17,7 @@ const STEPS = [
 	},
 	{
 		icon: Link2Off,
-		title: 'Miss a day, the chain breaks',
+		title: 'Miss a day, the wall shows it',
 		body: 'The day counts only when everyone is in. The whole crew sees it.'
 	}
 ] as const

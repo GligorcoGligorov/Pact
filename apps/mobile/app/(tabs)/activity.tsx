@@ -133,7 +133,7 @@ export default function ActivityScreen() {
 					The crews.
 				</Text>
 				<Text variant="display" tone="tertiary">
-					As it lands.
+					Every photo, as it lands.
 				</Text>
 			</View>
 

@@ -64,7 +64,7 @@ export function SaverCard({
 			onSuccess: () => {
 				haptic.success()
 				track('check_in_submitted', { kind: 'saver', pact_id: pactId })
-				showToast('Saved. The chain holds.', 'success')
+				showToast('Saved. Your row stays whole.', 'success')
 			},
 			onError: (error) => {
 				haptic.error()
@@ -99,7 +99,7 @@ export function SaverCard({
 					<View>
 						<Text variant="h2">The day’s about to break.</Text>
 						<Text variant="h2" tone="tertiary">
-							Your saver keeps the chain closed, no photo needed.
+							Your saver keeps your row whole, no photo needed.
 						</Text>
 					</View>
 					<Button
@@ -113,7 +113,7 @@ export function SaverCard({
 			) : (
 				<View style={s.quiet}>
 					<Text variant="bodySm" tone="secondary" style={s.quietText}>
-						Can’t make it today? Your one saver keeps the chain closed.
+						Can’t make it today? Your one saver keeps your row whole.
 					</Text>
 					<Button
 						label="Use saver"

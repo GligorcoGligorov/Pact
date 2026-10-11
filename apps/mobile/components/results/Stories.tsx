@@ -29,8 +29,9 @@ export type Slide = (typeof SLIDES)[number]
 
 /** A tap on the left third goes back, anywhere else forward. */
 const BACK_ZONE = 0.33
-/** An award's winner photos. */
+/** An award's winner photos, and how far a second one overlaps the first. */
 const AWARD_FACE = 56
+const FACE_OVERLAP = 0.35
 /** The loser's own days: this many tiles a row. */
 const DAYS_PER_ROW = 7
 
@@ -344,9 +345,10 @@ function Faces({
 	tone: CrewTone
 }) {
 	const names = new Map(detail.result.members.map((m) => [m.user_id, displayName(m)]))
+	// A fixed-width column, room for two overlapping photos, so every award's text lines up.
 	return (
-		<View style={s.faces}>
-			{ids.slice(0, 3).map((id, i) => {
+		<View style={[s.faces, { width: size * (2 - FACE_OVERLAP) }]}>
+			{ids.slice(0, 2).map((id, i) => {
 				const url = bestPhoto(wall, id)
 				return (
 					<View
@@ -354,7 +356,7 @@ function Faces({
 						style={[
 							s.face,
 							{ width: size, height: size, borderColor: tone.fill },
-							i > 0 && { marginLeft: -size * 0.35 }
+							i > 0 && { marginLeft: -size * FACE_OVERLAP }
 						]}
 					>
 						{url ? (
