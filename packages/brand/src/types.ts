@@ -206,9 +206,13 @@ export type TypeRole =
 	| 'label'
 	| 'labelTracked'
 	| 'number'
+	| 'mono'
 
-/** `display` is the preset's headline face; `text` is the workhorse (Inter). */
-export type FontGroup = 'display' | 'text'
+/**
+ * `display` is the preset's headline face; `text` is the workhorse (Inter); `mono` sets the
+ * micro-labels and counters ("DAY 08 / 21", "02:14:33 LEFT").
+ */
+export type FontGroup = 'display' | 'text' | 'mono'
 export type FontWeight = 400 | 500 | 600 | 700 | 800
 
 export interface TypeSpec {

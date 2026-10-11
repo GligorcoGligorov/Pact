@@ -1,13 +1,10 @@
 import { useEffect, useState } from 'react'
-import { StyleSheet, View } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import Animated, { ZoomIn } from 'react-native-reanimated'
+import Animated, { FadeIn } from 'react-native-reanimated'
 import { Text } from '@/components/ui/Text'
-import { useTheme } from '@/contexts/ThemeContext'
 import { track } from '@/lib/analytics'
 import { haptic } from '@/lib/haptics'
-import type { Milestone } from '@/lib/streaks'
-import { StreakFlame } from './StreakFlame'
+import { CELEBRATION, type Milestone } from '@/lib/streaks'
 
 /**
  * True the first time this device sees `key` while `active`, then false: a celebration's haptic,
@@ -56,57 +53,30 @@ export function useFirstMilestoneView(pactId: string, milestone: Milestone | nul
 }
 
 const MILESTONE_COPY: Record<Milestone, { title: string; body: string }> = {
-	3: { title: '3 days in a row', body: 'The habit’s catching. Keep the chain going.' },
-	7: { title: 'A whole week!', body: 'Seven days, nobody missed one. That’s a crew.' },
-	14: { title: 'Two weeks strong', body: 'Fourteen days straight. This is just who you are now.' }
+	3: { title: 'Three in a row.', body: 'The habit’s catching. Keep the rows coming.' },
+	7: { title: 'A whole week.', body: 'Seven days, nobody missed one.' },
+	14: { title: 'Two weeks strong.', body: 'Fourteen days straight. This is just who you are now.' }
 }
 
 /**
- * The board's payoff once everyone is in: the day kept by the whole crew, and the streak. On a
- * milestone day it says so instead.
+ * The board's line once everyone is in, under the wall whose row for today just filled: the
+ * day kept by the whole crew, or the milestone it reached. Two-tone, no card: the full row is the
+ * celebration, this only names it.
  */
-export function KeptCard({
+export function KeptLine({
 	dayNumber,
-	streak,
 	milestone
 }: {
 	dayNumber: number
-	streak: number
 	milestone: Milestone | null
 }) {
-	const { colors: c, elevation } = useTheme()
 	const copy = milestone ? MILESTONE_COPY[milestone] : null
 	return (
-		<Animated.View
-			entering={ZoomIn.springify().damping(14)}
-			style={[s.card, { backgroundColor: c.brandFill }, elevation.raised]}
-			accessibilityRole="summary"
-		>
-			<View style={[s.flame, { backgroundColor: c.onBrand }]}>
-				<StreakFlame streak={streak} size={26} />
-			</View>
-			<View style={s.text}>
-				<Text variant="h3" style={{ color: c.onBrand }}>
-					{copy ? copy.title : `Day ${dayNumber} kept by the whole crew`}
-				</Text>
-				<Text variant="bodySm" style={{ color: c.onBrand, opacity: 0.85 }}>
-					{copy
-						? copy.body
-						: `Everyone’s in. ${streak} ${streak === 1 ? 'day' : 'days'} in a row. See you tomorrow.`}
-				</Text>
-			</View>
+		<Animated.View entering={FadeIn.duration(CELEBRATION.landMs)} accessibilityRole="summary">
+			<Text variant="h2">{copy ? copy.title : `Day ${dayNumber} kept.`}</Text>
+			<Text variant="h2" tone="tertiary">
+				{copy ? copy.body : 'The whole crew is in. See you tomorrow.'}
+			</Text>
 		</Animated.View>
 	)
 }
-
-const s = StyleSheet.create({
-	card: { flexDirection: 'row', alignItems: 'center', gap: 14, borderRadius: 24, padding: 18 },
-	flame: {
-		width: 48,
-		height: 48,
-		borderRadius: 16,
-		alignItems: 'center',
-		justifyContent: 'center'
-	},
-	text: { flex: 1, gap: 3 }
-})

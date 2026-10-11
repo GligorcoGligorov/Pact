@@ -1,6 +1,5 @@
 import Link from 'next/link'
 import { brandConfig } from '@app/brand'
-import { BrandMark } from './BrandMark'
 import { Container } from './Container'
 
 const COLUMNS = [
@@ -37,8 +36,7 @@ export function Footer() {
 				<div className="grid gap-12 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
 					<div className="max-w-xs">
 						<Link href="/" className="inline-flex items-center gap-2.5 rounded-lg">
-							<BrandMark siteName={siteName} />
-							<span className="font-display text-lg font-semibold">{siteName}</span>
+							<span className="font-mono text-sm uppercase tracking-[0.08em]">{siteName}</span>
 						</Link>
 						<p className="mt-4 text-pretty text-sm leading-relaxed text-ink-secondary">{TAGLINE}</p>
 					</div>

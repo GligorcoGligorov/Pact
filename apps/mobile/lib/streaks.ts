@@ -3,16 +3,6 @@
  * decide them.
  */
 
-/** How alive the flame is: out, a spark, burning, blazing. The streak decides, not the screen. */
-export type FlameLevel = 0 | 1 | 2 | 3
-
-export function flameLevel(streak: number): FlameLevel {
-	if (streak <= 0) return 0
-	if (streak < 3) return 1
-	if (streak < 7) return 2
-	return 3
-}
-
 /** The streaks worth a moment of their own: the habit catching, a week, two weeks. */
 export const MILESTONES = [3, 7, 14] as const
 export type Milestone = (typeof MILESTONES)[number]

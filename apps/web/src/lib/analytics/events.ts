@@ -205,7 +205,13 @@ export const PACT_EVENTS = {
 	 * metric of the finale: pacts that end in a rematch over pact_completed. Recorded once per
 	 * new pact. metadata: { pact_id (the new one), from_pact_id, crew_size }
 	 */
-	pactRematched: 'pact_rematched'
+	pactRematched: 'pact_rematched',
+	/**
+	 * A member signed the pact's card (create or join). Recorded by POST pacts/:id/signature,
+	 * which accepts one signature per member, so once per person and pact. metadata: { pact_id }.
+	 * Over pact_joined: how many members commit on the record, the ritual the signed card is for.
+	 */
+	pactSigned: 'pact_signed'
 } as const
 
 export const PACT_EVENT_NAMES = Object.values(PACT_EVENTS)

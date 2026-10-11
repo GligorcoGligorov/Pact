@@ -6,6 +6,7 @@ import type * as ImagePicker from 'expo-image-picker'
 import { useQueryClient } from '@tanstack/react-query'
 import { CameraOff, CircleCheck, ScanEye, SearchX } from 'lucide-react-native'
 import { CHECK_IN_NOTE_MAX, type CheckIn, type Verdict } from '@app/contract'
+import { ChallengeMoment } from '@/components/pact/ChallengeMoment'
 import { VerdictView, type VerdictProgress } from '@/components/pact/VerdictView'
 import { QueryErrorState } from '@/components/QueryError'
 import { Button } from '@/components/ui/Button'
@@ -20,18 +21,22 @@ import { useColors, useTheme } from '@/contexts/ThemeContext'
 import { useProfile } from '@/hooks/useProfile'
 import { track } from '@/lib/analytics'
 import { api, errorMessage } from '@/lib/api'
+import { crewTone } from '@/lib/crew'
 import { haptic } from '@/lib/haptics'
 import {
 	checkInFailure,
+	pactDayCount,
 	pactKeys,
 	submitPhotoCheckIn,
 	useCheckIn,
 	useMyUserId,
 	usePact,
+	useWall,
 	type CheckInFailure
 } from '@/lib/pacts'
 import { ensureNotificationPermission } from '@/lib/notifications'
 import { takeProofPhoto, USES_SIMULATOR_LIBRARY_FALLBACK } from '@/lib/proofPhoto'
+import { goBack } from '@/lib/nav'
 
 /** How long the verdict screen waits on the judge before it says "still thinking". */
 const JUDGE_WAIT_MS = 12_000
@@ -42,6 +47,7 @@ let consentDeclinedThisSession = false
 type Asset = ImagePicker.ImagePickerAsset
 type Phase =
 	| { name: 'consent' }
+	| { name: 'challenge' }
 	| { name: 'capture' }
 	| { name: 'no_camera' }
 	| { name: 'preview'; asset: Asset }
@@ -73,7 +79,7 @@ export default function CheckInScreen() {
 		if (phase || !owesToday || !profile.data) return
 		setPhase(
 			profile.data.aiConsent || consentDeclinedThisSession
-				? { name: 'capture' }
+				? { name: 'challenge' }
 				: { name: 'consent' }
 		)
 	}, [phase, owesToday, profile.data])
@@ -87,7 +93,7 @@ export default function CheckInScreen() {
 			setPhase({ name: 'no_camera' })
 		} else {
 			// Cancelled the camera: back to the board. (Capture only runs from the capture step.)
-			router.back()
+			goBack()
 		}
 	}, [id])
 
@@ -107,7 +113,7 @@ export default function CheckInScreen() {
 		} else {
 			consentDeclinedThisSession = true
 		}
-		setPhase({ name: 'capture' })
+		setPhase({ name: 'challenge' })
 	}
 
 	async function send(asset: Asset) {
@@ -132,7 +138,21 @@ export default function CheckInScreen() {
 		// In context, once: right after a check-in is the moment a heads-up from the crew (a
 		// nudge, a kept day, the 22:00 reminder) makes sense. iOS asks only the first time.
 		if (phase?.name === 'verdict') void ensureNotificationPermission()
-		router.back()
+		goBack()
+	}
+
+	if (phase?.name === 'challenge' && pact.data && today && challenge) {
+		const { pact: p, progress } = pact.data
+		return (
+			<ChallengeMoment
+				tone={crewTone(c, p.color)}
+				challenge={challenge}
+				closesAt={today.closes_at}
+				dayLabel={`Day ${String(progress.chain.length).padStart(2, '0')} / ${String(pactDayCount(p.start_day, p.end_day, p.cadence)).padStart(2, '0')}`}
+				onCapture={() => setPhase({ name: 'capture' })}
+				onClose={close}
+			/>
+		)
 	}
 
 	if (phase?.name === 'verdict') {
@@ -337,6 +357,7 @@ function Judged({
 }) {
 	const query = useCheckIn(initial.id)
 	const pact = usePact(pactId)
+	const wall = useWall(pactId)
 	const { data: myId } = useMyUserId()
 	// The pact as it was read after the check-in, not the cached copy from before it.
 	const fresh = pact.data && pact.dataUpdatedAt >= sentAt ? pact.data : null
@@ -357,7 +378,9 @@ function Judged({
 		streakBefore,
 		streakAfter: fresh?.progress.current_streak ?? streakBefore,
 		board,
-		myId: myId ?? null
+		myId: myId ?? null,
+		color: pact.data?.pact.color ?? null,
+		wall: wall.data ?? null
 	}
 
 	const viewed = useRef(false)
@@ -388,8 +411,8 @@ const s = StyleSheet.create({
 	row: { flexDirection: 'row', gap: 10 },
 	flex: { flex: 1 },
 	grow: { flex: 2 },
-	photoWrap: { borderRadius: 24, padding: 8 },
-	photo: { width: '100%', aspectRatio: 3 / 4, borderRadius: 18 },
+	photoWrap: { borderRadius: 8, padding: 8 },
+	photo: { width: '100%', aspectRatio: 3 / 4, borderRadius: 4 },
 	tag: {
 		alignSelf: 'center',
 		alignItems: 'center',

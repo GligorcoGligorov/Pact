@@ -1,20 +1,11 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import { StyleSheet, View } from 'react-native'
 import { router, useLocalSearchParams } from 'expo-router'
-import { Hourglass, Repeat, SearchX, Share } from 'lucide-react-native'
-import { Pop } from '@/components/motion/Pop'
-import { FadeSlideIn } from '@/components/motion/FadeSlideIn'
-import { CrewBadge } from '@/components/pact/CrewTheme'
-import { EmojiBurst } from '@/components/pact/EmojiBurst'
+import { Hourglass, Repeat, SearchX } from 'lucide-react-native'
 import { QueryErrorState } from '@/components/QueryError'
-import { Awards } from '@/components/results/Awards'
-import { LoserReveal, type RevealPhase } from '@/components/results/LoserReveal'
-import { ResultChain } from '@/components/results/ResultChain'
-import { Scoreboard } from '@/components/results/Scoreboard'
+import { Stories } from '@/components/results/Stories'
 import { Button } from '@/components/ui/Button'
-import { Card } from '@/components/ui/Card'
 import { EmptyState } from '@/components/ui/EmptyState'
-import { SectionHeader } from '@/components/ui/List'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Screen } from '@/components/ui/Screen'
 import { CardSkeleton } from '@/components/ui/Skeleton'
@@ -23,29 +14,29 @@ import { useColors } from '@/contexts/ThemeContext'
 import { useToast } from '@/contexts/ToastContext'
 import { track } from '@/lib/analytics'
 import { errorMessage } from '@/lib/api'
-import { crewEmoji, crewTone } from '@/lib/crew'
+import { crewTone } from '@/lib/crew'
 import { haptic } from '@/lib/haptics'
-import { useMyUserId } from '@/lib/pacts'
+import { goBack } from '@/lib/nav'
+import { useMyUserId, usePact, useWall } from '@/lib/pacts'
 import { usePactResult, useRematch, type PactResultDetail } from '@/lib/results'
-import { shareResult } from '@/lib/shareResult'
 
 /** Pacts whose reveal this person has already seen in this app session: no second drumroll. */
 const revealed = new Set<string>()
 
 /**
- * R24: the end of a pact, the moment a crew screenshots. The crew's final chain in its colour,
- * the awards, then the reveal (a drumroll, then who owes the stake, or nobody), then the
- * scoreboard and round 2 with the same crew in one tap.
+ * R24: the end of a pact, the moment a crew screenshots, as stories you tap through: the whole
+ * wall, the awards, the drumroll, who pays, and the signed pact with round 2 in one tap.
  */
 export default function PactResultScreen() {
 	const { id } = useLocalSearchParams<{ id: string }>()
 	const query = usePactResult(id)
 	const data = query.data
-	const [burst, setBurst] = useState<readonly string[] | null>(null)
+
+	if (data && data !== 'not_finished') return <Results detail={data} />
 
 	return (
 		<View style={s.root}>
-			<Screen header={<PageHeader />} gap={16}>
+			<Screen header={<PageHeader />} gap={32}>
 				{data === undefined && query.isError ? (
 					<QueryErrorState
 						error={query.error}
@@ -68,33 +59,22 @@ export default function PactResultScreen() {
 				) : data === 'not_finished' ? (
 					<EmptyState
 						icon={Hourglass}
-						emoji={['🔥', '⏳']}
 						title="Still going strong"
-						body="The results land the day after the last day. Keep the chain alive till then."
+						body="The results land the day after the last day. Keep the wall full till then."
 						action={{ label: 'Back to the pact', onPress: () => router.replace(`/pact/${id}`) }}
 					/>
-				) : (
-					<Results detail={data} onBurst={setBurst} />
-				)}
+				) : null}
 			</Screen>
-			{burst ? <EmojiBurst emoji={burst} originY={0.45} /> : null}
 		</View>
 	)
 }
 
-function Results({
-	detail,
-	onBurst
-}: {
-	detail: PactResultDetail
-	/** The reveal's celebration, drawn over the whole screen. */
-	onBurst: (emoji: readonly string[]) => void
-}) {
+function Results({ detail }: { detail: PactResultDetail }) {
 	const c = useColors()
 	const { pact, result } = detail
 	const { data: myId } = useMyUserId()
-	const tone = crewTone(c, pact.color)
-	const [phase, setPhase] = useState<RevealPhase>(revealed.has(pact.id) ? 'revealed' : 'idle')
+	const members = usePact(pact.id)
+	const wall = useWall(pact.id)
 	const viewed = useRef(false)
 
 	useEffect(() => {
@@ -103,119 +83,26 @@ function Results({
 		track('pact_result_viewed', { pact_id: pact.id })
 	}, [pact.id])
 
-	function onPhase(next: RevealPhase) {
-		setPhase(next)
-		if (next !== 'revealed') return
-		revealed.add(pact.id)
-		onBurst(
-			result.outcome !== 'loser'
-				? [crewEmoji(pact.emoji), '🎉', '🙌', '🏆']
-				: ['😂', crewEmoji(pact.emoji), '🎉', '☕']
-		)
-		track('pact_result_revealed', { pact_id: pact.id, outcome: result.outcome })
-	}
-
 	return (
-		<>
-			<FadeSlideIn index={0}>
-				<Card
-					tier="hero"
-					padding="spacious"
-					style={[s.hero, { backgroundColor: tone.fill, borderColor: tone.fill }]}
-				>
-					<View style={s.heroTop}>
-						<Pop>
-							<CrewBadge color={pact.color} emoji={pact.emoji} size={56} onFill />
-						</Pop>
-						<View style={s.heroTitle}>
-							<Text variant="eyebrow" style={{ color: tone.onFillMuted }} numberOfLines={1}>
-								{pact.name} · that&apos;s a wrap
-							</Text>
-							<Text variant="h2" style={{ color: tone.onFill }}>
-								{pact.habit}
-							</Text>
-						</View>
-					</View>
-					<View style={s.score}>
-						<Text variant="display" tabular style={{ color: tone.onFill }}>
-							{result.kept_days}/{result.total_days}
-						</Text>
-						<Text variant="lead" style={[s.scoreText, { color: tone.onFillMuted }]}>
-							days kept together{'\n'}best run {result.best_streak} 🔥
-						</Text>
-					</View>
-					<View style={[s.chainWell, { backgroundColor: c.surface }]}>
-						<ResultChain chain={result.chain} color={pact.color} />
-					</View>
-				</Card>
-			</FadeSlideIn>
-
-			{result.awards.length > 0 ? (
-				<View>
-					<SectionHeader title="The awards" />
-					<Awards result={result} color={pact.color} myId={myId ?? null} base={1} />
-				</View>
-			) : null}
-
-			<FadeSlideIn index={4}>
-				<LoserReveal
-					result={result}
-					stake={pact.stake}
-					color={pact.color}
-					myId={myId ?? null}
-					phase={phase}
-					onPhase={onPhase}
-				/>
-			</FadeSlideIn>
-
-			{phase === 'revealed' ? (
-				<>
-					<FadeSlideIn index={1}>
-						<ShareResult pactId={pact.id} name={pact.name} />
-					</FadeSlideIn>
-					<FadeSlideIn index={2}>
-						<SectionHeader title="Final scores" />
-						<Scoreboard result={result} myId={myId ?? null} />
-					</FadeSlideIn>
-					<FadeSlideIn index={3}>
-						<RoundTwo detail={detail} />
-					</FadeSlideIn>
-				</>
-			) : null}
-		</>
-	)
-}
-
-/** R25: the card, through the share sheet: the moment the group chat sees. */
-function ShareResult({ pactId, name }: { pactId: string; name: string }) {
-	const { showToast } = useToast()
-	const [sharing, setSharing] = useState(false)
-	return (
-		<Button
-			label="Share the results"
-			variant="secondary"
-			size="lg"
-			fullWidth
-			loading={sharing}
-			icon={(color) => <Share size={18} color={color} strokeWidth={2.4} />}
-			onPress={async () => {
-				setSharing(true)
-				try {
-					const method = await shareResult(pactId, name)
-					if (method) track('pact_result_shared', { pact_id: pactId, method })
-				} catch (error) {
-					haptic.error()
-					showToast(errorMessage(error), 'error')
-				} finally {
-					setSharing(false)
-				}
+		<Stories
+			detail={detail}
+			pact={members.data ?? null}
+			wall={wall.data ?? null}
+			tone={crewTone(c, pact.color)}
+			myId={myId ?? null}
+			startRevealed={revealed.has(pact.id)}
+			onRevealed={() => {
+				revealed.add(pact.id)
+				track('pact_result_revealed', { pact_id: pact.id, outcome: result.outcome })
 			}}
+			onClose={goBack}
+			roundTwo={<RoundTwo detail={detail} ink={crewTone(c, pact.color).onFillMuted} />}
 		/>
 	)
 }
 
-/** Round 2: the same crew, the same habit, from tomorrow. Green: it's the action. */
-function RoundTwo({ detail }: { detail: PactResultDetail }) {
+/** Round 2: the same crew, the same habit, from tomorrow. */
+function RoundTwo({ detail, ink }: { detail: PactResultDetail; ink?: string }) {
 	const { showToast } = useToast()
 	const rematch = useRematch(detail.pact.id)
 
@@ -239,7 +126,7 @@ function RoundTwo({ detail }: { detail: PactResultDetail }) {
 				fullWidth
 				haptic="snap"
 				loading={rematch.isPending}
-				icon={(color) => <Repeat size={18} color={color} strokeWidth={2.4} />}
+				icon={(color) => <Repeat size={18} color={color} strokeWidth={1.8} />}
 				onPress={() => {
 					track('pact_rematch_started', { pact_id: detail.pact.id })
 					rematch.mutate(undefined, {
@@ -247,8 +134,8 @@ function RoundTwo({ detail }: { detail: PactResultDetail }) {
 							haptic.success()
 							showToast(
 								created
-									? 'Round 2 is on! Day 1 is tomorrow.'
-									: 'Your crew already started round 2. You’re in!',
+									? 'Round 2 is on. Day 1 is tomorrow.'
+									: 'Your crew already started round 2. You’re in.',
 								'success'
 							)
 							router.replace(`/pact/${pact.id}`)
@@ -260,7 +147,7 @@ function RoundTwo({ detail }: { detail: PactResultDetail }) {
 					})
 				}}
 			/>
-			<Text variant="caption" tone="secondary" style={s.center}>
+			<Text variant="caption" tone="secondary" style={[s.center, ink ? { color: ink } : null]}>
 				Same habit, same crew, same stakes. Everyone&apos;s in, starting tomorrow.
 			</Text>
 		</View>
@@ -269,12 +156,6 @@ function RoundTwo({ detail }: { detail: PactResultDetail }) {
 
 const s = StyleSheet.create({
 	root: { flex: 1 },
-	hero: { gap: 18 },
-	heroTop: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-	heroTitle: { flex: 1, gap: 4 },
-	score: { flexDirection: 'row', alignItems: 'flex-end', gap: 14 },
-	scoreText: { flex: 1, marginBottom: 6 },
-	chainWell: { borderRadius: 18, padding: 12 },
 	roundTwo: { gap: 8 },
 	center: { textAlign: 'center' }
 })

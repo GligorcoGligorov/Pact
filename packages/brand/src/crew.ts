@@ -30,10 +30,18 @@ export interface CrewTone {
 	onFill: string
 	/** Secondary text on `fill`: a step softer than `onFill`, still AA. */
 	onFillMuted: string
+	/** The muted second line of a headline on `fill`: large text, so 3:1. */
+	onFillLarge: string
 	/** An empty ring track on `fill`. */
 	onFillTrack: string
-	/** The colour as text or a thin line on any ground. */
+	/** The colour as text on any ground (AA). */
 	ink: string
+	/** The colour as a graphic line on any ground (3:1): the chain's links. */
+	line: string
+	/** A soft halo in the crew's colour: glows, a kept row's frame. */
+	glow: string
+	/** A pact screen's background: the crew colour sunk deep into the ground. */
+	deep: string
 	/** A low-alpha wash: card accents, the feed stripe's chip. */
 	dim: string
 	/** The ring's empty track, tinted toward the crew. */

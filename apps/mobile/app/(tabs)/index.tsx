@@ -1,12 +1,11 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { RefreshControl, StyleSheet, View } from 'react-native'
 import { router } from 'expo-router'
 import { useQueryClient } from '@tanstack/react-query'
 import { Handshake, KeyRound, Plus } from 'lucide-react-native'
 import type { PactListItem } from '@app/contract'
-import { timeLeft } from '@/components/pact/Countdown'
+import { ClockLeft } from '@/components/pact/Countdown'
 import { PactCard, pactRank } from '@/components/pact/PactCard'
-import { WeekStrip, type DayMark } from '@/components/pact/WeekStrip'
 import { QueryErrorState } from '@/components/QueryError'
 import { FadeSlideIn } from '@/components/motion/FadeSlideIn'
 import { Button } from '@/components/ui/Button'
@@ -22,21 +21,10 @@ import { useProfile } from '@/hooks/useProfile'
 import { haptic } from '@/lib/haptics'
 import { pactKeys, useMyUserId, usePacts } from '@/lib/pacts'
 
-const TICK_MS = 30_000
-
-/** Each closed day across the caller's pacts: kept everywhere, or broken in at least one. */
-function dayMarks(pacts: PactListItem[]): Map<string, DayMark> {
-	const marks = new Map<string, DayMark>()
-	for (const pact of pacts) {
-		for (const { day, status } of pact.progress.chain) {
-			if (status === 'broken') marks.set(day, 'broken')
-			else if (status === 'kept' && !marks.has(day)) marks.set(day, 'kept')
-		}
-	}
-	return marks
-}
-
-/** Home: the caller's crews, today's to-dos first, each one check-in tap away (ref 01). */
+/**
+ * Home: the caller's crews, today's to-dos first. The first pact still owed today is the screen's
+ * one loud block, with its check-in on it; the rest are quiet rows.
+ */
 export default function HomeScreen() {
 	const c = useColors()
 	const queryClient = useQueryClient()
@@ -51,7 +39,6 @@ export default function HomeScreen() {
 		() => [...(pacts.data ?? [])].sort((a, b) => pactRank(a) - pactRank(b)),
 		[pacts.data]
 	)
-	const marks = useMemo(() => dayMarks(pacts.data ?? []), [pacts.data])
 	const hasPacts = sorted.length > 0
 
 	async function onRefresh() {
@@ -70,7 +57,7 @@ export default function HomeScreen() {
 		<>
 			<Screen
 				tabs
-				gap={18}
+				gap={32}
 				refreshControl={
 					<RefreshControl
 						refreshing={refreshing}
@@ -83,27 +70,24 @@ export default function HomeScreen() {
 			>
 				<FadeSlideIn index={0} style={s.masthead}>
 					<View style={s.titleRow}>
-						<Text variant="display" accessibilityRole="header" style={s.flex}>
-							Hey{firstName ? ', ' : ''}
-							<Text variant="display" tone="brand">
-								{firstName || 'there'}
-							</Text>
-							!
+						<Text variant="mono" tone="secondary" style={s.flex}>
+							{todayLabel()}
 						</Text>
 						{hasPacts ? (
 							<IconButton
-								icon={(color) => <Plus size={22} color={color} strokeWidth={2.4} />}
+								icon={(color) => <Plus size={22} color={color} strokeWidth={1.8} />}
 								onPress={() => setAdding(true)}
 								accessibilityLabel="New pact or join one"
 								size={44}
 							/>
 						) : null}
 					</View>
-					{hasPacts ? <DueLine pacts={sorted} /> : null}
-				</FadeSlideIn>
-
-				<FadeSlideIn index={1}>
-					<WeekStrip marks={marks} />
+					<View>
+						<Text variant="display" accessibilityRole="header">
+							Hey{firstName ? `, ${firstName}` : ''}.
+						</Text>
+						{hasPacts ? <DueLine pacts={sorted} /> : null}
+					</View>
 				</FadeSlideIn>
 
 				{pacts.data === undefined && pacts.isError ? (
@@ -121,7 +105,6 @@ export default function HomeScreen() {
 					<FadeSlideIn index={2} style={s.empty}>
 						<EmptyState
 							icon={Handshake}
-							emoji={['🤝', '🔥', '📸']}
 							title="No pacts yet. Let's fix that."
 							body="Grab a few friends, pick one habit, keep each other honest. Miss a day and the whole crew knows."
 						/>
@@ -143,8 +126,8 @@ export default function HomeScreen() {
 					</FadeSlideIn>
 				) : (
 					sorted.map((pact, i) => (
-						<FadeSlideIn key={pact.id} index={2 + i}>
-							<PactCard pact={pact} myId={myId ?? null} />
+						<FadeSlideIn key={pact.id} index={1 + i}>
+							<PactCard pact={pact} myId={myId ?? null} loud={i === 0 && pactRank(pact) === 0} />
 						</FadeSlideIn>
 					))
 				)}
@@ -170,46 +153,44 @@ export default function HomeScreen() {
 	)
 }
 
-/** "6h 12m left · 2 to go": the soonest close among the pacts the caller still owes today. */
-function DueLine({ pacts }: { pacts: PactListItem[] }) {
-	const [now, setNow] = useState(Date.now())
-	useEffect(() => {
-		const timer = setInterval(() => setNow(Date.now()), TICK_MS)
-		return () => clearInterval(timer)
-	}, [])
+/** "SUN 11 OCT": the masthead's mono date. */
+function todayLabel(): string {
+	return new Date()
+		.toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short' })
+		.replace(',', '')
+}
 
+/**
+ * The headline's muted second line: what today still asks ("One pact to go."), and the soonest
+ * close among the pacts the caller still owes, ticking in mono.
+ */
+function DueLine({ pacts }: { pacts: PactListItem[] }) {
 	const owed = pacts.filter((p) => p.status === 'active' && p.my_state_today === 'out' && p.today)
 	if (owed.length === 0) {
 		const anyActive = pacts.some((p) => p.status === 'active' && p.my_state_today !== null)
 		return (
-			<Text variant="lead" tone="secondary">
-				{anyActive ? "You're in everywhere today. Nice." : 'Nothing to check in today.'}
+			<Text variant="display" tone="tertiary">
+				{anyActive ? 'You’re in everywhere.' : 'Nothing due today.'}
 			</Text>
 		)
 	}
 	const soonest = owed
 		.map((p) => p.today!.closes_at)
 		.sort((a, b) => Date.parse(a) - Date.parse(b))[0]
-	const { hours, minutes } = timeLeft(soonest, now)
 	return (
-		<View
-			style={s.due}
-			accessibilityLabel={`${hours} hours ${minutes} minutes left, ${owed.length} to go`}
-		>
-			<Text variant="h1" tone="brand" tabular>
-				{hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`}
+		<View style={s.due}>
+			<Text variant="display" tone="tertiary">
+				{owed.length === 1 ? 'One pact to go.' : `${owed.length} pacts to go.`}
 			</Text>
-			<Text variant="lead" tone="secondary">
-				left · {owed.length} to go
-			</Text>
+			<ClockLeft closesAt={soonest} />
 		</View>
 	)
 }
 
 const s = StyleSheet.create({
-	masthead: { gap: 8, marginBottom: 2 },
+	masthead: { gap: 16 },
 	titleRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
 	flex: { flex: 1 },
-	due: { flexDirection: 'row', alignItems: 'baseline', gap: 8 },
+	due: { gap: 12 },
 	empty: { gap: 12 }
 })

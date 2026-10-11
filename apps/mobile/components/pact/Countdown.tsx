@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 // The system font, not the brand's: the brief wants thin numerals, and the bundled faces start
 // at 400. SF Pro has a true ultralight.
 import { StyleSheet, Text, View, type StyleProp, type TextStyle } from 'react-native'
+import { Text as BrandText } from '@/components/ui/Text'
 
 const TICK_MS = 15_000
 
@@ -59,3 +60,29 @@ const s = StyleSheet.create({
 	},
 	unit: { fontSize: 22, fontWeight: '400', marginRight: 10 }
 })
+
+/** "05:59:12", zero-padded hours, minutes and seconds left until `closesAt`. */
+export function clockLeft(closesAt: string, now = Date.now()): string {
+	const total = Math.max(Math.floor((Date.parse(closesAt) - now) / 1000), 0)
+	const pad = (n: number) => String(n).padStart(2, '0')
+	return `${pad(Math.floor(total / 3600))}:${pad(Math.floor(total / 60) % 60)}:${pad(total % 60)}`
+}
+
+/** The board's micro-label countdown: "05:59:12 LEFT" in mono, ticking every second. */
+export function ClockLeft({ closesAt, style }: { closesAt: string; style?: StyleProp<TextStyle> }) {
+	const [now, setNow] = useState(Date.now())
+	useEffect(() => {
+		const timer = setInterval(() => setNow(Date.now()), 1000)
+		return () => clearInterval(timer)
+	}, [])
+	const { hours, minutes } = timeLeft(closesAt, now)
+	return (
+		<BrandText
+			variant="mono"
+			style={style}
+			accessibilityLabel={`${hours} hours ${minutes} minutes left today`}
+		>
+			{clockLeft(closesAt, now)} left
+		</BrandText>
+	)
+}

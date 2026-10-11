@@ -53,7 +53,7 @@ test('an active pact: who is in today, the inviter, the countdown and the streak
 	assert.equal(page.stake, 'Loser buys coffee')
 })
 
-test('R27: nothing beyond names, dates, the stake and today’s states', async () => {
+test('R27: nothing beyond names, dates, the stake, who was in, and the signatures', async () => {
 	fakeStore(pactStore, 'publicPage', () => ({
 		pact: pactRow(),
 		members: [memberRow()],
@@ -64,7 +64,15 @@ test('R27: nothing beyond names, dates, the stake and today’s states', async (
 	for (const secret of ['photo', 'caption', 'verdict', 'reason', 'note', 'timezone', 'ownerId']) {
 		assert.ok(!keys.includes(secret), `no ${secret} on the public page`)
 	}
-	assert.deepEqual(Object.keys(page!.members[0]).sort(), ['isOwner', 'name', 'state', 'userId'])
+	assert.deepEqual(Object.keys(page!.members[0]).sort(), [
+		'isOwner',
+		'name',
+		'signature',
+		'state',
+		'userId'
+	])
+	// The wall is presence only: who was held and who was in, never what they sent.
+	assert.deepEqual(Object.keys(page!.wall[0]!.cells[0]!).sort(), ['held', 'in', 'userId'])
 })
 
 test('a lobby pact: no countdown, no board, every member listed', async () => {

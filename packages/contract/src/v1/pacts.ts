@@ -205,8 +205,27 @@ export const pactMemberSchema = z.object({
 	/** The first day they are held (R6). */
 	joined_day: isoDate,
 	/** The first day they are NOT held, once they left (R7). */
-	left_day: isoDate.nullable()
+	left_day: isoDate.nullable(),
+	/** The signed pact: their finger signature as SVG path data in a 300×120 box, once signed. */
+	signature: z.string().nullable(),
+	signed_at: isoDateTime.nullable()
 })
+
+/** The signature box every path is drawn in, so any screen can scale it. */
+export const SIGNATURE_BOX = { width: 300, height: 120 } as const
+
+/**
+ * A finger signature as SVG path data: moves, lines and curves with numbers only, nothing that
+ * could be markup. Long enough for a slow, loopy signature, short enough to store as text.
+ */
+export const signaturePathSchema = z
+	.string()
+	.min(8)
+	.max(16_000)
+	.regex(/^[MLQCmlqc0-9.,\s-]+$/, 'A signature is path data: M, L, Q and C with numbers.')
+
+export const signPactBody = z.object({ signature: signaturePathSchema }).strict()
+export const signPactResponse = z.object({ member: pactMemberSchema })
 
 /** A check-in as the board shows it: no photo (that is the feed's, R22). */
 export const boardCheckInSchema = z.object({
@@ -411,3 +430,4 @@ export type Verdict = z.infer<typeof verdictSchema>
 export type MemberState = z.infer<typeof memberStateSchema>
 export type DayStatus = z.infer<typeof dayStatusSchema>
 export type PactProgress = z.infer<typeof pactProgressSchema>
+export type SignPactBody = z.infer<typeof signPactBody>

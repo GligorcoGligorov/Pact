@@ -118,7 +118,7 @@ async function closeOne(row: PactForResults, now: Date, deps: CloserDeps, summar
 			lines.push({
 				userId,
 				title: brokenTitle(plan.broken.dayNumber),
-				body: `${label}: not everyone made it. New day, new chain. You've got this.`,
+				body: `${label}: not everyone made it. New day, new row. You've got this.`,
 				pactId: pact.id
 			})
 		}

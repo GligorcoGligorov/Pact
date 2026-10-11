@@ -2,7 +2,19 @@ import type { CSSProperties } from 'react'
 import { alphaOf, theme, toChannels } from '@app/brand'
 import { crewThemeOf } from '@app/contract'
 
-const PARTS = ['fill', 'on-fill', 'on-fill-muted', 'on-fill-track', 'ink', 'dim', 'track'] as const
+const PARTS = [
+	'fill',
+	'on-fill',
+	'on-fill-muted',
+	'on-fill-large',
+	'on-fill-track',
+	'ink',
+	'line',
+	'glow',
+	'deep',
+	'dim',
+	'track'
+] as const
 
 /**
  * Points the generic --crew-* variables at one crew's tone (emitted per scheme by @app/brand's

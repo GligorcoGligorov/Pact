@@ -1,20 +1,27 @@
 import { useEffect, useRef, useState } from 'react'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 import { Image } from 'expo-image'
-import Animated, { FadeIn, FadeInDown, ZoomIn } from 'react-native-reanimated'
+import Animated, {
+	Easing,
+	FadeIn,
+	useAnimatedStyle,
+	useSharedValue,
+	withDelay,
+	withSequence,
+	withTiming
+} from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Check, Info, TriangleAlert } from 'lucide-react-native'
-import type { TodayBoard, Verdict } from '@app/contract'
-import { NumberTicker } from '@/components/motion/NumberTicker'
+import type { TodayBoard, Verdict, Wall } from '@app/contract'
 import { Button } from '@/components/ui/Button'
-import { Card } from '@/components/ui/Card'
 import { Text } from '@/components/ui/Text'
-import { useTheme } from '@/contexts/ThemeContext'
+import { useColors } from '@/contexts/ThemeContext'
+import { crewTone } from '@/lib/crew'
 import { haptic } from '@/lib/haptics'
+import { useReducedMotion } from '@/lib/motion'
+import { CELEBRATION } from '@/lib/streaks'
+import { WallGrid } from '@/components/wall/WallGrid'
 import { crewLine } from './Avatars'
-import { CrewWall } from './CrewWall'
-import { EmojiBurst } from './EmojiBurst'
-import { StreakFlame } from './StreakFlame'
+import { CrewHero, OnFill } from './CrewHero'
 
 /** What shows in the caption's place when the AI has no caption (R14, R16). */
 const FALLBACK: Record<Exclude<Verdict, 'pass' | 'suspicious'>, string> = {
@@ -24,17 +31,10 @@ const FALLBACK: Record<Exclude<Verdict, 'pass' | 'suspicious'>, string> = {
 	skipped: 'No AI judge on this one, as you chose.'
 }
 
-/** How long the streak waits before it ticks up, so the eye lands on it first. */
-/** The big print's tilt; the flight to the wall starts at it. */
-const PRINT_TILT = -3
-
-/** The payoff card fades in at 380ms; the print flies once it's there. */
-const WALL_FLIGHT_DELAY_MS = 480
-
-/** A passed check-in's cheer. */
-const PASS_BURST = ['🎉', '🔥', '👏'] as const
-
-const STREAK_TICK_DELAY_MS = 700
+/** The photo lands on the wall once the block is in and the eye has read the verdict. */
+const LAND_DELAY_MS = 700
+/** The big print dips, like a send, as its tile pops in on the wall. */
+const FLY_MS = 300
 
 export interface VerdictProgress {
 	/** The pact day this check-in is for, counted from 1. */
@@ -45,13 +45,18 @@ export interface VerdictProgress {
 	streakAfter: number
 	board: TodayBoard | null
 	myId: string | null
+	/** The crew's colour key, for the block. */
+	color: string | null
+	/** The Crew Wall as read after this check-in. */
+	wall: Wall | null
 }
 
 /**
- * The verdict, in ref 01's style: a light page, the proof photo as a tilted polaroid (never
- * text over it), the day's result, the AI's caption, then the payoff: the streak ticking up and
- * the crew wall, where your print flies to land beside whoever is in. A pass gets an emoji burst
- * and a success haptic; a suspicious one is amber, with no burst, and still counts (R15).
+ * The verdict, on the crew's colour: the photo, the day and the AI's line as a two-tone
+ * headline, the streak. Below, today's row of the Crew Wall with this check-in's tile still
+ * waiting; then the photo lands: the big print dips like a send, its tile pops in
+ * with a haptic, and if it completed the row the row lights up as a kept day, with the success
+ * haptic. A suspicious one says so in mono and still counts (R15).
  */
 export function VerdictView({
 	photoUri,
@@ -72,190 +77,136 @@ export function VerdictView({
 	/** Once, when a verdict first shows. */
 	onViewed: (verdict: Verdict) => void
 }) {
-	const { colors: c, elevation } = useTheme()
+	const c = useColors()
 	const insets = useSafeAreaInsets()
+	const reduced = useReducedMotion()
 	const judging = verdict === undefined
 	const viewed = useRef(false)
-	const print = useRef<View>(null)
+	const tone = crewTone(c, progress.color ?? '')
+	const [landed, setLanded] = useState(false)
 
 	useEffect(() => {
 		if (!verdict || viewed.current) return
 		viewed.current = true
 		onViewed(verdict)
-		if (verdict === 'pass') haptic.success()
-		else if (verdict === 'suspicious') haptic.warning()
-		else haptic.snap()
+		if (verdict === 'suspicious') haptic.warning()
 	}, [verdict, onViewed])
 
-	const isPass = verdict === 'pass'
+	// The landing: once judged and the wall is in, the photo flies into its tile.
+	const fly = useSharedValue(0)
+	const canLand = !judging && !!progress.wall && !!progress.myId
+	useEffect(() => {
+		if (!canLand || landed) return
+		const timer = setTimeout(
+			() => {
+				setLanded(true)
+				haptic.snap()
+				if (progress.dayKept) setTimeout(() => haptic.success(), CELEBRATION.landMs / 2)
+			},
+			reduced ? 0 : LAND_DELAY_MS
+		)
+		if (!reduced) {
+			// The print starts shrinking just before its tile pops, so the two read as one move.
+			fly.value = withDelay(
+				LAND_DELAY_MS - FLY_MS / 2,
+				withSequence(
+					withTiming(1, { duration: FLY_MS / 2, easing: Easing.in(Easing.cubic) }),
+					withTiming(0, { duration: FLY_MS / 2, easing: Easing.out(Easing.cubic) })
+				)
+			)
+		}
+		return () => clearTimeout(timer)
+		// The landing runs once.
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [canLand])
+	const printStyle = useAnimatedStyle(() => ({ transform: [{ scale: 1 - 0.05 * fly.value }] }))
+
 	const isFlag = verdict === 'suspicious'
-	const tone = isFlag
-		? { fill: c.warning, on: c.onWarning, icon: TriangleAlert }
-		: isPass
-			? { fill: c.brandFill, on: c.onBrand, icon: Check }
-			: { fill: c.surface3, on: c.textPrimary, icon: Info }
-	const ToneIcon = tone.icon
 	const day = progress.dayNumber ? `Day ${progress.dayNumber}` : 'Today'
-	const title = !isFlag && progress.dayKept ? `${day} kept` : `${day} · you're in`
-	const fallback = verdict && !isPass && !isFlag ? FALLBACK[verdict] : null
+	const title = !isFlag && progress.dayKept ? `${day} kept.` : `${day}. You’re in.`
+	const fallback = verdict && verdict !== 'pass' && !isFlag ? FALLBACK[verdict] : null
+	const line = caption ? `“${caption}”` : (fallback ?? '')
+	const board = progress.board
+	const pad = (n: number) => String(n).padStart(2, '0')
 
 	return (
-		<View style={[s.root, { backgroundColor: c.bg, paddingTop: insets.top + 28 }]}>
-			{/* The entering animation owns the outer transform, so the tilt lives on the inner card. */}
-			<Animated.View entering={ZoomIn.springify().damping(13)} style={s.polaroidSlot}>
-				<View
-					ref={print}
-					collapsable={false}
-					style={[s.polaroid, { backgroundColor: c.surface }, elevation.raised]}
-				>
-					<Image source={{ uri: photoUri }} style={s.photo} contentFit="cover" />
+		<View
+			style={[
+				s.root,
+				{
+					backgroundColor: tone.deep,
+					paddingTop: insets.top + 16,
+					paddingBottom: insets.bottom + 12
+				}
+			]}
+		>
+			<CrewHero tone={tone} compact glow>
+				<View style={s.metaRow}>
+					<OnFill tone={tone} muted variant="mono">
+						{judging ? 'Judging…' : isFlag ? 'Flagged · still counts' : 'Checked in'}
+					</OnFill>
+					{judging ? (
+						<ActivityIndicator color={tone.onFill} />
+					) : (
+						<OnFill tone={tone} muted variant="mono">
+							{progress.streakAfter > progress.streakBefore
+								? `Streak ${pad(progress.streakBefore)} → ${pad(progress.streakAfter)}`
+								: `Streak ${pad(progress.streakAfter)}`}
+						</OnFill>
+					)}
 				</View>
-			</Animated.View>
-
-			{judging ? (
-				<Animated.View entering={FadeIn.delay(150)} style={s.judging}>
-					<View style={[s.judgingPill, { backgroundColor: c.surface2, borderColor: c.borderSoft }]}>
-						<ActivityIndicator color={c.brandInk} />
-						<Text variant="label" tone="secondary">
-							Judging…
-						</Text>
-					</View>
+				<Animated.View style={printStyle}>
+					<Image source={{ uri: photoUri }} style={s.photo} contentFit="cover" />
 				</Animated.View>
-			) : (
-				<View style={s.body}>
-					<Animated.View entering={FadeInDown.delay(120).duration(360)} style={s.titleRow}>
-						<View style={[s.tick, { backgroundColor: tone.fill }]}>
-							<ToneIcon size={18} color={tone.on} strokeWidth={3} />
-						</View>
-						<Text variant="h1">{title}</Text>
-					</Animated.View>
-
-					<Animated.View entering={FadeInDown.delay(220).duration(380)} style={s.copy}>
-						<Text variant="lead" tone="body" numberOfLines={3} style={s.caption}>
-							{caption ? `“${caption}”` : (fallback ?? '')}
-						</Text>
-						{isFlag ? (
-							<Text variant="bodySm" tone="warning" style={s.center}>
-								Your crew will take a look. It still counts.
-							</Text>
+				{judging ? null : (
+					<Animated.View entering={FadeIn.duration(CELEBRATION.landMs)} style={s.copy}>
+						<OnFill tone={tone} variant="h1">
+							{title}
+						</OnFill>
+						{line ? (
+							<OnFill tone={tone} muted variant="h2" numberOfLines={3}>
+								{line}
+							</OnFill>
 						) : null}
 						{reason ? (
-							<Text variant="caption" tone="tertiary" numberOfLines={2} style={s.center}>
+							<OnFill tone={tone} muted variant="bodySm" numberOfLines={2}>
 								{reason}
-							</Text>
+							</OnFill>
 						) : null}
 					</Animated.View>
+				)}
+			</CrewHero>
 
-					<Animated.View entering={FadeInDown.delay(380).duration(400)}>
-						<Card padding="normal" style={s.payoff}>
-							<Streak before={progress.streakBefore} after={progress.streakAfter} />
-							{progress.board && progress.board.members.length > 0 ? (
-								<View style={[s.crew, { borderTopColor: c.borderHairline }]}>
-									<CrewWall
-										members={progress.board.members}
-										myId={progress.myId}
-										photoUri={photoUri}
-										land={!judging}
-										delayMs={WALL_FLIGHT_DELAY_MS}
-										from={print}
-										fromTilt={PRINT_TILT}
-									/>
-									{progress.board.members.length > 1 ? (
-										<Text variant="bodySm" tone="secondary" style={s.crewText} numberOfLines={2}>
-											{crewLine(progress.board.members, progress.myId)}
-										</Text>
-									) : null}
-								</View>
-							) : null}
-						</Card>
-					</Animated.View>
-				</View>
-			)}
+			{!judging && progress.wall && progress.wall.days.length > 0 ? (
+				<Animated.View entering={FadeIn.delay(CELEBRATION.landMs)} style={s.wall}>
+					<Text variant="mono" tone="secondary">
+						{board && board.members.length > 1
+							? crewLine(board.members, progress.myId)
+							: 'Today on the wall'}
+					</Text>
+					<WallGrid
+						wall={progress.wall}
+						myId={progress.myId}
+						tone={tone}
+						rows={1}
+						pending={landed ? null : progress.myId}
+						landed={landed ? progress.myId : null}
+					/>
+				</Animated.View>
+			) : null}
 
-			<Animated.View
-				entering={FadeIn.delay(judging ? 0 : 520)}
-				style={[s.footer, { paddingBottom: insets.bottom + 12 }]}
-			>
+			<View style={s.footer}>
 				<Button label="Done" size="lg" fullWidth onPress={onDone} disabled={judging} />
-			</Animated.View>
-
-			{isPass ? <EmojiBurst emoji={PASS_BURST} /> : null}
-		</View>
-	)
-}
-
-/** "5 → 6" when this check-in kept the day, ticking up; otherwise the streak as it stands. */
-function Streak({ before, after }: { before: number; after: number }) {
-	const grew = after > before
-	const [shown, setShown] = useState(before)
-	useEffect(() => {
-		if (!grew) return
-		const timer = setTimeout(() => {
-			setShown(after)
-			haptic.select()
-		}, STREAK_TICK_DELAY_MS)
-		return () => clearTimeout(timer)
-	}, [grew, after])
-
-	return (
-		<View style={s.streak}>
-			<StreakFlame streak={after} size={30} />
-			{grew ? (
-				<View style={s.streakNumbers}>
-					<Text variant="h2" tone="tertiary" tabular>
-						{before}
-					</Text>
-					<Text variant="h3" tone="tertiary">
-						→
-					</Text>
-					<NumberTicker value={shown} variant="display" />
-				</View>
-			) : (
-				<Text variant="display" tabular>
-					{after}
-				</Text>
-			)}
-			<View style={s.streakLabel}>
-				<Text variant="label">day streak</Text>
-				<Text variant="caption" tone="tertiary">
-					{grew ? 'You kept it going.' : 'Grows when everyone’s in.'}
-				</Text>
 			</View>
 		</View>
 	)
 }
 
 const s = StyleSheet.create({
-	root: { flex: 1, paddingHorizontal: 24 },
-	polaroidSlot: { width: '60%', alignSelf: 'center' },
-	polaroid: {
-		padding: 10,
-		paddingBottom: 32,
-		borderRadius: 6,
-		transform: [{ rotate: `${PRINT_TILT}deg` }]
-	},
-	photo: { width: '100%', aspectRatio: 4 / 5, borderRadius: 3 },
-	judging: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-	judgingPill: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		gap: 10,
-		paddingHorizontal: 18,
-		paddingVertical: 12,
-		borderRadius: 999,
-		borderWidth: StyleSheet.hairlineWidth
-	},
-	body: { flex: 1, justifyContent: 'center', gap: 18 },
-	titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
-	tick: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
-	copy: { gap: 8 },
-	caption: { textAlign: 'center', fontStyle: 'italic' },
-	center: { textAlign: 'center' },
-	payoff: { gap: 14 },
-	streak: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-	streakNumbers: { flexDirection: 'row', alignItems: 'baseline', gap: 8 },
-	streakLabel: { flex: 1, gap: 2 },
-	crew: { gap: 12, paddingTop: 14, borderTopWidth: StyleSheet.hairlineWidth },
-	crewText: { textAlign: 'center' },
-	footer: { paddingTop: 12 }
+	root: { flex: 1, paddingHorizontal: 16, gap: 24 },
+	metaRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+	photo: { width: '100%', aspectRatio: 4 / 3, borderRadius: 4 },
+	copy: { gap: 4 },
+	wall: { gap: 12 },
+	footer: { marginTop: 'auto' }
 })

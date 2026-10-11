@@ -7,43 +7,59 @@ import {
 	type NativeScrollEvent,
 	type NativeSyntheticEvent
 } from 'react-native'
-import Animated from 'react-native-reanimated'
+import Animated, { FadeInDown } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import type { CrewTone } from '@app/brand'
 import type { PactColor } from '@app/contract'
-import { Pop } from '@/components/motion/Pop'
-import { Avatar } from '@/components/pact/Avatars'
+import { PressableScale } from '@/components/motion/PressableScale'
+import { OnFill } from '@/components/pact/CrewHero'
+import { Signature } from '@/components/sign/Signature'
 import { Button } from '@/components/ui/Button'
+import { CornerMarks } from '@/components/ui/CornerMarks'
+import { DemoWall } from '@/components/wall/DemoWall'
 import { Text } from '@/components/ui/Text'
 import { useTheme } from '@/contexts/ThemeContext'
 import { track } from '@/lib/analytics'
 import { haptic } from '@/lib/haptics'
 import { exitFade, fade } from '@/lib/motion'
 
-type Page = { title: string; body: string; art: () => ReactNode }
+type Page = {
+	one: string
+	two: string
+	body: string
+	color: PactColor
+	art: (tone: CrewTone) => ReactNode
+}
 
 const PAGES: Page[] = [
 	{
-		title: 'Make a pact with your crew',
-		body: 'One habit, a few friends, a fixed run of days. And a stake: loser buys the coffees.',
-		art: () => <CrewArt />
+		one: 'Make a pact.',
+		two: 'Sign it.',
+		body: 'One habit, a few friends, a fixed run of days, and a stake for whoever slips. Everyone signs.',
+		color: 'coral',
+		art: (tone) => <PactArt tone={tone} />
 	},
 	{
-		title: 'A photo every day, with a twist',
+		one: 'One photo a day.',
+		two: 'Real proof.',
 		body: 'Every day has a challenge to show in your photo, so it’s from today. An AI takes a look, and has opinions.',
-		art: () => <PhotoArt />
+		color: 'violet',
+		art: (tone) => <WallArt tone={tone} />
 	},
 	{
-		title: 'Keep the chain together',
-		body: 'A day only counts when everyone’s in. Nudge the stragglers, save a streak, win together.',
-		art: () => <ChainArt />
+		one: 'Everyone in,',
+		two: 'or nobody is.',
+		body: 'A day only counts when the whole crew is in. Nudge the stragglers. Miss one, and the wall shows it.',
+		color: 'ocean',
+		art: (tone) => <KeptArt tone={tone} />
 	}
 ]
 
 /**
- * The first-launch intro: three short screens (make a pact → a photo every day, with a twist →
- * keep the chain together). Swipe or tap through; Skip is always there. Shown once per device
- * (lib/intro.ts). Each picture pops in as its page arrives, inside the fun pass's 400ms; with
- * Reduce Motion it simply appears.
+ * The first-launch intro: three full-screen pages in crew colours (make a pact and sign it → a
+ * real photo a day → everyone in, or nobody is), each with the thing itself: the signed card,
+ * the wall, a kept row. Swipe or tap through; Skip is always there. Shown once per device
+ * (lib/intro.ts). With Reduce Motion the pictures simply appear.
  */
 export function Intro({ onDone }: { onDone: () => void }) {
 	const { colors: c, layout } = useTheme()
@@ -52,6 +68,7 @@ export function Intro({ onDone }: { onDone: () => void }) {
 	const scroller = useRef<ScrollView>(null)
 	const [page, setPage] = useState(0)
 	const last = page === PAGES.length - 1
+	const tone = c.crew[PAGES[page]!.color]
 
 	useEffect(() => {
 		track('intro_step_viewed', { step: page + 1 })
@@ -80,61 +97,87 @@ export function Intro({ onDone }: { onDone: () => void }) {
 		<Animated.View
 			entering={fade(0, 200)}
 			exiting={exitFade()}
-			style={[StyleSheet.absoluteFill, { backgroundColor: c.bg }]}
+			style={[StyleSheet.absoluteFill, { backgroundColor: tone.fill }]}
 			accessibilityViewIsModal
 		>
-			<View style={[s.top, { paddingTop: insets.top + 8, paddingHorizontal: layout.gutter }]}>
-				{last ? (
-					<View />
-				) : (
-					<Button label="Skip" variant="ghost" size="sm" onPress={() => finish(true)} />
-				)}
-			</View>
-
 			<ScrollView
 				ref={scroller}
 				horizontal
 				pagingEnabled
 				showsHorizontalScrollIndicator={false}
 				onMomentumScrollEnd={onScrollEnd}
-				style={s.pager}
+				style={StyleSheet.absoluteFill}
 			>
-				{PAGES.map((p, i) => (
-					<View key={p.title} style={[s.page, { width, paddingHorizontal: layout.gutterWide }]}>
-						{/* Keyed by arrival, so the picture pops in each time its page comes round. */}
-						<View style={s.art} key={i === page ? 'here' : 'away'}>
-							{i === page ? p.art() : null}
+				{PAGES.map((p, i) => {
+					const pageTone = c.crew[p.color]
+					return (
+						<View
+							key={p.one}
+							style={[
+								s.page,
+								{
+									width,
+									backgroundColor: pageTone.fill,
+									paddingHorizontal: layout.gutterWide,
+									paddingTop: insets.top + 84,
+									paddingBottom: insets.bottom + 120
+								}
+							]}
+						>
+							{/* Keyed by arrival, so the picture comes in each time its page comes round. */}
+							<View style={s.art} key={i === page ? 'here' : 'away'}>
+								{i === page ? p.art(pageTone) : null}
+							</View>
+							<View style={s.copy}>
+								<View>
+									<OnFill tone={pageTone} variant="display">
+										{p.one}
+									</OnFill>
+									<OnFill tone={pageTone} variant="display" muted>
+										{p.two}
+									</OnFill>
+								</View>
+								<OnFill tone={pageTone} variant="lead">
+									{p.body}
+								</OnFill>
+							</View>
 						</View>
-						<View style={s.copy}>
-							<Text variant="eyebrow" tone="brand">
-								{i + 1} of {PAGES.length}
-							</Text>
-							<Text variant="h1">{p.title}</Text>
-							<Text variant="lead" tone="secondary">
-								{p.body}
-							</Text>
-						</View>
-					</View>
-				))}
+					)
+				})}
 			</ScrollView>
+
+			<View style={[s.top, { paddingTop: insets.top + 8, paddingHorizontal: layout.gutter }]}>
+				<View style={s.ticks}>
+					{PAGES.map((p, i) => (
+						<View
+							key={p.one}
+							style={[s.tick, { backgroundColor: tone.onFill, opacity: i <= page ? 1 : 0.25 }]}
+						/>
+					))}
+				</View>
+				<View style={s.topRow}>
+					<OnFill tone={tone} variant="mono">
+						{`0${page + 1} / 0${PAGES.length}`}
+					</OnFill>
+					{last ? null : (
+						<PressableScale
+							onPress={() => finish(true)}
+							scaleTo="button"
+							accessibilityRole="button"
+							accessibilityLabel="Skip the intro"
+							hitSlop={12}
+						>
+							<OnFill tone={tone} variant="mono">
+								Skip
+							</OnFill>
+						</PressableScale>
+					)}
+				</View>
+			</View>
 
 			<View
 				style={[s.bottom, { paddingBottom: insets.bottom + 16, paddingHorizontal: layout.gutter }]}
 			>
-				<View style={s.dots} accessibilityElementsHidden>
-					{PAGES.map((p, i) => (
-						<View
-							key={p.title}
-							style={[
-								s.dot,
-								{
-									width: i === page ? 22 : 8,
-									backgroundColor: i === page ? c.brandFill : c.surface3
-								}
-							]}
-						/>
-					))}
-				</View>
 				<Button
 					label={last ? 'Let’s go' : 'Next'}
 					size="lg"
@@ -149,149 +192,89 @@ export function Intro({ onDone }: { onDone: () => void }) {
 
 // ─── The pictures ─────────────────────────────────────────────────────────────
 
-function Badge({ color, emoji, size }: { color: PactColor; emoji: string; size: number }) {
+/** Three of the demo crew's signatures, as they signed Sunrise Yoga. */
+const SIGNATURES = [
+	'M27.4 85.0 L27.4 25.0 C67.4 25.0 67.4 85.0 27.4 85.0 M71.4 69.0 C97.4 37.0 115.4 91.0 141.4 65.0 C157.4 49.0 171.4 81.0 199.4 55.0 M10.0 97.0 L211.4 89.0',
+	'M27.5 73.9 L37.5 27.9 L45.5 83.9 L53.7 54.0 L61.9 82.7 L69.2 67.1 L76.4 82.6 L84.8 65.1 L93.2 83.1 L97.8 61.9 L102.4 83.6 L107.5 60.7 L112.6 82.3 L120.4 63.9 L128.3 82.4 L132.4 68.4 L136.5 83.3 L144.1 66.7 L151.7 83.7 L221.7 39.9',
+	'M18.0 86.1 Q30.0 0.1 36.4 73.2 M32.4 86.1 Q44.4 50.4 50.8 80.7 M46.8 86.1 Q58.8 52.4 67.1 81.0 M63.1 86.1 Q75.1 57.3 82.5 81.8 M78.5 86.1 Q90.5 54.0 100.0 81.3 M96.0 86.1 Q108.0 57.3 114.2 81.8 M110.2 86.1 Q122.2 29.7 130.8 77.6 M126.8 86.1 Q138.8 55.4 147.5 81.5 M153.5 36.1 L154.5 37.1 M18.0 96.1 Q71.8 90.1 159.5 98.1'
+]
+
+/** The signed pact card, the way the crew signs it. */
+function PactArt({ tone }: { tone: CrewTone }) {
 	const { colors: c } = useTheme()
 	return (
-		<View
-			style={{
-				width: size,
-				height: size,
-				borderRadius: size / 2,
-				backgroundColor: c.crew[color].fill,
-				alignItems: 'center',
-				justifyContent: 'center'
-			}}
-		>
-			<Text style={{ fontSize: size * 0.48, lineHeight: size * 0.6 }}>{emoji}</Text>
-		</View>
-	)
-}
-
-/** Three crews and a stake: what a pact is. */
-function CrewArt() {
-	const { colors: c, elevation } = useTheme()
-	return (
-		<View style={s.cluster}>
-			<Pop style={[s.at, { left: 18, top: 30 }]}>
-				<Badge color="coral" emoji="🏃" size={96} />
-			</Pop>
-			<Pop delay={70} style={[s.at, { right: 22, top: 8 }]}>
-				<Badge color="violet" emoji="🧘" size={76} />
-			</Pop>
-			<Pop delay={140} style={[s.at, { right: 52, bottom: 76 }]}>
-				<Badge color="ocean" emoji="📚" size={84} />
-			</Pop>
-			<Pop delay={240} style={[s.at, { left: 30, bottom: 22 }]}>
-				<View style={[s.chip, elevation.card, { backgroundColor: c.surface }]}>
-					<Text variant="label">☕ Loser buys the coffees</Text>
-				</View>
-			</Pop>
-		</View>
-	)
-}
-
-/** The polaroid, the day's challenge in it, and the AI's verdict. */
-function PhotoArt() {
-	const { colors: c, elevation } = useTheme()
-	return (
-		<View style={s.cluster}>
-			<Pop style={[s.at, { left: 16, top: 0 }]}>
-				<View style={[s.chip, { backgroundColor: c.brandDim }]}>
-					<Text variant="label" tone="brand">
-						Today: show a peace sign
+		<Animated.View entering={FadeInDown.duration(300)}>
+			<CornerMarks color={tone.onFill}>
+				<View style={[s.card, { backgroundColor: c.inkOnArt }]}>
+					<Text variant="mono" style={{ color: c.hero }}>
+						Pact · 6am Run Club
 					</Text>
-				</View>
-			</Pop>
-			<Pop delay={80} style={[s.at, s.polaroidSpot]}>
-				<View style={[s.polaroid, elevation.raised, { backgroundColor: c.surface }]}>
-					<View style={[s.photo, { backgroundColor: c.crew.sun.dim }]}>
-						<Text style={s.photoEmoji}>✌️</Text>
-					</View>
-					<Text variant="caption" tone="secondary" style={s.center}>
-						Day 3 · 7:12
+					<Text variant="h3" style={{ color: c.hero }}>
+						I, Ana, promise: run for 20 minutes, every day for 21 days. If I break it, I buy the
+						coffees.
 					</Text>
+					<View style={s.signed}>
+						{SIGNATURES.map((path) => (
+							<Signature key={path.slice(0, 12)} path={path} ink={c.hero} width={88} />
+						))}
+					</View>
 				</View>
-			</Pop>
-			<Pop delay={260} style={[s.at, { right: 6, bottom: 18 }]}>
-				<View style={[s.bubble, elevation.card, { backgroundColor: c.surface }]}>
-					<Text variant="bodySm">🤖 “Two fingers, zero excuses.”</Text>
-				</View>
-			</Pop>
+			</CornerMarks>
+		</Animated.View>
+	)
+}
+
+/** Today's challenge over the wall: the proof is a real photo, and it's from today. */
+function WallArt({ tone }: { tone: CrewTone }) {
+	return (
+		<View style={s.wallArt}>
+			<OnFill tone={tone} variant="mono" muted>
+				Today’s challenge · include something red
+			</OnFill>
+			<DemoWall
+				tone={tone}
+				onFill
+				aspect={1.15}
+				rows={[{ tiles: [11, 4, 8, { waiting: 'AN' }] }, { tiles: [2, 6, 9, 0], kept: true }]}
+			/>
+			<OnFill tone={tone} variant="h3">
+				“Three fingers, zero excuses.”
+			</OnFill>
 		</View>
 	)
 }
 
-const CHAIN = 7
-const CHAIN_STEP_MS = 45
-
-/** A week of kept days, everyone's face checked, and the flame. */
-function ChainArt() {
-	const { colors: c } = useTheme()
-	const tone = c.crew.sky
+/** A kept row, glowing, and today's still waiting on one. */
+function KeptArt({ tone }: { tone: CrewTone }) {
 	return (
-		<View style={[s.cluster, s.chainArt]}>
-			<View style={s.chain}>
-				{Array.from({ length: CHAIN }, (_, i) => (
-					<Pop key={i} delay={i * CHAIN_STEP_MS}>
-						<View style={[s.tile, { backgroundColor: tone.fill }]}>
-							<Text style={{ color: tone.onFill, fontWeight: '800' }}>✓</Text>
-						</View>
-					</Pop>
-				))}
-			</View>
-			<View style={s.faces}>
-				{['Ana', 'Ben', 'Cleo', 'Dan'].map((name, i) => (
-					<View key={name} style={i > 0 ? s.overlap : undefined}>
-						<Avatar userId={`intro-${name}`} name={name} size={52} state="in" breathe={false} />
-					</View>
-				))}
-			</View>
-			<Pop delay={CHAIN * CHAIN_STEP_MS}>
-				<Text style={s.flame}>🔥 7</Text>
-			</Pop>
+		<View style={s.wallArt}>
+			<DemoWall
+				tone={tone}
+				onFill
+				aspect={1}
+				rows={[
+					{ tiles: [1, 3, 5, { waiting: 'DA' }] },
+					{ tiles: [7, 10, 2, 11], kept: true },
+					{ tiles: [4, 0, 6, 8], kept: true }
+				]}
+			/>
+			<OnFill tone={tone} variant="mono" muted>
+				3 / 4 in · waiting on Dan · 04:12:09 left
+			</OnFill>
 		</View>
 	)
 }
 
 const s = StyleSheet.create({
-	top: { flexDirection: 'row', justifyContent: 'flex-end', minHeight: 52 },
-	pager: { flex: 1 },
-	page: { flex: 1, justifyContent: 'center', gap: 28 },
-	art: { height: 280, justifyContent: 'center' },
-	copy: { gap: 10 },
-	bottom: { gap: 18 },
-	dots: { flexDirection: 'row', justifyContent: 'center', gap: 6 },
-	dot: { height: 8, borderRadius: 4 },
-	cluster: { height: 260, position: 'relative' },
-	at: { position: 'absolute' },
-	chip: { borderRadius: 999, paddingHorizontal: 14, paddingVertical: 9 },
-	polaroidSpot: { left: 70, top: 46 },
-	polaroid: {
-		padding: 10,
-		paddingBottom: 12,
-		borderRadius: 14,
-		gap: 8,
-		transform: [{ rotate: '-6deg' }]
-	},
-	photo: {
-		width: 150,
-		height: 150,
-		borderRadius: 8,
-		alignItems: 'center',
-		justifyContent: 'center'
-	},
-	photoEmoji: { fontSize: 72, lineHeight: 86 },
-	bubble: {
-		borderRadius: 18,
-		borderBottomRightRadius: 4,
-		paddingHorizontal: 14,
-		paddingVertical: 10
-	},
-	center: { textAlign: 'center' },
-	chainArt: { alignItems: 'center', justifyContent: 'center', gap: 22 },
-	chain: { flexDirection: 'row', gap: 6 },
-	tile: { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-	faces: { flexDirection: 'row' },
-	overlap: { marginLeft: -12 },
-	flame: { fontSize: 34, lineHeight: 42, fontWeight: '800' }
+	page: { flex: 1, justifyContent: 'space-between', gap: 24 },
+	art: { flex: 1, justifyContent: 'center' },
+	copy: { gap: 14 },
+	top: { position: 'absolute', left: 0, right: 0, top: 0, gap: 12 },
+	ticks: { flexDirection: 'row', gap: 4 },
+	tick: { flex: 1, height: 3, borderRadius: 2 },
+	topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+	bottom: { position: 'absolute', left: 0, right: 0, bottom: 0 },
+	card: { borderRadius: 6, padding: 18, gap: 14 },
+	signed: { flexDirection: 'row', gap: 10 },
+	wallArt: { gap: 14 }
 })

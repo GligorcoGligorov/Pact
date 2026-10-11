@@ -131,6 +131,34 @@
 }
 
 @layer components {
+	/* Crosshair corner marks: four thin brackets just outside the block, like a print trim. */
+	.corner-marks {
+		--mark: 10px;
+		--mark-out: -6px;
+		--mark-ink: rgb(var(--c-text-primary));
+	}
+	.corner-marks::before,
+	.corner-marks::after {
+		content: '';
+		position: absolute;
+		inset: var(--mark-out);
+		pointer-events: none;
+	}
+	.corner-marks::before {
+		background:
+			linear-gradient(var(--mark-ink), var(--mark-ink)) top left / var(--mark) 1.5px no-repeat,
+			linear-gradient(var(--mark-ink), var(--mark-ink)) top left / 1.5px var(--mark) no-repeat,
+			linear-gradient(var(--mark-ink), var(--mark-ink)) top right / var(--mark) 1.5px no-repeat,
+			linear-gradient(var(--mark-ink), var(--mark-ink)) top right / 1.5px var(--mark) no-repeat;
+	}
+	.corner-marks::after {
+		background:
+			linear-gradient(var(--mark-ink), var(--mark-ink)) bottom left / var(--mark) 1.5px no-repeat,
+			linear-gradient(var(--mark-ink), var(--mark-ink)) bottom left / 1.5px var(--mark) no-repeat,
+			linear-gradient(var(--mark-ink), var(--mark-ink)) bottom right / var(--mark) 1.5px no-repeat,
+			linear-gradient(var(--mark-ink), var(--mark-ink)) bottom right / 1.5px var(--mark) no-repeat;
+	}
+
 	/* ── Type roles on the web ────────────────────────────────────────────────
 	 * Family, weight and tracking come from the preset's role scale; sizes are
 	 * the web's (the brand scale is phone-sized). */

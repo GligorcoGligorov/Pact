@@ -182,6 +182,19 @@ describe(
 			assert.equal((await saver('2026-10-02')).outcome, 'saver_used')
 		})
 
+		test('the signed pact: once per member even concurrently, and only by a current member', async () => {
+			const pact = await newPact()
+			const path = (n: number) => `M0 0 L ${n} ${n}`
+			const outcomes = await Promise.all([
+				pacts.sign(pact.id, ana, path(10)),
+				pacts.sign(pact.id, ana, path(20))
+			])
+			assert.deepEqual(outcomes.map((o) => o?.outcome).sort(), ['already', 'signed'])
+			const stored = outcomes.find((o) => o?.outcome === 'signed')?.member.signature
+			assert.equal((await pacts.sign(pact.id, ana, path(30)))?.member.signature, stored, 'kept')
+			assert.equal(await pacts.sign(pact.id, ben, path(40)), null, 'not a member')
+		})
+
 		test('a verdict is written once, only over pending', async () => {
 			const pact = await newPact()
 			const result = await pacts.createCheckIn({

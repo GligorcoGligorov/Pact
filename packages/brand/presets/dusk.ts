@@ -124,6 +124,11 @@ export const dusk: Preset = {
 				700: 'Inter_700Bold',
 				800: 'Inter_800ExtraBold'
 			}
+		},
+		mono: {
+			name: 'IBM Plex Mono',
+			fallback: 'ui-monospace, Menlo, monospace',
+			files: { 500: 'IBMPlexMono_500Medium' }
 		}
 	},
 
@@ -238,6 +243,16 @@ export const dusk: Preset = {
 			tracking: -0.02,
 			tabular: true,
 			maxScale: 1.3
+		},
+		mono: {
+			family: 'mono',
+			weight: 500,
+			size: 11,
+			lineHeight: 14,
+			tracking: 0.06,
+			uppercase: true,
+			tabular: true,
+			maxScale: 1.4
 		}
 	},
 

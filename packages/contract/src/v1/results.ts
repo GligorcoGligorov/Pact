@@ -25,7 +25,7 @@ export const AWARDS: Record<AwardKind, { emoji: string; title: string; blurb: st
 	iron_streak: { emoji: '🔥', title: 'Iron streak', blurb: 'The longest run of the pact' },
 	never_missed: { emoji: '💯', title: 'Never missed', blurb: 'Every single day, with proof' },
 	comeback_kid: { emoji: '🦸', title: 'Comeback kid', blurb: 'Missed one, came back swinging' },
-	clutch_save: { emoji: '🛟', title: 'Clutch save', blurb: 'Their saver held the chain' },
+	clutch_save: { emoji: '🛟', title: 'Clutch save', blurb: 'Their saver kept the day whole' },
 	early_bird: { emoji: '🌅', title: 'Early bird', blurb: 'In before 9am, most days' },
 	night_owl: { emoji: '🦉', title: 'Night owl', blurb: 'Living dangerously after 9pm' }
 }
@@ -112,11 +112,43 @@ function pluralVerb(word: string): string {
 export function stakeLine(loserNames: readonly string[], stake: string | null): string {
 	const who = joinNames(loserNames)
 	const plural = loserNames.length > 1 || loserNames[0] === 'You'
-	if (!stake) return `${who} ${plural ? 'owe' : 'owes'} the crew a high five 🙌`
+	if (!stake) return `${who} ${plural ? 'owe' : 'owes'} the crew a high five`
 	const match = /^(?:the\s+)?losers?\s+(\S+)(.*)$/i.exec(stake.trim())
 	if (match) {
 		const [, verb = '', rest = ''] = match
 		return `${who} ${plural ? pluralVerb(verb) : verb}${rest}`
 	}
 	return `${who} ${plural ? 'owe' : 'owes'}: ${stake.trim()}`
+}
+
+/**
+ * The signed pact's sentence, in the signer's own voice, grammatical for any habit (habits are
+ * free text: "Run for 20 minutes", "Ten minutes of yoga"): "I, Ana, promise: run for 20
+ * minutes, every day for 21 days. If I break it, I buy the coffees." A stake that doesn't start
+ * with "loser" reads "If I break it, I owe: a round of pizza"; no stake, "If I break it, my crew
+ * will know." `name` null is the whole crew: "We promise: …".
+ */
+export function pledgeLine(
+	name: string | null,
+	habit: string,
+	cadence: 'daily' | 'weekdays',
+	days: number,
+	stake: string | null
+): string {
+	const we = name === null
+	const what = lowerFirst(habit.trim().replace(/[.!]+$/, ''))
+	const when = cadence === 'daily' ? 'every day' : 'every weekday'
+	const promise = `${we ? 'We' : `I, ${name},`} promise: ${what}, ${when} for ${days} days.`
+	const breakIt = we ? 'If we break it,' : 'If I break it,'
+	if (!stake) return `${promise} ${breakIt} ${we ? 'the crew' : 'my crew'} will know.`
+	const match = /^(?:the\s+)?losers?\s+(\S+)(.*)$/i.exec(stake.trim())
+	const who = we ? 'whoever slips' : 'I'
+	const cost = match
+		? `${who} ${we ? (match[1] ?? '') : pluralVerb(match[1] ?? '')}${(match[2] ?? '').replace(/[.!]+$/, '')}`
+		: `${who} ${we ? 'owes' : 'owe'}: ${lowerFirst(stake.trim().replace(/[.!]+$/, ''))}`
+	return `${promise} ${breakIt} ${cost}.`
+}
+
+function lowerFirst(text: string): string {
+	return text.charAt(0).toLowerCase() + text.slice(1)
 }

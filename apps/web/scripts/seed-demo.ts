@@ -31,6 +31,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { crc32, deflateSync } from 'node:zlib'
 import { challengeFor } from '../src/lib/pacts/challenges'
+import { DEMO_PHOTO_DIR, DEMO_PHOTO_IDS } from './demo-photos'
 import {
 	addDays,
 	canonicalTimeZone,
@@ -84,6 +85,92 @@ const CAPTIONS = [
 	'Evidence filed. Carry on.'
 ]
 
+/** How each demo member signs, so the four signatures look like four different hands. */
+type Hand = 'cursive' | 'angular' | 'tall' | 'print'
+const HANDS: Record<DemoMember['key'], Hand> = {
+	ana: 'cursive',
+	ben: 'angular',
+	cleo: 'tall',
+	dan: 'print'
+}
+
+/** Printed capitals for the printed hand, in a 30×60 box with the baseline at y = 0. */
+const PRINTED: Record<string, string> = {
+	D: 'M0 0 L0 -60 C40 -60 40 0 0 0',
+	A: 'M0 0 L15 -60 L30 0 M6 -24 L24 -24',
+	B: 'M0 0 L0 -60 C34 -60 34 -30 0 -30 C38 -30 38 0 0 0',
+	C: 'M30 -54 C10 -66 0 -44 0 -30 C0 -12 12 6 30 -6',
+	default: 'M0 -60 L30 -60 M15 -60 L15 0'
+}
+
+/**
+ * A demo signature as SVG path data in the 300×120 signature box, in one of four hands: a
+ * looping cursive, a fast angular scrawl, a tall narrow slant, or printed initials with a
+ * flourish. Proportions come from the name, so the same name always signs the same way.
+ */
+function demoSignature(name: string, hand: Hand): string {
+	// FNV-1a, then a xorshift: names that differ by a letter still sign very differently.
+	let seed = 2166136261
+	for (const ch of name) seed = Math.imul(seed ^ ch.charCodeAt(0), 16777619) >>> 0
+	const rand = () => {
+		seed ^= seed << 13
+		seed ^= seed >>> 17
+		seed ^= seed << 5
+		seed >>>= 0
+		return (seed % 10_000) / 10_000
+	}
+	const f = (n: number) => n.toFixed(1)
+	const base = 80 + rand() * 8
+	let x = 16 + rand() * 12
+	let d = ''
+
+	if (hand === 'cursive') {
+		// A big looped capital, then round joined letters, then an underline swept back.
+		d = `M${f(x)} ${f(base)} C${f(x - 6)} ${f(base - 70)} ${f(x + 46)} ${f(base - 72)} ${f(x + 22)} ${f(base - 6)}`
+		d += ` C${f(x + 14)} ${f(base + 8)} ${f(x + 4)} ${f(base - 30)} ${f(x + 34)} ${f(base - 26)}`
+		x += 34
+		for (let i = 0; i < name.length + 3; i++) {
+			const w = 12 + rand() * 8
+			d += ` C${f(x + 2)} ${f(base - 24)} ${f(x + w)} ${f(base - 24)} ${f(x + w * 0.7)} ${f(base)}`
+			x += w * 0.9
+		}
+		d += ` Q${f(x + 30)} ${f(base + 14)} ${f(30)} ${f(base + 16)}`
+	} else if (hand === 'angular') {
+		// A quick scrawl of sharp peaks, uneven, ending in a long rising tail.
+		d = `M${f(x)} ${f(base - 10)} L${f(x + 10)} ${f(base - 56)} L${f(x + 18)} ${f(base)}`
+		x += 18
+		for (let i = 0; i < name.length + 5; i++) {
+			const w = 8 + rand() * 9
+			const h = 14 + rand() * (i % 2 ? 34 : 18)
+			d += ` L${f(x + w / 2)} ${f(base - h)} L${f(x + w)} ${f(base - 2 * rand())}`
+			x += w
+		}
+		d += ` L${f(Math.min(x + 70, 294))} ${f(base - 44)}`
+	} else if (hand === 'tall') {
+		// Narrow, upright, steeply slanted strokes with tall ascenders, and a dot.
+		for (let i = 0; i < name.length + 4; i++) {
+			const h = i === 0 ? 86 : 22 + rand() * (i % 3 === 0 ? 48 : 18)
+			const w = 7 + rand() * 5
+			d += `${d ? ' ' : ''}M${f(x)} ${f(base)} Q${f(x + 12)} ${f(base - h)} ${f(x + w + 10)} ${f(base - h * 0.15)}`
+			x += w + 6
+		}
+		d += ` M${f(x + 10)} ${f(base - 50)} L${f(x + 11)} ${f(base - 49)}`
+		d += ` M${f(18)} ${f(base + 10)} Q${f(x / 2)} ${f(base + 4)} ${f(x + 16)} ${f(base + 12)}`
+	} else {
+		// The initial printed big and boxy, then the rest of the name as a fast flourish.
+		const initial = PRINTED[name.charAt(0).toUpperCase()] ?? PRINTED.default!
+		d = initial.replace(
+			/(-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?)/g,
+			(_, px: string, py: string) => `${f(Number(px) + x)} ${f(Number(py) + base)}`
+		)
+		x += 44
+		d += ` M${f(x)} ${f(base - 16)} C${f(x + 26)} ${f(base - 48)} ${f(x + 44)} ${f(base + 6)} ${f(x + 70)} ${f(base - 20)}`
+		d += ` C${f(x + 86)} ${f(base - 36)} ${f(x + 100)} ${f(base - 4)} ${f(x + 128)} ${f(base - 30)}`
+		d += ` M${f(10)} ${f(base + 12)} L${f(Math.min(x + 140, 294))} ${f(base + 4)}`
+	}
+	return d
+}
+
 function fail(message: string): never {
 	process.stderr.write(`seed:demo: ${message}\n`)
 	process.exit(1)
@@ -113,6 +200,24 @@ async function realRunPhotos(): Promise<Buffer[]> {
 		RUN_PHOTOS.map((name) => readFile(path.join(dir, name)).catch(() => null))
 	)
 	return found.flatMap((photo) => (photo ? [photo] : []))
+}
+
+/**
+ * The hand-picked demo photos for one pact (`npm run demo:photos` downloads them), so every
+ * member and day on the Crew Wall is a different real photo. Empty when they aren't on disk.
+ */
+async function demoPhotos(set: keyof typeof DEMO_PHOTO_IDS): Promise<Buffer[]> {
+	const found = await Promise.all(
+		DEMO_PHOTO_IDS[set].map((id) =>
+			readFile(path.join(DEMO_PHOTO_DIR, set, `${id}.jpg`)).catch(() => null)
+		)
+	)
+	return found.flatMap((photo) => (photo ? [photo] : []))
+}
+
+/** The photo for one member and day: walks the set so neighbours on the wall never match. */
+function photoFor(set: Buffer[], memberIndex: number, offset: number, days: number): Buffer | null {
+	return set.length > 0 ? set[(memberIndex * days + offset) % set.length]! : null
 }
 
 function placeholderPng([r, g, b]: [number, number, number], width = 360, height = 480): Buffer {
@@ -240,16 +345,31 @@ async function main() {
 		update: pactFields
 	})
 
+	// Ben, Cleo and Dan signed when they joined; Ana's card is left for the demo to sign.
+	const signed = (m: DemoMember) =>
+		m.key === 'ana'
+			? { signature: null, signedAt: null }
+			: {
+					signature: demoSignature(m.name, HANDS[m.key]),
+					signedAt: new Date(Date.now() - 8 * 24 * HOUR_MS)
+				}
+
 	const plan = checkInPlan()
-	const real = await realRunPhotos()
+	const demo = await demoPhotos('run')
+	const real = demo.length > 0 ? demo : await realRunPhotos()
 	const photoPath = (p: Plan) =>
 		`${idOf(p.key)}/proofs/demo-${p.offset}.${real.length > 0 ? 'jpg' : 'png'}`
 
-	for (const m of MEMBERS) {
+	for (const [memberIndex, m] of MEMBERS.entries()) {
 		const photos = plan.filter((p) => p.key === m.key && p.kind === 'photo')
 		const png = placeholderPng(m.colour)
 		for (const [i, p] of photos.entries()) {
-			const photo = real.length > 0 ? real[(i + m.key.length) % real.length] : null
+			const photo =
+				demo.length > 0
+					? photoFor(demo, memberIndex, p.offset, TODAY_OFFSET + 1)
+					: real.length > 0
+						? real[(i + m.key.length) % real.length]!
+						: null
 			const { error } = await supabase.storage.from(BUCKET).upload(photoPath(p), photo ?? png, {
 				contentType: photo ? 'image/jpeg' : 'image/png',
 				upsert: true
@@ -308,14 +428,16 @@ async function main() {
 					userId: idOf(m.key),
 					role: m.key === 'ana' ? 'owner' : 'member',
 					joinedDay: dateFromDay(startDay),
-					saverUsedDay: m.key === 'cleo' ? dateFromDay(addDays(startDay, CLEO_SAVER_OFFSET)) : null
+					saverUsedDay: m.key === 'cleo' ? dateFromDay(addDays(startDay, CLEO_SAVER_OFFSET)) : null,
+					...signed(m)
 				},
 				update: {
 					role: m.key === 'ana' ? 'owner' : 'member',
 					joinedDay: dateFromDay(startDay),
 					leftAt: null,
 					leftDay: null,
-					saverUsedDay: m.key === 'cleo' ? dateFromDay(addDays(startDay, CLEO_SAVER_OFFSET)) : null
+					saverUsedDay: m.key === 'cleo' ? dateFromDay(addDays(startDay, CLEO_SAVER_OFFSET)) : null,
+					...signed(m)
 				}
 			})
 		),
@@ -377,7 +499,7 @@ async function seedFinished(ids: Map<DemoMember['key'], string>) {
 		timezone: timezone!,
 		startDay: dateFromDay(startDay),
 		endDay: dateFromDay(endDay),
-		stake: 'Loser buys the coffees ☕',
+		stake: 'Loser buys the coffees',
 		cancelledAt: null,
 		closedThrough: null
 	}
@@ -386,6 +508,22 @@ async function seedFinished(ids: Map<DemoMember['key'], string>) {
 		create: { ...fields, inviteCode: FINISHED_CODE },
 		update: fields
 	})
+
+	// A finished pact's wall is the first results slide, so its photos are stored too (the closer
+	// deletes them 30 days after the end, as for any pact).
+	const calm = await demoPhotos('calm')
+	const finishedPath = (key: DemoMember['key'], offset: number) =>
+		`${idOf(key)}/proofs/demo-yoga-${offset}.jpg`
+	for (const [memberIndex, m] of MEMBERS.entries()) {
+		for (let offset = 0; offset < FINISHED_DAYS && calm.length > 0; offset++) {
+			if (FINISHED_MISSES[m.key].includes(offset)) continue
+			const photo = photoFor(calm, memberIndex, offset, FINISHED_DAYS)!
+			const { error } = await supabase.storage
+				.from(BUCKET)
+				.upload(finishedPath(m.key, offset), photo, { contentType: 'image/jpeg', upsert: true })
+			if (error) fail(`uploading ${finishedPath(m.key, offset)}: ${error.message}`)
+		}
+	}
 
 	const checkIns = MEMBERS.flatMap((m) =>
 		Array.from({ length: FINISHED_DAYS }, (_, offset) => offset)
@@ -405,8 +543,7 @@ async function seedFinished(ids: Map<DemoMember['key'], string>) {
 					day: dateFromDay(day),
 					kind: saver ? ('saver' as const) : ('photo' as const),
 					challenge: saver ? null : challengeFor(pact.id, day),
-					// The photos of a finished pact aren't shown; none are stored.
-					photoPath: null,
+					photoPath: saver || calm.length === 0 ? null : finishedPath(m.key, offset),
 					verdict: saver ? ('skipped' as const) : ('pass' as const),
 					aiReason: saver ? null : 'The pose and the challenge are both clearly visible.',
 					aiCaption: saver ? null : CAPTIONS[(offset + m.key.length) % CAPTIONS.length],
@@ -429,7 +566,9 @@ async function seedFinished(ids: Map<DemoMember['key'], string>) {
 				joinedDay: dateFromDay(startDay),
 				leftAt: null,
 				leftDay: null,
-				saverUsedDay
+				saverUsedDay,
+				signature: demoSignature(m.name, HANDS[m.key]),
+				signedAt: new Date(closesAt(timezone!, addDays(startDay, -1)).getTime() - HOUR_MS)
 			}
 			return db.pactMember.upsert({
 				where: { pactId_userId: { pactId: pact.id, userId: idOf(m.key) } },

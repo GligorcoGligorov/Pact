@@ -17,6 +17,7 @@ import {
 	reactionResponse
 } from './feed'
 import { listNotificationsQuery, listNotificationsResponse } from './notifications'
+import { wallResponse } from './wall'
 import {
 	blockBody,
 	blockParams,
@@ -41,7 +42,9 @@ import {
 	listPactsResponse,
 	pactDetailResponse,
 	pactParams,
-	pactResponse
+	pactResponse,
+	signPactBody,
+	signPactResponse
 } from './pacts'
 import { profileResponse, updateProfileBody } from './profile'
 import { pactResultResponse, rematchPactBody, rematchPactResponse } from './results'
@@ -183,6 +186,23 @@ export const endpoints = {
 		auth: 'user',
 		params: pactParams,
 		response: pactDetailResponse,
+		status: 200
+	},
+	signPact: {
+		method: 'POST',
+		path: '/api/app/v1/pacts/:id/signature',
+		auth: 'user',
+		params: pactParams,
+		body: signPactBody,
+		response: signPactResponse,
+		status: 200
+	},
+	getPactWall: {
+		method: 'GET',
+		path: '/api/app/v1/pacts/:id/wall',
+		auth: 'user',
+		params: pactParams,
+		response: wallResponse,
 		status: 200
 	},
 	getPactResult: {

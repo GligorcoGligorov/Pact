@@ -16,7 +16,7 @@ export async function shareResult(
 ): Promise<'image' | 'link' | null> {
 	const page = resultPageUrl(pactId)
 	if (!page) throw new Error('EXPO_PUBLIC_SITE_URL is not set, so there is no page to share.')
-	const message = `${pactName}: the results are in 🏁 ${page}`
+	const message = `${pactName}: the results are in. ${page}`
 
 	let image: string | null = null
 	try {

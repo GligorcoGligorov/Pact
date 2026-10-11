@@ -16,6 +16,7 @@
 		"prisma:generate": "prisma generate",
 		"seed:demo": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local --import ./scripts/register-ts.mjs scripts/seed-demo.ts",
 		"pacts:close": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --conditions=react-server --env-file-if-exists=.env.local --import ./scripts/register-ts.mjs scripts/close-pacts.ts",
+		"demo:photos": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/register-ts.mjs scripts/demo-photos.ts",
 		"demo:clean": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local --import ./scripts/register-ts.mjs scripts/demo-clean.ts",
 		"postinstall": "prisma generate"
 	},

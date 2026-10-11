@@ -10,6 +10,20 @@ done.** Earlier: 2026-10-06, Phase 5 done on branch `feat/phase-5-finale`. Earli
 this trial, see [trial-local-only](memory/trial-local-only.md)). Build traps:
 [device-build-traps](memory/device-build-traps.md).
 
+## UI revamp (2026-10-11, branch `feat/ui-revamp`)
+
+[design/ui-revamp/](design/ui-revamp/plan.md): the audit, the plan with both revisions, and
+before/after shots in `shots/`. Dark first; the **Crew Wall** of real photos is the signature
+(`GET pacts/:id/wall`); **the signed pact** on create and join (`POST pacts/:id/signature`,
+migration `20261011012142_pact_signature`); a full-screen daily challenge; results as stories.
+Events added: `pact_sign_viewed`, `pact_signed`, `wall_photo_opened`, `pact_result_story_viewed`.
+Done: every mobile screen (onboarding, home, board, signing, check-in, verdict, results,
+activity, pact settings) and the web (landing, join page and its preview, results page, share
+card). The public pages show the wall as presence only, never photos (R25, R27), plus the
+signatures (pinned by `join-page.test.mts`). Demo: `npm run demo:photos`, then
+`npm run seed:demo -- --finished`. `app.json`'s splash is the near-black ground; it shows from
+the next binary.
+
 ## Phases
 
 | Phase                              | State | Notes                                                                              |

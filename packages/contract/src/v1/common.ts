@@ -50,7 +50,9 @@ export const ERROR_CODES = {
 	/** R20: one nudge per pair per day; this pair's is sent. */
 	already_nudged: 409,
 	/** R24: the pact hasn't completed, so it has no results (and no round 2) yet. */
-	not_finished: 409
+	not_finished: 409,
+	/** The signed pact: a member signs once. */
+	already_signed: 409
 } as const
 
 export type ErrorCode = keyof typeof ERROR_CODES

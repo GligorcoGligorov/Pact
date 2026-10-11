@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Bricolage_Grotesque, Inter, Source_Serif_4 } from 'next/font/google'
+import { IBM_Plex_Mono, Inter, Inter_Tight, Source_Serif_4 } from 'next/font/google'
 import { Suspense } from 'react'
 import { Analytics } from '@vercel/analytics/next'
 import { brandConfig, brandCss, palette, theme } from '@app/brand'
@@ -9,9 +9,10 @@ import './globals.css'
 
 // Fonts. Inter is the text face for both presets; the display face is picked
 // by the preset through --font-display (packages/brand/src/css.ts): Source
-// Serif 4 for dusk, Bricolage Grotesque for daylight. Both are declared so a
+// Serif 4 for dusk, Inter Tight for daylight (Pact). Both are declared so a
 // preset switch is one line in brand.config.ts; neither display face is
-// preloaded, so the one the preset does not use is never downloaded.
+// preloaded, so the one the preset does not use is never downloaded. IBM Plex
+// Mono sets the micro-labels (--font-mono).
 const inter = Inter({
 	subsets: ['latin'],
 	variable: '--font-inter',
@@ -26,11 +27,18 @@ const sourceSerif = Source_Serif_4({
 	preload: false
 })
 
-const bricolage = Bricolage_Grotesque({
+const interTight = Inter_Tight({
 	subsets: ['latin'],
-	variable: '--font-bricolage',
+	variable: '--font-inter-tight',
 	display: 'swap',
-	axes: ['opsz'],
+	preload: false
+})
+
+const plexMono = IBM_Plex_Mono({
+	subsets: ['latin'],
+	weight: ['500'],
+	variable: '--font-plex-mono',
+	display: 'swap',
 	preload: false
 })
 
@@ -94,7 +102,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 			lang="en"
 			data-preset={theme.preset}
 			data-scheme={theme.primaryScheme}
-			className={`${inter.variable} ${sourceSerif.variable} ${bricolage.variable}`}
+			className={`${inter.variable} ${sourceSerif.variable} ${interTight.variable} ${plexMono.variable}`}
 		>
 			<head>
 				<style id="brand-tokens" dangerouslySetInnerHTML={{ __html: BRAND_CSS }} />

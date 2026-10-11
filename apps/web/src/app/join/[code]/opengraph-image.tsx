@@ -11,7 +11,7 @@ export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
 /** The light palette's colours: an image has no CSS variables, so it reads the tokens directly. */
-const c = theme.palettes.light
+const c = theme.palettes.dark
 const AVATAR_LOOKS = [
 	{ bg: c.brandDim, fg: c.brandInk },
 	{ bg: c.infoSoft, fg: c.infoText },
@@ -44,12 +44,12 @@ export default async function Image({ params }: { params: Promise<{ code: string
 	const code = (await params).code.toUpperCase()
 	const page = inviteCodeSchema.safeParse(code).success ? await getJoinPage(code) : null
 	const [display, medium, bold] = await Promise.all([
-		font('BricolageGrotesque_800ExtraBold.ttf'),
+		font('InterTight_600SemiBold.ttf'),
 		font('Inter_500Medium.ttf'),
 		font('Inter_700Bold.ttf')
 	])
 	const fonts = [
-		{ name: 'Bricolage', data: display, weight: 800 as const },
+		{ name: 'Display', data: display, weight: 600 as const },
 		{ name: 'Inter', data: medium, weight: 500 as const },
 		{ name: 'Inter', data: bold, weight: 700 as const }
 	]
@@ -64,7 +64,7 @@ export default async function Image({ params }: { params: Promise<{ code: string
 					alignItems: 'center',
 					justifyContent: 'center',
 					background: c.bg,
-					fontFamily: 'Bricolage',
+					fontFamily: 'Display',
 					fontSize: 96,
 					color: c.textPrimary
 				}}
@@ -81,7 +81,7 @@ export default async function Image({ params }: { params: Promise<{ code: string
 	const circumference = 2 * Math.PI * r
 	const share = active ? page.inCount / page.heldCount : 0
 	const faces = page.members.slice(0, MAX_FACES)
-	// The crew's colour and emoji, as on the page: the mark, the habit, the hero and its ring.
+	// The crew's colour, as on the page: the mark, the habit, the hero and its ring.
 	const crew = crewThemeOf(page.color, page.emoji)
 	const tone = c.crew[crew.color]
 
@@ -105,21 +105,8 @@ export default async function Image({ params }: { params: Promise<{ code: string
 				}}
 			>
 				<div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-					<div
-						style={{
-							display: 'flex',
-							width: 56,
-							height: 56,
-							borderRadius: 28,
-							background: tone.fill,
-							alignItems: 'center',
-							justifyContent: 'center',
-							fontSize: 32
-						}}
-					>
-						{crew.emoji}
-					</div>
-					<div style={{ fontFamily: 'Bricolage', fontSize: 36, color: c.textPrimary }}>Pact</div>
+					<div style={{ width: 20, height: 20, borderRadius: 3, background: tone.fill }} />
+					<div style={{ fontFamily: 'Display', fontSize: 36, color: c.textPrimary }}>Pact</div>
 				</div>
 
 				<div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -136,7 +123,7 @@ export default async function Image({ params }: { params: Promise<{ code: string
 					</div>
 					<div
 						style={{
-							fontFamily: 'Bricolage',
+							fontFamily: 'Display',
 							fontSize: 92,
 							lineHeight: 1,
 							color: c.textPrimary,
@@ -264,7 +251,7 @@ export default async function Image({ params }: { params: Promise<{ code: string
 						) : null}
 					</svg>
 					<div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-						<div style={{ fontFamily: 'Bricolage', fontSize: 64, color: tone.onFill }}>
+						<div style={{ fontFamily: 'Display', fontSize: 64, color: tone.onFill }}>
 							{active ? `${page.inCount}/${page.heldCount}` : page.members.length}
 						</div>
 						<div style={{ fontSize: 24, fontWeight: 500, color: tone.onFillMuted }}>
@@ -278,6 +265,6 @@ export default async function Image({ params }: { params: Promise<{ code: string
 			</div>
 		</div>,
 		// The fonts carry no emoji: Twemoji draws the crew's.
-		{ ...size, fonts, emoji: 'twemoji' }
+		{ ...size, fonts }
 	)
 }

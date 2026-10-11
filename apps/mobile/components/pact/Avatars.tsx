@@ -18,13 +18,6 @@ import { getInitials } from '@/lib/utils'
 
 type BoardMember = TodayBoard['members'][number]
 
-/** A stable pick from a small set, so a person keeps their colour on every screen. */
-function hueIndex(userId: string, count: number): number {
-	let hash = 0
-	for (let i = 0; i < userId.length; i++) hash = (hash * 31 + userId.charCodeAt(i)) >>> 0
-	return hash % count
-}
-
 export function displayName(member: { display_name: string | null }): string {
 	return member.display_name?.trim() || 'A member'
 }
@@ -78,12 +71,12 @@ function WaitingRing({ size }: { size: number }) {
  * they're in (or a saver), and a breathing ring while they still owe the day.
  */
 export function Avatar({
-	userId,
 	name,
 	state,
 	size = 36,
 	breathe = true
 }: {
+	/** Who it is; every avatar looks the same (paper and ink), so it doesn't pick a colour. */
 	userId: string
 	name: string
 	state?: MemberState
@@ -92,14 +85,8 @@ export function Avatar({
 	breathe?: boolean
 }) {
 	const c = useColors()
-	const palette = [
-		{ bg: c.brandDim, fg: c.brandInk },
-		{ bg: c.infoSoft, fg: c.infoText },
-		{ bg: c.warningSoft, fg: c.warningText },
-		{ bg: c.errorSoft, fg: c.errorText },
-		{ bg: c.surface3, fg: c.textPrimary }
-	]
-	const look = palette[hueIndex(userId, palette.length)]
+	// One look for everyone: paper and ink. Colour belongs to the crew, not to a person.
+	const look = { bg: c.surface2, fg: c.textPrimary }
 	const done = state === 'in' || state === 'saver'
 	const badge = Math.round(size * 0.42)
 	return (
@@ -117,7 +104,10 @@ export function Avatar({
 			]}
 		>
 			{state === 'out' && breathe ? <WaitingRing size={size} /> : null}
-			<Text style={{ color: look.fg, fontSize: size * 0.36, fontWeight: '700' }}>
+			<Text
+				variant="mono"
+				style={{ color: look.fg, fontSize: size * 0.32, lineHeight: size * 0.4 }}
+			>
 				{getInitials(name)}
 			</Text>
 			{done ? (
@@ -129,7 +119,7 @@ export function Avatar({
 								width: badge,
 								height: badge,
 								borderRadius: badge / 2,
-								backgroundColor: state === 'saver' ? c.info : c.brandFill,
+								backgroundColor: c.brandFill,
 								borderColor: c.surface
 							}
 						]}

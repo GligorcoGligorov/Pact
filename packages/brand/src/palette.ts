@@ -43,15 +43,11 @@ export function onColor(fill: string, onFill: SchemeSpec['onFill']): string {
 	return mostContrasting(fill, ['#000000', '#ffffff'])
 }
 
-/** Two gradient stops around `fill`, compressed until `on` passes on both. */
-function gradientAround(fill: string, on: string): readonly [string, string] {
-	for (let d = 0.04; d > 0; d -= 0.005) {
-		const from = shiftLightness(fill, d)
-		const to = shiftLightness(fill, -d)
-		if (contrast(on, from) >= DERIVE_TARGET && contrast(on, to) >= DERIVE_TARGET) {
-			return [from, to] as const
-		}
-	}
+/**
+ * The fill's two "gradient" stops, both the fill itself: Pact has no decorative gradients
+ * (docs/design/ui-revamp/plan.md). Kept as a pair so every consumer stays a flat fill.
+ */
+function flatPair(fill: string): readonly [string, string] {
 	return [fill, fill] as const
 }
 
@@ -69,7 +65,9 @@ export function buildPalette(
 	const A = spec.alpha
 
 	// ── Accent ────────────────────────────────────────────────────────────────
-	const brandFill = toHex(accent)
+	// An accent that vanishes into this scheme's ground (an ink accent on a dark ground) fills
+	// with the scheme's own primary text instead, so a filled button always reads as one.
+	const brandFill = contrast(toHex(accent), bg) >= AA_NON_TEXT ? toHex(accent) : toHex(t.primary)
 	const onBrand = onColor(brandFill, spec.onFill)
 	// Hover moves the fill away from its text colour, so contrast only rises.
 	const brandFillHover = shiftLightness(
@@ -129,7 +127,7 @@ export function buildPalette(
 		brandDim,
 		brandBorder: withAlpha(brandInk, A.brandBorder),
 		brandGlow: withAlpha(brandFill, A.brandGlow),
-		brandGradient: gradientAround(brandFill, onBrand),
+		brandGradient: flatPair(brandFill),
 
 		...(semantic('success') as Pick<
 			Palette,
@@ -186,10 +184,20 @@ function crewTone(
 	const onFill = onColor(fill, spec.onFill)
 	// Muted text leans toward the fill, but never below AA: if the lean would cost that, it doesn't.
 	const leaned = mix(onFill, fill, 0.22)
+	// Headlines are large text (WCAG 3:1), so their muted line can lean much further.
+	let large = onFill
+	for (let t = 0.6; t > 0; t -= 0.04) {
+		const candidate = mix(onFill, fill, t)
+		if (contrast(candidate, fill) >= AA_NON_TEXT + 0.05) {
+			large = candidate
+			break
+		}
+	}
 	return {
 		fill,
 		onFill,
 		onFillMuted: contrast(leaned, fill) >= DERIVE_TARGET ? leaned : onFill,
+		onFillLarge: large,
 		onFillTrack: withAlpha(onFill, 0.2),
 		ink: ensureContrast(
 			fill,
@@ -197,6 +205,14 @@ function crewTone(
 			DERIVE_TARGET,
 			away
 		),
+		// A graphic, not text: the chain's links clear the non-text bar (3:1) on every ground,
+		// which keeps the crew's own hue where `ink` would darken it toward an error red.
+		line: ensureContrast(fill, grounds, AA_NON_TEXT + 0.05, away),
+		// A halo on the ground: the crew's own colour, a touch lifted, for glows and kept rows.
+		glow: mix(fill, '#ffffff', 0.18),
+		// A pact screen's whole background: the crew colour sunk deep into the ground, dark or
+		// light, keeping the scheme's text readable on it.
+		deep: mix(spec.ground.bg, fill, spec.scheme === 'dark' ? 0.16 : 0.12),
 		dim,
 		track: withAlpha(fill, A.track + 0.08)
 	}

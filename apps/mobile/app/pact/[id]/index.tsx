@@ -1,52 +1,51 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
+import type { CrewTone } from '@app/brand'
 import { RefreshControl, StyleSheet, View } from 'react-native'
 import { router, useLocalSearchParams } from 'expo-router'
 import { useQueryClient } from '@tanstack/react-query'
-import { Camera, Check, ScanEye, SearchX, Settings2, UserPlus } from 'lucide-react-native'
-import { Avatar, displayName } from '@/components/pact/Avatars'
-import { Chain, chainTiles } from '@/components/pact/Chain'
-import { Countdown } from '@/components/pact/Countdown'
-import { EmojiBurst } from '@/components/pact/EmojiBurst'
-import { KeptCard, useFirstKeptView, useFirstMilestoneView } from '@/components/pact/KeptCard'
-import { CrewBadge } from '@/components/pact/CrewTheme'
-import { MemberRow } from '@/components/pact/MemberRow'
-import { Ring } from '@/components/pact/Ring'
+import { Camera, Check, SearchX, Settings2, UserPlus } from 'lucide-react-native'
+import { displayName } from '@/components/pact/Avatars'
+import { ClockLeft } from '@/components/pact/Countdown'
+import { KeptLine, useFirstKeptView, useFirstMilestoneView } from '@/components/pact/KeptCard'
+import { CrewHero, OnFill } from '@/components/pact/CrewHero'
 import { SaverCard } from '@/components/pact/SaverCard'
-import { StateChip } from '@/components/pact/StateChip'
-import { StreakFlame } from '@/components/pact/StreakFlame'
 import { QueryErrorState } from '@/components/QueryError'
+import { PhotoViewer } from '@/components/wall/PhotoViewer'
+import { Waiting } from '@/components/wall/Waiting'
+import { WallGrid, type OpenTile } from '@/components/wall/WallGrid'
+import { CountUp } from '@/components/motion/CountUp'
 import { FadeSlideIn } from '@/components/motion/FadeSlideIn'
 import { Button } from '@/components/ui/Button'
-import { Card } from '@/components/ui/Card'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { IconButton } from '@/components/ui/IconButton'
-import { SectionHeader } from '@/components/ui/List'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Screen } from '@/components/ui/Screen'
 import { CardSkeleton } from '@/components/ui/Skeleton'
 import { Text } from '@/components/ui/Text'
-import { useColors, useTheme } from '@/contexts/ThemeContext'
+import { useColors } from '@/contexts/ThemeContext'
 import { useToast } from '@/contexts/ToastContext'
 import { track } from '@/lib/analytics'
 import { errorCode, errorMessage } from '@/lib/api'
-import { crewEmoji, crewTone } from '@/lib/crew'
+import { crewTone } from '@/lib/crew'
 import { milestoneFor } from '@/lib/streaks'
 import { haptic } from '@/lib/haptics'
 import {
 	daysBetween,
 	localIsoDate,
+	pactDayCount,
 	pactKeys,
 	shortDay,
 	useMyUserId,
 	useNudge,
 	usePact,
+	useWall,
 	type PactDetail
 } from '@/lib/pacts'
 
 /**
- * R18, R19: today's board. The countdown to local midnight, the group's ring, the challenge,
- * each held member and the chain with the streak. The check-in button is the screen's one
- * primary action, while the caller still owes today.
+ * R18, R19: today's board, on the crew's deep tint. One loud block in the crew's colour (the
+ * countdown, the streak), then the Crew Wall of everyone's photos, the challenge and the stake.
+ * The check-in button is the screen's one primary action, while the caller still owes today.
  */
 export default function PactBoardScreen() {
 	const c = useColors()
@@ -81,15 +80,17 @@ export default function PactBoardScreen() {
 
 	const today = detail?.today ?? null
 	const kept = !!today && today.held_count >= MIN_CREW && today.in_count === today.held_count
-	const celebrate = useFirstKeptView(id, today?.day ?? '', kept)
-	const milestone = kept && detail ? milestoneFor(detail.progress.current_streak) : null
-	const milestoneFirst = useFirstMilestoneView(id, milestone)
+	// The first view of a kept day or a milestone: the haptic and the event, once per device.
+	// The celebration itself is today's row on the wall filling up.
+	useFirstKeptView(id, today?.day ?? '', kept)
+	useFirstMilestoneView(id, kept && detail ? milestoneFor(detail.progress.current_streak) : null)
 
 	return (
 		<View style={s.root}>
 			<Screen
+				ground={detail ? crewTone(c, detail.pact.color).deep : undefined}
 				header={<PageHeader right={detail ? invite : undefined} />}
-				gap={16}
+				gap={32}
 				refreshControl={
 					<RefreshControl
 						refreshing={refreshing}
@@ -109,9 +110,9 @@ export default function PactBoardScreen() {
 					/>
 				) : detail === undefined ? (
 					<>
-						<CardSkeleton height={190} />
-						<CardSkeleton height={120} />
-						<CardSkeleton height={160} />
+						<CardSkeleton height={260} />
+						<CardSkeleton height={72} />
+						<CardSkeleton height={180} />
 					</>
 				) : detail === null ? (
 					<EmptyState
@@ -124,12 +125,6 @@ export default function PactBoardScreen() {
 					<Board detail={detail} myId={myId ?? null} kept={kept} />
 				)}
 			</Screen>
-			{(celebrate || milestoneFirst) && detail ? (
-				// The crew's own emoji leads; a milestone adds the trophy.
-				<EmojiBurst
-					emoji={[crewEmoji(detail.pact.emoji), '🎉', '🔥', ...(milestoneFirst ? ['🏆'] : [])]}
-				/>
-			) : null}
 		</View>
 	)
 }
@@ -141,10 +136,10 @@ function Board({
 }: {
 	detail: PactDetail
 	myId: string | null
-	/** Everyone held today is in: the board leads with the celebration. */
+	/** Everyone held today is in: today's row on the wall is full. */
 	kept: boolean
 }) {
-	const { colors: c, elevation } = useTheme()
+	const c = useColors()
 	const { showToast } = useToast()
 	const nudge = useNudge(detail.pact.id)
 	// Marked at once on success, before the board's refetch says so.
@@ -174,104 +169,135 @@ function Board({
 		})
 	}
 	const { pact, today, progress, members } = detail
-	const tiles = chainTiles(progress.chain, pact.start_day, pact.end_day, pact.cadence)
-	const totalDays = tiles.length
-	const doneDays = tiles.filter((t) => t.status !== 'future').length
-	// The hero is the crew's own: its bright colour, its mark by the name, its ring.
+	const totalDays = pactDayCount(pact.start_day, pact.end_day, pact.cadence)
+	const wall = useWall(pact.id)
+	const [open, setOpen] = useState<OpenTile | null>(null)
+	const dayNumber = progress.chain.length
+	// The crew's colour: the hero's fill, and the line of each member's link below it.
 	const tone = crewTone(c, pact.color)
+	const live = !!today && today.held_count > 0
+	const milestone = kept ? milestoneFor(progress.current_streak) : null
 
 	return (
 		<>
-			<FadeSlideIn index={0}>
-				{/* The crew's own card, in its bright colour (ref 01): the countdown and the crew's ring. */}
-				<Card
-					tier="hero"
-					padding="spacious"
-					style={[s.hero, { backgroundColor: tone.fill, borderColor: tone.fill }]}
-				>
-					<View style={s.heroTop}>
-						<View style={s.heroTitle}>
-							<View style={s.heroEyebrow}>
-								<CrewBadge color={pact.color} emoji={pact.emoji} size={30} onFill />
-								<Text
-									variant="eyebrow"
-									style={[s.heroEyebrowText, { color: tone.onFillMuted }]}
-									numberOfLines={1}
-								>
-									{pact.name}
-								</Text>
-							</View>
-							<Text variant="h1" style={{ color: tone.onFill }}>
-								{pact.habit}
-							</Text>
-						</View>
-						{today && today.held_count > 0 ? (
-							<Ring
-								value={today.in_count}
-								max={today.held_count}
-								size={80}
-								stroke={9}
-								color={tone.onFill}
-								track={tone.onFillTrack}
-							>
-								<Text variant="h3" tabular style={{ color: tone.onFill }}>
-									{today.in_count}/{today.held_count}
-								</Text>
-								<Text variant="caption" style={{ color: tone.onFillMuted }}>
-									in
-								</Text>
-							</Ring>
-						) : null}
-					</View>
-
-					{today && today.held_count > 0 ? (
-						<View>
-							<Countdown
-								closesAt={today.closes_at}
-								color={tone.onFill}
-								unitColor={tone.onFillMuted}
-							/>
-							<Text variant="bodySm" style={{ color: tone.onFillMuted }}>
-								{kept ? 'until tomorrow’s check-in' : 'left to check in today'}
-							</Text>
-						</View>
+			<CrewHero tone={tone} glow compact>
+				<View style={s.metaRow}>
+					<OnFill tone={tone} muted variant="mono">
+						{pact.status === 'lobby'
+							? `${pad(totalDays)} days`
+							: `Day ${pad(dayNumber)} / ${pad(totalDays)}`}
+					</OnFill>
+					{live && !kept ? (
+						<ClockLeft closesAt={today.closes_at} style={{ color: tone.onFill }} />
 					) : (
-						<Text variant="lead" style={{ color: tone.onFillMuted }}>
-							{heroLine(detail)}
-						</Text>
+						<OnFill tone={tone} variant="mono">
+							{statusLabel(detail, kept)}
+						</OnFill>
 					)}
-				</Card>
-			</FadeSlideIn>
+				</View>
+
+				<View>
+					<OnFill tone={tone} variant="display">
+						{pact.name}
+					</OnFill>
+					<OnFill tone={tone} muted variant="h1">
+						{pact.habit}
+					</OnFill>
+				</View>
+
+				{pact.status === 'lobby' || !live ? (
+					<OnFill tone={tone} muted variant="bodySm">
+						{heroLine(detail)}
+					</OnFill>
+				) : null}
+
+				{pact.status !== 'lobby' ? (
+					<View style={[s.stats, { borderTopColor: tone.onFillTrack }]}>
+						{live ? (
+							<Stat tone={tone} label="In today" value={today.in_count} of={today.held_count} />
+						) : null}
+						<Stat tone={tone} label="Streak" value={progress.current_streak} />
+						<Stat tone={tone} label="Best" value={progress.best_streak} />
+					</View>
+				) : null}
+			</CrewHero>
 
 			{kept ? (
-				<KeptCard
-					dayNumber={progress.chain.length}
-					streak={progress.current_streak}
-					milestone={milestoneFor(progress.current_streak)}
-				/>
+				<FadeSlideIn index={1}>
+					<KeptLine dayNumber={dayNumber} milestone={milestone} />
+				</FadeSlideIn>
 			) : null}
 
-			{today && today.held_count > 0 && !kept ? (
+			{wall.data && wall.data.days.length > 0 ? (
 				<FadeSlideIn index={1}>
-					<Card padding="normal" style={[s.challenge, elevation.card]}>
-						<View style={[s.challengeIcon, { backgroundColor: c.brandDim }]}>
-							<ScanEye size={24} color={c.brandInk} />
-						</View>
-						<View style={s.challengeText}>
-							<Text variant="eyebrow" tone="brand">
-								Today&apos;s challenge
-							</Text>
-							<Text variant="h3">{today.challenge}</Text>
-							<Text variant="caption" tone="secondary">
-								Show it in your photo, so everyone knows it&apos;s from today.
-							</Text>
-						</View>
-					</Card>
+					<Section
+						label={
+							today && today.held_count > 0
+								? `The wall · ${today.in_count} / ${today.held_count} in today`
+								: 'The wall'
+						}
+					>
+						<WallGrid wall={wall.data} myId={myId} tone={tone} onOpen={setOpen} />
+						{today ? (
+							<Waiting
+								members={today.members}
+								myId={myId}
+								nudgeFor={(member) => ({
+									sent: member.nudged_by_me || sentTo.has(member.user_id),
+									sending: nudge.isPending && nudge.variables === member.user_id,
+									onPress: () => sendNudge(member)
+								})}
+							/>
+						) : null}
+					</Section>
+					<PhotoViewer
+						pactId={pact.id}
+						tile={open}
+						own={open?.cell.user_id === myId}
+						onClose={() => setOpen(null)}
+					/>
+				</FadeSlideIn>
+			) : !today ? (
+				<FadeSlideIn index={1}>
+					<Section label={`The crew · ${members.filter((m) => !m.left_day).length}`}>
+						{members
+							.filter((m) => !m.left_day)
+							.map((m, i) => (
+								<View
+									key={m.user_id}
+									style={[
+										s.member,
+										i > 0 && {
+											borderTopColor: c.borderHairline,
+											borderTopWidth: StyleSheet.hairlineWidth
+										}
+									]}
+								>
+									<Text variant="label" style={s.memberName} numberOfLines={1}>
+										{displayName(m)}
+										{m.user_id === myId ? ' (you)' : ''}
+									</Text>
+									{m.role === 'owner' ? (
+										<Text variant="mono" tone="tertiary">
+											Owner
+										</Text>
+									) : null}
+								</View>
+							))}
+					</Section>
+				</FadeSlideIn>
+			) : null}
+
+			{live && !kept ? (
+				<FadeSlideIn index={2}>
+					<Section label="Today’s challenge">
+						<Text variant="h2">{today.challenge}</Text>
+					</Section>
 				</FadeSlideIn>
 			) : null}
 
 			{today && today.me.held && today.me.state === 'out' ? (
-				<FadeSlideIn index={1}>
+				<FadeSlideIn index={3}>
 					<SaverCard
 						pactId={pact.id}
 						closesAt={today.closes_at}
@@ -280,77 +306,71 @@ function Board({
 				</FadeSlideIn>
 			) : null}
 
-			{today && today.members.length > 0 ? (
-				<FadeSlideIn index={2}>
-					<SectionHeader title="Today" />
-					<Card padding="compact">
-						{today.members.map((member) => (
-							<MemberRow
-								key={member.user_id}
-								member={member}
-								isMe={member.user_id === myId}
-								nudge={{
-									sent: member.nudged_by_me || sentTo.has(member.user_id),
-									sending: nudge.isPending && nudge.variables === member.user_id,
-									onPress: () => sendNudge(member)
-								}}
-							/>
-						))}
-					</Card>
-				</FadeSlideIn>
-			) : !today ? (
-				<FadeSlideIn index={2}>
-					<SectionHeader title={`Members · ${members.filter((m) => !m.left_day).length}`} />
-					<Card padding="compact">
-						{members
-							.filter((m) => !m.left_day)
-							.map((m) => (
-								<View key={m.user_id} style={s.member}>
-									<Avatar userId={m.user_id} name={displayName(m)} size={40} />
-									<Text variant="label" style={s.memberName} numberOfLines={1}>
-										{displayName(m)}
-										{m.user_id === myId ? ' (you)' : ''}
-									</Text>
-									{m.role === 'owner' ? <StateChip label="Owner" tone="brand" /> : null}
-								</View>
-							))}
-					</Card>
-				</FadeSlideIn>
-			) : null}
-
-			{/* Before day one there's no streak or chain to show. */}
-			{pact.status !== 'lobby' ? (
-				<FadeSlideIn index={3}>
-					<Card padding="spacious" style={s.streakCard}>
-						<View style={s.streakTop}>
-							<View style={s.streak}>
-								<StreakFlame streak={progress.current_streak} size={34} />
-								<View>
-									<Text variant="display" tabular>
-										{progress.current_streak}
-									</Text>
-									<Text variant="caption" tone="secondary">
-										day streak · best {progress.best_streak}
-									</Text>
-								</View>
-							</View>
-							<Text variant="caption" tone="tertiary" tabular>
-								{doneDays} of {totalDays} days
-							</Text>
-						</View>
-						<Chain tiles={tiles} />
-					</Card>
-				</FadeSlideIn>
-			) : null}
-
 			{pact.stake ? (
 				<FadeSlideIn index={4}>
-					<Text variant="bodySm" tone="secondary" style={s.stake}>
-						The stake: {pact.stake}
-					</Text>
+					<Section label="The stake">
+						<Text variant="body">{pact.stake}</Text>
+					</Section>
 				</FadeSlideIn>
 			) : null}
 		</>
+	)
+}
+
+/** Two digits, the way the micro-labels count: "08". */
+function pad(n: number): string {
+	return String(n).padStart(2, '0')
+}
+
+/** The hero's right-hand label when there is no clock running. */
+function statusLabel({ pact, today }: PactDetail, kept: boolean): string {
+	if (pact.status === 'lobby') return `Starts ${shortDay(pact.start_day)}`
+	if (pact.status === 'completed') return 'Finished'
+	if (pact.status === 'cancelled') return 'Cancelled'
+	if (kept) return 'Day kept'
+	return today?.held_count === 0 ? 'Rest day' : ''
+}
+
+/** A mono label over a number that counts up on open: "STREAK / 06", "IN TODAY / 2 / 4". */
+function Stat({
+	tone,
+	label,
+	value,
+	of
+}: {
+	tone: CrewTone
+	label: string
+	value: number
+	/** "of N": shown after the value. */
+	of?: number
+}) {
+	return (
+		<View style={s.stat}>
+			<OnFill tone={tone} muted variant="mono">
+				{label}
+			</OnFill>
+			<View style={s.statValue}>
+				<CountUp value={value} format={of === undefined ? pad : String} color={tone.onFill} />
+				{of !== undefined ? (
+					<Text variant="h1" tabular style={{ color: tone.onFillMuted }}>
+						/{of}
+					</Text>
+				) : null}
+			</View>
+		</View>
+	)
+}
+
+/** A block of the board: a hairline, a mono label, then its content. No card. */
+function Section({ label, children }: { label: string; children: ReactNode }) {
+	const c = useColors()
+	return (
+		<View style={[s.section, { borderTopColor: c.textPrimary }]}>
+			<Text variant="mono" tone="secondary">
+				{label}
+			</Text>
+			<View style={s.sectionBody}>{children}</View>
+		</View>
 	)
 }
 
@@ -364,7 +384,7 @@ function heroLine({ pact, today }: PactDetail): string {
 				: `Starts in ${days} days, on ${shortDay(pact.start_day)}. Get everyone in before then.`
 		}
 		case 'completed':
-			return "That's a wrap! The results are in."
+			return 'That’s a wrap. The results are in.'
 		case 'cancelled':
 			return 'This pact was cancelled.'
 		case 'active':
@@ -391,7 +411,7 @@ function BoardAction({ detail }: { detail: PactDetail }) {
 	if (pact.status === 'completed') {
 		return (
 			<Button
-				label="See the results 🏆"
+				label="See the results"
 				size="lg"
 				fullWidth
 				withArrow
@@ -412,9 +432,9 @@ function BoardAction({ detail }: { detail: PactDetail }) {
 	}
 	if (today.me.state === 'in' || today.me.state === 'saver') {
 		return (
-			<View style={[s.doneBar, { backgroundColor: c.successSoft, borderColor: c.successBorder }]}>
-				<Check size={18} color={c.successText} strokeWidth={2.6} />
-				<Text variant="label" tone="success">
+			<View style={[s.doneBar, { borderColor: c.borderActive }]}>
+				<Check size={18} color={c.textPrimary} strokeWidth={2.2} />
+				<Text variant="label">
 					{today.me.state === 'saver' ? 'Saver used. Today is covered.' : "You're in today."}
 				</Text>
 			</View>
@@ -426,7 +446,7 @@ function BoardAction({ detail }: { detail: PactDetail }) {
 			size="lg"
 			fullWidth
 			haptic="snap"
-			icon={(color) => <Camera size={20} color={color} strokeWidth={2.2} />}
+			icon={(color) => <Camera size={20} color={color} strokeWidth={1.8} />}
 			onPress={() => router.push(`/pact/${pact.id}/check-in`)}
 		/>
 	)
@@ -438,26 +458,19 @@ const MIN_CREW = 2
 const s = StyleSheet.create({
 	root: { flex: 1 },
 	headerActions: { flexDirection: 'row', gap: 8 },
-	hero: { gap: 18 },
-	heroTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 16 },
-	heroTitle: { flex: 1, gap: 6 },
-	heroEyebrow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-	heroEyebrowText: { flex: 1 },
-	challenge: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-	challengeIcon: {
-		width: 48,
-		height: 48,
-		borderRadius: 16,
-		alignItems: 'center',
-		justifyContent: 'center'
+	metaRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
+	stats: {
+		flexDirection: 'row',
+		gap: 32,
+		paddingTop: 16,
+		borderTopWidth: StyleSheet.hairlineWidth
 	},
-	challengeText: { flex: 1, gap: 3 },
-	member: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 8 },
+	stat: { gap: 4 },
+	statValue: { flexDirection: 'row', alignItems: 'baseline' },
+	section: { borderTopWidth: StyleSheet.hairlineWidth * 2, paddingTop: 12, gap: 12 },
+	sectionBody: { gap: 16 },
+	member: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
 	memberName: { flex: 1 },
-	streakCard: { gap: 16 },
-	streakTop: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' },
-	streak: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-	stake: { textAlign: 'center' },
 	footerNote: { textAlign: 'center' },
 	doneBar: {
 		flexDirection: 'row',
@@ -466,6 +479,6 @@ const s = StyleSheet.create({
 		gap: 8,
 		minHeight: 52,
 		borderRadius: 999,
-		borderWidth: StyleSheet.hairlineWidth
+		borderWidth: StyleSheet.hairlineWidth * 2
 	}
 })

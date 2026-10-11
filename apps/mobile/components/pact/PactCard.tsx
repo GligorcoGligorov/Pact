@@ -1,33 +1,16 @@
 import { StyleSheet, View } from 'react-native'
 import { router } from 'expo-router'
-import { Camera, Check } from 'lucide-react-native'
+import { Camera } from 'lucide-react-native'
 import type { PactListItem } from '@app/contract'
-import { Pop } from '@/components/motion/Pop'
 import { PressableScale } from '@/components/motion/PressableScale'
 import { Button } from '@/components/ui/Button'
 import { Text } from '@/components/ui/Text'
-import { useTheme } from '@/contexts/ThemeContext'
-import { daysBetween, localIsoDate, shortDay } from '@/lib/pacts'
+import { useColors } from '@/contexts/ThemeContext'
 import { crewTone } from '@/lib/crew'
-import { AvatarStack, crewLine } from './Avatars'
-import { CrewBadge } from './CrewTheme'
-import { Ring } from './Ring'
-import { StateChip, type ChipTone } from './StateChip'
-import { StreakFlame } from './StreakFlame'
-
-/** Where the caller stands in a pact today, when there is no board to show it. */
-function statusChip(pact: PactListItem): { label: string; tone: ChipTone } | null {
-	switch (pact.status) {
-		case 'lobby':
-			return { label: `Starts ${shortDay(pact.start_day)}`, tone: 'info' }
-		case 'completed':
-			return { label: 'Results are in 🏆', tone: 'info' }
-		case 'cancelled':
-			return { label: 'Cancelled', tone: 'neutral' }
-		case 'active':
-			return pact.my_state_today === null ? { label: 'Rest day', tone: 'neutral' } : null
-	}
-}
+import { pactDayCount, shortDay, useWall } from '@/lib/pacts'
+import { WallGrid } from '@/components/wall/WallGrid'
+import { crewLine } from './Avatars'
+import { CrewHero, OnFill } from './CrewHero'
 
 /** Home's order: today's to-dos first, then the rest of what's running, then what's coming. */
 export function pactRank(pact: PactListItem): number {
@@ -36,146 +19,118 @@ export function pactRank(pact: PactListItem): number {
 	return 3
 }
 
+/** Two digits, the way the micro-labels count. */
+const pad = (n: number) => String(n).padStart(2, '0')
+
+/** The card's mono line: "DAY 08 / 21 · 2 / 4 IN", or where the pact stands. */
+function metaLine(pact: PactListItem): string {
+	const days = pactDayCount(pact.start_day, pact.end_day, pact.cadence)
+	switch (pact.status) {
+		case 'lobby':
+			return `Starts ${shortDay(pact.start_day)} · ${pad(days)} days`
+		case 'completed':
+			return 'Finished · results are in'
+		case 'cancelled':
+			return 'Cancelled'
+		case 'active': {
+			const day = `Day ${pad(pact.progress.chain.length)} / ${pad(days)}`
+			const board = pact.today
+			if (pact.my_state_today === null || !board || board.held_count === 0)
+				return `${day} · rest day`
+			return `${day} · ${board.in_count} / ${board.held_count} in`
+		}
+	}
+}
+
+function open(pact: PactListItem) {
+	router.push(pact.status === 'completed' ? `/pact/${pact.id}/result` : `/pact/${pact.id}`)
+}
+
 /**
- * A pact on home, social first (ref 01, 02, 04): the habit and the crew's ring, everyone's face
- * with who's in today, the streak, and the check-in two taps from home.
+ * A pact on home. The one the caller still owes today is the screen's loud block: the crew's
+ * colour, the last three days of its wall, and the check-in on it, one tap from home. Every
+ * other pact is a quiet row with its own mini wall.
  */
-export function PactCard({ pact, myId }: { pact: PactListItem; myId: string | null }) {
-	const { colors: c, elevation } = useTheme()
-	const board = pact.today
-	const chip = statusChip(pact)
-	const owes = pact.status === 'active' && pact.my_state_today === 'out'
-	const done = pact.my_state_today === 'in' || pact.my_state_today === 'saver'
-	const total = daysBetween(pact.start_day, pact.end_day) + 1
-	const day = Math.min(daysBetween(pact.start_day, localIsoDate()) + 1, total)
-	const streak = pact.progress.current_streak
-	// The crew's colour marks what is theirs (ring, mark, name); green stays the check-in.
+export function PactCard({
+	pact,
+	myId,
+	loud
+}: {
+	pact: PactListItem
+	myId: string | null
+	/** The screen's one loud block. */
+	loud?: boolean
+}) {
+	const c = useColors()
 	const tone = crewTone(c, pact.color)
+	const wall = useWall(pact.id)
+	const board = pact.today
+	// The last three days of the crew's wall: today's photos, and whether the days before held.
+	const mini = (onFill: boolean) =>
+		wall.data && wall.data.days.length > 0 ? (
+			<WallGrid wall={wall.data} myId={myId} tone={tone} mini rows={3} onFill={onFill} />
+		) : null
+	const label = `${pact.name}: ${pact.habit}.${board ? ` ${crewLine(board.members, myId)}.` : ''}`
 
-	return (
-		<PressableScale
-			scaleTo="card"
-			lift={{ from: elevation.card, to: elevation.raised }}
-			onPress={() =>
-				router.push(pact.status === 'completed' ? `/pact/${pact.id}/result` : `/pact/${pact.id}`)
-			}
-			accessibilityRole="button"
-			accessibilityLabel={`${pact.name}: ${pact.habit}.${board ? ` ${crewLine(board.members, myId)}.` : ''}`}
-			style={[
-				s.card,
-				{ backgroundColor: c.surface, borderColor: c.borderHairline },
-				elevation.card
-			]}
-		>
-			<View style={s.top}>
-				{/* The crew's identity, big enough to find the pact by. */}
-				<CrewBadge color={pact.color} emoji={pact.emoji} size={CARD_BADGE} />
-				<View style={s.title}>
-					<View style={s.eyebrow}>
-						<Text variant="eyebrow" numberOfLines={1} style={[s.eyebrowText, { color: tone.ink }]}>
-							{pact.name}
-						</Text>
-					</View>
-					<Text variant="h2" numberOfLines={2}>
+	if (loud) {
+		return (
+			<CrewHero tone={tone} compact glow onPress={() => open(pact)} accessibilityLabel={label}>
+				<OnFill tone={tone} muted variant="mono">
+					{metaLine(pact)}
+				</OnFill>
+				<View>
+					<OnFill tone={tone} variant="h1" numberOfLines={1}>
+						{pact.name}
+					</OnFill>
+					<OnFill tone={tone} muted variant="h2" numberOfLines={2}>
 						{pact.habit}
-					</Text>
-					{pact.status === 'active' ? (
-						<Text variant="caption" tone="tertiary" tabular>
-							{day === total ? 'Last day' : `Day ${day} of ${total}`}
-						</Text>
-					) : null}
-					{chip ? <StateChip label={chip.label} tone={chip.tone} /> : null}
+					</OnFill>
 				</View>
-				{board && board.held_count > 0 ? (
-					<Ring
-						value={board.in_count}
-						max={board.held_count}
-						size={68}
-						stroke={8}
-						color={tone.fill}
-						track={tone.track}
-					>
-						{board.in_count === board.held_count ? (
-							// Lands once the ring has filled.
-							<Pop delay={RING_FILL_MS}>
-								<Check size={24} color={tone.ink} strokeWidth={3} />
-							</Pop>
-						) : (
-							<Text variant="label" tabular>
-								{board.in_count}/{board.held_count}
-							</Text>
-						)}
-					</Ring>
-				) : null}
-			</View>
-
-			<View style={s.social}>
-				{board && board.members.length > 0 ? (
-					<View style={s.crew}>
-						<AvatarStack members={board.members} size={32} max={5} />
-						<Text variant="caption" tone="secondary" numberOfLines={1} style={s.crewText}>
-							{crewLine(board.members, myId, { short: true })}
-						</Text>
-					</View>
-				) : (
-					<View style={s.crew} />
-				)}
-				<View style={s.streak} accessibilityLabel={`${streak} day streak`}>
-					<StreakFlame streak={streak} size={20} />
-					<Text variant="h3" tabular>
-						{streak}
-					</Text>
-				</View>
-			</View>
-
-			{owes ? (
+				{mini(true)}
 				<Button
 					label="Check in"
 					fullWidth
 					haptic="snap"
-					icon={(color) => <Camera size={18} color={color} strokeWidth={2.2} />}
+					icon={(color) => <Camera size={18} color={color} strokeWidth={1.8} />}
 					onPress={() => router.push(`/pact/${pact.id}/check-in`)}
 				/>
-			) : done ? (
-				<View style={[s.doneBar, { backgroundColor: c.successSoft }]}>
-					<Pop>
-						<Check size={16} color={c.successText} strokeWidth={3} />
-					</Pop>
-					<Text variant="label" tone="success">
-						{pact.my_state_today === 'saver' ? 'Saver used today' : "You're in today"}
-					</Text>
-				</View>
-			) : null}
+			</CrewHero>
+		)
+	}
+
+	const done = pact.my_state_today === 'in' || pact.my_state_today === 'saver'
+	return (
+		<PressableScale
+			scaleTo="card"
+			haptic="press"
+			onPress={() => open(pact)}
+			accessibilityRole="button"
+			accessibilityLabel={label}
+			style={[s.row, { borderTopColor: c.textPrimary }]}
+		>
+			<View style={s.rowTop}>
+				<Text variant="mono" tone="secondary" style={s.flex} numberOfLines={1}>
+					{metaLine(pact)}
+				</Text>
+				{done ? (
+					<Text variant="mono">{pact.my_state_today === 'saver' ? 'Saver used' : 'You’re in'}</Text>
+				) : null}
+			</View>
+			<View>
+				<Text variant="h2" numberOfLines={1}>
+					{pact.name}
+				</Text>
+				<Text variant="h2" tone="tertiary" numberOfLines={2}>
+					{pact.habit}
+				</Text>
+			</View>
+			{mini(false)}
 		</PressableScale>
 	)
 }
 
-const CARD_BADGE = 52
-
-/** About when Ring's gentle spring has nearly filled the arc. */
-const RING_FILL_MS = 250
-
 const s = StyleSheet.create({
-	card: {
-		borderRadius: 28,
-		borderWidth: StyleSheet.hairlineWidth,
-		padding: 20,
-		gap: 18
-	},
-	top: { flexDirection: 'row', alignItems: 'flex-start', gap: 14 },
-	title: { flex: 1, gap: 6 },
-	eyebrow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-	eyebrowText: { flex: 1 },
-	social: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-	crew: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },
-	crewText: { flex: 1 },
-	streak: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-	doneBar: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		justifyContent: 'center',
-		gap: 6,
-		minHeight: 44,
-		borderRadius: 999
-	}
+	row: { borderTopWidth: StyleSheet.hairlineWidth * 2, paddingTop: 12, gap: 14 },
+	rowTop: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+	flex: { flex: 1 }
 })

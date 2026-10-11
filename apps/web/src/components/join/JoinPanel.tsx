@@ -183,10 +183,7 @@ export function JoinPanel({
 	)
 
 	return (
-		<section
-			aria-live="polite"
-			className="rounded-card border border-line-hairline bg-surface p-5 shadow-card sm:p-6"
-		>
+		<section aria-live="polite" className="border-t-2 border-ink pt-4">
 			{step.name === 'checking' ? (
 				<div className="flex h-28 items-center justify-center text-ink-tertiary">
 					<Loader2 className="h-6 w-6 animate-spin" aria-label="Loading" />
