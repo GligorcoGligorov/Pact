@@ -30,6 +30,18 @@ const PULSE_MS = 1600
 /** Rows fade in one after another on open, capped so a long pact doesn't wait. */
 const ROW_STAGGER_MS = 40
 const STAGGER_CAP = 8
+/** Home's mini wall: small square tiles, never wider than this. */
+const MINI_MAX = 52
+
+/** How the wall draws on its ground: paper-dark, or the crew's own fill. */
+type Look = {
+	frame: string
+	glow: string | null
+	dash: string
+	/** The initials on an empty tile; the scheme's text tones when null. */
+	initials: string | null
+	ground: string
+}
 
 export type OpenTile = { day: WallDay; cell: WallCell; name: string; dayNumber: number }
 
@@ -48,6 +60,7 @@ export function WallGrid({
 	tone,
 	mini,
 	rows,
+	onFill,
 	onOpen
 }: {
 	wall: Wall
@@ -56,6 +69,8 @@ export function WallGrid({
 	mini?: boolean
 	/** How many days to show, newest first; all of them when left out. */
 	rows?: number
+	/** Drawn on the crew's own fill (home's loud card): frames and dashes in its ink. */
+	onFill?: boolean
 	onOpen?: (tile: OpenTile) => void
 }) {
 	const c = useColors()
@@ -67,9 +82,25 @@ export function WallGrid({
 	const label = mini ? 0 : LABEL_W
 	// Every row reserves the frame, kept or not, so the columns line up.
 	const inner = width - label - FRAME * 2 - (label > 0 ? GAP : 0)
-	const tileW = width > 0 ? (inner - GAP * (n - 1)) / n : 0
+	const fit = width > 0 ? (inner - GAP * (n - 1)) / n : 0
+	const tileW = mini ? Math.min(fit, MINI_MAX) : fit
 	const tileH = mini ? tileW : tileW * (4 / 3)
 	const total = wall.days.length
+	const look: Look = onFill
+		? {
+				frame: tone.onFill,
+				glow: null,
+				dash: tone.onFillTrack,
+				initials: tone.onFillMuted,
+				ground: tone.onFillTrack
+			}
+		: {
+				frame: tone.fill,
+				glow: tone.fill,
+				dash: c.borderActive,
+				initials: null,
+				ground: c.surface2
+			}
 	const names = new Map(wall.members.map((m) => [m.user_id, m.display_name?.trim() || 'A member']))
 
 	return (
@@ -110,11 +141,13 @@ export function WallGrid({
 										s.frame,
 										day.kept
 											? {
-													borderColor: tone.fill,
-													shadowColor: tone.fill,
-													shadowOpacity: 0.55,
-													shadowRadius: 10,
-													shadowOffset: { width: 0, height: 0 }
+													borderColor: look.frame,
+													...(look.glow && {
+														shadowColor: look.glow,
+														shadowOpacity: 0.55,
+														shadowRadius: 10,
+														shadowOffset: { width: 0, height: 0 }
+													})
 												}
 											: { borderColor: 'transparent' }
 									]}
@@ -128,7 +161,7 @@ export function WallGrid({
 											width={tileW}
 											height={tileH}
 											last={j === day.cells.length - 1}
-											ground={c.surface2}
+											look={look}
 											onPress={
 												onOpen && cell.check_in?.photo_url
 													? () =>
@@ -159,7 +192,7 @@ function Tile({
 	width,
 	height,
 	last,
-	ground,
+	look,
 	onPress
 }: {
 	cell: WallCell
@@ -168,7 +201,7 @@ function Tile({
 	width: number
 	height: number
 	last: boolean
-	ground: string
+	look: Look
 	onPress?: () => void
 }) {
 	const c = useColors()
@@ -178,13 +211,13 @@ function Tile({
 	if (!cell.held) return <View style={box} />
 
 	if (!checkIn) {
-		return <WaitingTile name={name} today={today} style={box} />
+		return <WaitingTile name={name} today={today} style={box} look={look} />
 	}
 
 	if (checkIn.kind === 'saver' || !checkIn.photo_url) {
 		return (
 			<View
-				style={[s.tile, s.center, box, { backgroundColor: ground }]}
+				style={[s.tile, s.center, box, { backgroundColor: look.ground }]}
 				accessibilityLabel={`${name}: ${checkIn.kind === 'saver' ? 'saver' : 'photo hidden'}`}
 			>
 				<Text variant="mono" tone="secondary">
@@ -195,7 +228,7 @@ function Tile({
 	}
 
 	const photo = (
-		<View style={[s.tile, box, { backgroundColor: ground }]}>
+		<View style={[s.tile, box, { backgroundColor: look.ground }]}>
 			<Image
 				source={{ uri: checkIn.photo_url }}
 				style={StyleSheet.absoluteFill}
@@ -231,13 +264,14 @@ function Tile({
 function WaitingTile({
 	name,
 	today,
-	style
+	style,
+	look
 }: {
 	name: string
 	today: boolean
 	style: { width: number; height: number; marginRight: number }
+	look: Look
 }) {
-	const c = useColors()
 	const reduced = useReducedMotion()
 	const breath = useSharedValue(1)
 	useEffect(() => {
@@ -256,10 +290,14 @@ function WaitingTile({
 	const pulse = useAnimatedStyle(() => ({ opacity: breath.value }))
 	return (
 		<Animated.View
-			style={[s.tile, s.center, s.dashed, style, { borderColor: c.borderActive }, pulse]}
+			style={[s.tile, s.center, s.dashed, style, { borderColor: look.dash }, pulse]}
 			accessibilityLabel={`${name}: ${today ? 'not in yet' : 'missed'}`}
 		>
-			<Text variant="mono" tone={today ? 'secondary' : 'tertiary'}>
+			<Text
+				variant="mono"
+				tone={today ? 'secondary' : 'tertiary'}
+				style={look.initials ? { color: look.initials } : undefined}
+			>
 				{getInitials(name)}
 			</Text>
 		</Animated.View>

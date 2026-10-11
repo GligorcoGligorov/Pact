@@ -7,6 +7,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { CameraOff, CircleCheck, ScanEye, SearchX } from 'lucide-react-native'
 import { CHECK_IN_NOTE_MAX, type CheckIn, type Verdict } from '@app/contract'
 import { chainTiles } from '@/components/pact/Chain'
+import { ChallengeMoment } from '@/components/pact/ChallengeMoment'
 import { VerdictView, type VerdictProgress } from '@/components/pact/VerdictView'
 import { QueryErrorState } from '@/components/QueryError'
 import { Button } from '@/components/ui/Button'
@@ -21,9 +22,11 @@ import { useColors, useTheme } from '@/contexts/ThemeContext'
 import { useProfile } from '@/hooks/useProfile'
 import { track } from '@/lib/analytics'
 import { api, errorMessage } from '@/lib/api'
+import { crewTone } from '@/lib/crew'
 import { haptic } from '@/lib/haptics'
 import {
 	checkInFailure,
+	pactDayCount,
 	pactKeys,
 	submitPhotoCheckIn,
 	useCheckIn,
@@ -44,6 +47,7 @@ let consentDeclinedThisSession = false
 type Asset = ImagePicker.ImagePickerAsset
 type Phase =
 	| { name: 'consent' }
+	| { name: 'challenge' }
 	| { name: 'capture' }
 	| { name: 'no_camera' }
 	| { name: 'preview'; asset: Asset }
@@ -75,7 +79,7 @@ export default function CheckInScreen() {
 		if (phase || !owesToday || !profile.data) return
 		setPhase(
 			profile.data.aiConsent || consentDeclinedThisSession
-				? { name: 'capture' }
+				? { name: 'challenge' }
 				: { name: 'consent' }
 		)
 	}, [phase, owesToday, profile.data])
@@ -109,7 +113,7 @@ export default function CheckInScreen() {
 		} else {
 			consentDeclinedThisSession = true
 		}
-		setPhase({ name: 'capture' })
+		setPhase({ name: 'challenge' })
 	}
 
 	async function send(asset: Asset) {
@@ -135,6 +139,20 @@ export default function CheckInScreen() {
 		// nudge, a kept day, the 22:00 reminder) makes sense. iOS asks only the first time.
 		if (phase?.name === 'verdict') void ensureNotificationPermission()
 		goBack()
+	}
+
+	if (phase?.name === 'challenge' && pact.data && today && challenge) {
+		const { pact: p, progress } = pact.data
+		return (
+			<ChallengeMoment
+				tone={crewTone(c, p.color)}
+				challenge={challenge}
+				closesAt={today.closes_at}
+				dayLabel={`Day ${String(progress.chain.length).padStart(2, '0')} / ${String(pactDayCount(p.start_day, p.end_day, p.cadence)).padStart(2, '0')}`}
+				onCapture={() => setPhase({ name: 'capture' })}
+				onClose={close}
+			/>
+		)
 	}
 
 	if (phase?.name === 'verdict') {

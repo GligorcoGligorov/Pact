@@ -7,9 +7,9 @@ import { Button } from '@/components/ui/Button'
 import { Text } from '@/components/ui/Text'
 import { useColors } from '@/contexts/ThemeContext'
 import { crewTone } from '@/lib/crew'
-import { shortDay } from '@/lib/pacts'
+import { pactDayCount, shortDay, useWall } from '@/lib/pacts'
+import { WallGrid } from '@/components/wall/WallGrid'
 import { crewLine } from './Avatars'
-import { Chain, chainTiles } from './Chain'
 import { CrewHero, OnFill } from './CrewHero'
 
 /** Home's order: today's to-dos first, then the rest of what's running, then what's coming. */
@@ -24,7 +24,7 @@ const pad = (n: number) => String(n).padStart(2, '0')
 
 /** The card's mono line: "DAY 08 / 21 · 2 / 4 IN", or where the pact stands. */
 function metaLine(pact: PactListItem): string {
-	const days = chainTiles(pact.progress.chain, pact.start_day, pact.end_day, pact.cadence).length
+	const days = pactDayCount(pact.start_day, pact.end_day, pact.cadence)
 	switch (pact.status) {
 		case 'lobby':
 			return `Starts ${shortDay(pact.start_day)} · ${pad(days)} days`
@@ -48,8 +48,8 @@ function open(pact: PactListItem) {
 
 /**
  * A pact on home. The one the caller still owes today is the screen's loud block: the crew's
- * colour, its chain closing, and the check-in on it, one tap from home. Every other pact is a
- * quiet paper row with its chain in the crew's line.
+ * colour, the last three days of its wall, and the check-in on it, one tap from home. Every
+ * other pact is a quiet row with its own mini wall.
  */
 export function PactCard({
 	pact,
@@ -63,15 +63,18 @@ export function PactCard({
 }) {
 	const c = useColors()
 	const tone = crewTone(c, pact.color)
-	const tiles = chainTiles(pact.progress.chain, pact.start_day, pact.end_day, pact.cadence)
+	const wall = useWall(pact.id)
 	const board = pact.today
-	const today =
-		board && board.held_count > 0 ? { in: board.in_count, held: board.held_count } : undefined
+	// The last three days of the crew's wall: today's photos, and whether the days before held.
+	const mini = (onFill: boolean) =>
+		wall.data && wall.data.days.length > 0 ? (
+			<WallGrid wall={wall.data} myId={myId} tone={tone} mini rows={3} onFill={onFill} />
+		) : null
 	const label = `${pact.name}: ${pact.habit}.${board ? ` ${crewLine(board.members, myId)}.` : ''}`
 
 	if (loud) {
 		return (
-			<CrewHero tone={tone} compact onPress={() => open(pact)} accessibilityLabel={label}>
+			<CrewHero tone={tone} compact glow onPress={() => open(pact)} accessibilityLabel={label}>
 				<OnFill tone={tone} muted variant="mono">
 					{metaLine(pact)}
 				</OnFill>
@@ -83,12 +86,7 @@ export function PactCard({
 						{pact.habit}
 					</OnFill>
 				</View>
-				<Chain
-					tiles={tiles}
-					size="small"
-					colors={{ ink: tone.onFill, track: tone.onFillTrack, glow: tone.glow }}
-					today={today}
-				/>
+				{mini(true)}
 				<Button
 					label="Check in"
 					fullWidth
@@ -126,12 +124,7 @@ export function PactCard({
 					{pact.habit}
 				</Text>
 			</View>
-			<Chain
-				tiles={tiles}
-				size="small"
-				colors={{ ink: tone.line, track: c.borderSoft }}
-				today={today}
-			/>
+			{mini(false)}
 		</PressableScale>
 	)
 }
