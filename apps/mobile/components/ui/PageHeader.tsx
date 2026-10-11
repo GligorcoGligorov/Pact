@@ -1,12 +1,12 @@
 import type { ReactNode } from 'react'
 import { StyleSheet, View } from 'react-native'
-import { router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ChevronLeft, X } from 'lucide-react-native'
 import { useTheme } from '@/contexts/ThemeContext'
 import { Eyebrow } from './Eyebrow'
 import { IconButton } from './IconButton'
 import { Text } from './Text'
+import { goBack } from '@/lib/nav'
 
 /**
  * The bar at the top of a pushed screen: a round back (or close) button, an
@@ -15,7 +15,7 @@ import { Text } from './Text'
  */
 export function PageHeader({
 	title,
-	onBack = () => router.back(),
+	onBack = goBack,
 	backIcon = 'back',
 	right,
 	inset = true

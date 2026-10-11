@@ -57,6 +57,7 @@ import { haptic } from '@/lib/haptics'
 import { periodPhrase, plansFromOfferings, type PlanOption } from '@/lib/paywall'
 import { MANAGE_SUBSCRIPTIONS_URL } from '@/lib/purchases'
 import { makeStyles } from '@/lib/themedStyles'
+import { goBack } from '@/lib/nav'
 
 // 🎨 BRAND: what Premium unlocks in your app. Four is plenty.
 const PRO_FEATURES: { icon: LucideIcon; label: string }[] = [
@@ -136,7 +137,7 @@ export default function UpgradeScreen() {
 				track('purchase_success', { package: selected.id })
 				await refresh()
 				haptic.success()
-				router.back()
+				goBack()
 			} else if (!result.cancelled) {
 				haptic.error()
 				setModal({

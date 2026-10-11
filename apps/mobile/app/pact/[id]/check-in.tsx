@@ -33,6 +33,7 @@ import {
 } from '@/lib/pacts'
 import { ensureNotificationPermission } from '@/lib/notifications'
 import { takeProofPhoto, USES_SIMULATOR_LIBRARY_FALLBACK } from '@/lib/proofPhoto'
+import { goBack } from '@/lib/nav'
 
 /** How long the verdict screen waits on the judge before it says "still thinking". */
 const JUDGE_WAIT_MS = 12_000
@@ -88,7 +89,7 @@ export default function CheckInScreen() {
 			setPhase({ name: 'no_camera' })
 		} else {
 			// Cancelled the camera: back to the board. (Capture only runs from the capture step.)
-			router.back()
+			goBack()
 		}
 	}, [id])
 
@@ -133,7 +134,7 @@ export default function CheckInScreen() {
 		// In context, once: right after a check-in is the moment a heads-up from the crew (a
 		// nudge, a kept day, the 22:00 reminder) makes sense. iOS asks only the first time.
 		if (phase?.name === 'verdict') void ensureNotificationPermission()
-		router.back()
+		goBack()
 	}
 
 	if (phase?.name === 'verdict') {
