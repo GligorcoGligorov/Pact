@@ -43,7 +43,6 @@ import { Ionicons } from '@expo/vector-icons'
 import { Mail } from 'lucide-react-native'
 import { Button } from '@/components/ui/Button'
 import { CODE_LENGTH, CodeInput } from '@/components/ui/CodeInput'
-import { LogoMark } from '@/components/ui/Marks'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Text } from '@/components/ui/Text'
 import TextInputField from '@/components/ui/TextInputField'
@@ -372,7 +371,7 @@ export default function LoginScreen() {
 					keyboardShouldPersistTaps="handled"
 					showsVerticalScrollIndicator={false}
 				>
-					<LogoMark name={APP_NAME} size={44} />
+					<Text variant="mono">{APP_NAME}</Text>
 
 					{step === 'email' ? (
 						<Animated.View key="email" entering={stepIn} exiting={stepOut} style={s.step}>
