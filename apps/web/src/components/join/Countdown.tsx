@@ -17,7 +17,8 @@ function left(closesAt: string, now: number) {
 const pad = (n: number) => String(n).padStart(2, '0')
 
 /**
- * The app's board countdown, live: the time left until today closes in the pact's timezone.
+ * The board's countdown as a mono micro-label, live: "05:59:12 LEFT" until today closes in the
+ * pact's timezone.
  * Renders the server's value first, then ticks every second, so it never flashes empty.
  */
 export function Countdown({ closesAt, renderedAt }: { closesAt: string; renderedAt: number }) {
@@ -30,21 +31,11 @@ export function Countdown({ closesAt, renderedAt }: { closesAt: string; rendered
 	const { hours, minutes, seconds } = left(closesAt, now)
 	return (
 		<span
-			className="flex items-baseline gap-1 font-sans tabular-nums text-hero-text"
+			className="font-mono tabular-nums"
 			role="timer"
 			aria-label={`${hours} hours ${minutes} minutes left today`}
 		>
-			<span className="text-[52px] font-extralight leading-none tracking-tight sm:text-[64px]">
-				{hours}
-			</span>
-			<span className="mr-1.5 text-lg text-hero-text-secondary">h</span>
-			<span className="text-[52px] font-extralight leading-none tracking-tight sm:text-[64px]">
-				{pad(minutes)}
-			</span>
-			<span className="mr-1.5 text-lg text-hero-text-secondary">m</span>
-			<span className="text-xl font-light leading-none text-hero-text-secondary">
-				{pad(seconds)}
-			</span>
+			{pad(hours)}:{pad(minutes)}:{pad(seconds)} left
 		</span>
 	)
 }
