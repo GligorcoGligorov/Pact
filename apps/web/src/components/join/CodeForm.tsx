@@ -51,7 +51,7 @@ export function CodeForm({ className }: { className?: string }) {
 				<button
 					type="submit"
 					aria-label="Find the pact"
-					className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-brand-fill text-on-brand shadow-cta transition active:scale-95"
+					className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-brand-fill text-on-brand transition active:scale-95"
 				>
 					<ArrowRight className="h-6 w-6" aria-hidden="true" />
 				</button>

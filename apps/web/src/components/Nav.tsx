@@ -7,7 +7,6 @@ import { Menu, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { gaEvent } from '@/lib/analytics/client'
 import { FUNNEL_EVENTS } from '@/lib/analytics/events'
-import { BrandMark } from './BrandMark'
 
 // 🎨 REPLACE: your site's sections and pages.
 const LINKS = [
@@ -98,7 +97,7 @@ export function Nav({ siteName }: { siteName: string }) {
 				className={cn(
 					'relative mx-auto flex h-14 items-center justify-between border transition-[max-width,background-color,border-color,box-shadow,padding] duration-slow ease-out',
 					isContracted
-						? 'max-w-[880px] rounded-pill border-line-glass bg-bg/75 pl-4 pr-2 shadow-raised backdrop-blur-xl backdrop-saturate-150'
+						? 'border-line max-w-[880px] rounded-pill bg-bg pl-4 pr-2'
 						: 'max-w-content border-transparent px-2 sm:px-5'
 				)}
 			>
@@ -107,8 +106,7 @@ export function Nav({ siteName }: { siteName: string }) {
 					className="flex items-center gap-2.5 rounded-lg font-semibold tracking-tight"
 					onClick={closeMenu}
 				>
-					<BrandMark siteName={siteName} />
-					<span className="font-display text-lg">{siteName}</span>
+					<span className="font-mono text-sm uppercase tracking-[0.08em]">{siteName}</span>
 				</Link>
 
 				<ul className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-1 md:flex">
@@ -137,7 +135,7 @@ export function Nav({ siteName }: { siteName: string }) {
 					<details ref={menu} className="group relative md:hidden">
 						<summary
 							aria-label="Menu"
-							className="grid h-11 w-11 cursor-pointer place-items-center rounded-full border border-line-soft bg-surface/70 text-ink backdrop-blur-md transition-transform duration-fast active:scale-[0.96]"
+							className="grid h-11 w-11 cursor-pointer place-items-center rounded-full border border-line-soft bg-bg text-ink transition-transform duration-fast active:scale-[0.96]"
 						>
 							<Menu className="h-5 w-5 group-open:hidden" aria-hidden="true" />
 							<X className="hidden h-5 w-5 group-open:block" aria-hidden="true" />

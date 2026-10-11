@@ -53,11 +53,6 @@ export function DeviceFrame({
 					aria-hidden="true"
 					className="absolute left-1/2 top-[1.3%] z-10 h-[4.35%] w-[31.8%] -translate-x-1/2 rounded-pill bg-[var(--device-bezel)]"
 				/>
-				{/* Glass: a faint top-lit sheen across the display. */}
-				<span
-					aria-hidden="true"
-					className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-br from-line-glass/60 via-transparent to-transparent opacity-60"
-				/>
 			</div>
 		</div>
 	)
