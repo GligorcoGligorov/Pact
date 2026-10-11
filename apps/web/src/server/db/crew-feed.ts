@@ -75,6 +75,9 @@ export function createCrewFeedStore(client: PrismaClient) {
 	}
 
 	return {
+		/** Each check-in's reaction counts and the person's own reactions. */
+		tallies,
+
 		/**
 		 * One page of the person's feed, newest first, with each check-in's reactions. `hidden`
 		 * are people never shown (blocked either way).

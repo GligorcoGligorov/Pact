@@ -31,6 +31,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { crc32, deflateSync } from 'node:zlib'
 import { challengeFor } from '../src/lib/pacts/challenges'
+import { DEMO_PHOTO_DIR, DEMO_PHOTO_IDS } from './demo-photos'
 import {
 	addDays,
 	canonicalTimeZone,
@@ -113,6 +114,24 @@ async function realRunPhotos(): Promise<Buffer[]> {
 		RUN_PHOTOS.map((name) => readFile(path.join(dir, name)).catch(() => null))
 	)
 	return found.flatMap((photo) => (photo ? [photo] : []))
+}
+
+/**
+ * The hand-picked demo photos for one pact (`npm run demo:photos` downloads them), so every
+ * member and day on the Crew Wall is a different real photo. Empty when they aren't on disk.
+ */
+async function demoPhotos(set: keyof typeof DEMO_PHOTO_IDS): Promise<Buffer[]> {
+	const found = await Promise.all(
+		DEMO_PHOTO_IDS[set].map((id) =>
+			readFile(path.join(DEMO_PHOTO_DIR, set, `${id}.jpg`)).catch(() => null)
+		)
+	)
+	return found.flatMap((photo) => (photo ? [photo] : []))
+}
+
+/** The photo for one member and day: walks the set so neighbours on the wall never match. */
+function photoFor(set: Buffer[], memberIndex: number, offset: number, days: number): Buffer | null {
+	return set.length > 0 ? set[(memberIndex * days + offset) % set.length]! : null
 }
 
 function placeholderPng([r, g, b]: [number, number, number], width = 360, height = 480): Buffer {
@@ -241,15 +260,21 @@ async function main() {
 	})
 
 	const plan = checkInPlan()
-	const real = await realRunPhotos()
+	const demo = await demoPhotos('run')
+	const real = demo.length > 0 ? demo : await realRunPhotos()
 	const photoPath = (p: Plan) =>
 		`${idOf(p.key)}/proofs/demo-${p.offset}.${real.length > 0 ? 'jpg' : 'png'}`
 
-	for (const m of MEMBERS) {
+	for (const [memberIndex, m] of MEMBERS.entries()) {
 		const photos = plan.filter((p) => p.key === m.key && p.kind === 'photo')
 		const png = placeholderPng(m.colour)
 		for (const [i, p] of photos.entries()) {
-			const photo = real.length > 0 ? real[(i + m.key.length) % real.length] : null
+			const photo =
+				demo.length > 0
+					? photoFor(demo, memberIndex, p.offset, TODAY_OFFSET + 1)
+					: real.length > 0
+						? real[(i + m.key.length) % real.length]!
+						: null
 			const { error } = await supabase.storage.from(BUCKET).upload(photoPath(p), photo ?? png, {
 				contentType: photo ? 'image/jpeg' : 'image/png',
 				upsert: true
@@ -387,6 +412,22 @@ async function seedFinished(ids: Map<DemoMember['key'], string>) {
 		update: fields
 	})
 
+	// A finished pact's wall is the first results slide, so its photos are stored too (the closer
+	// deletes them 30 days after the end, as for any pact).
+	const calm = await demoPhotos('calm')
+	const finishedPath = (key: DemoMember['key'], offset: number) =>
+		`${idOf(key)}/proofs/demo-yoga-${offset}.jpg`
+	for (const [memberIndex, m] of MEMBERS.entries()) {
+		for (let offset = 0; offset < FINISHED_DAYS && calm.length > 0; offset++) {
+			if (FINISHED_MISSES[m.key].includes(offset)) continue
+			const photo = photoFor(calm, memberIndex, offset, FINISHED_DAYS)!
+			const { error } = await supabase.storage
+				.from(BUCKET)
+				.upload(finishedPath(m.key, offset), photo, { contentType: 'image/jpeg', upsert: true })
+			if (error) fail(`uploading ${finishedPath(m.key, offset)}: ${error.message}`)
+		}
+	}
+
 	const checkIns = MEMBERS.flatMap((m) =>
 		Array.from({ length: FINISHED_DAYS }, (_, offset) => offset)
 			.filter((offset) => !FINISHED_MISSES[m.key].includes(offset))
@@ -405,8 +446,7 @@ async function seedFinished(ids: Map<DemoMember['key'], string>) {
 					day: dateFromDay(day),
 					kind: saver ? ('saver' as const) : ('photo' as const),
 					challenge: saver ? null : challengeFor(pact.id, day),
-					// The photos of a finished pact aren't shown; none are stored.
-					photoPath: null,
+					photoPath: saver || calm.length === 0 ? null : finishedPath(m.key, offset),
 					verdict: saver ? ('skipped' as const) : ('pass' as const),
 					aiReason: saver ? null : 'The pose and the challenge are both clearly visible.',
 					aiCaption: saver ? null : CAPTIONS[(offset + m.key.length) % CAPTIONS.length],

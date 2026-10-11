@@ -296,6 +296,25 @@ export function createPactStore(client: PrismaClient, codes: () => string = newI
 		},
 
 		/**
+		 * The Crew Wall: the pact, every member (left ones too: their days still count), and
+		 * every check-in with its photo path, caption and verdict. Null unless the person is or
+		 * was a member.
+		 */
+		async wall(pactId: string, userId: string) {
+			const pact = await client.pact.findFirst({
+				where: { id: pactId, members: { some: { userId } } },
+				select: {
+					...PACT,
+					members: { orderBy: [{ createdAt: 'asc' }, { userId: 'asc' }], select: MEMBER }
+				}
+			})
+			if (!pact) return null
+			const checkIns = await client.checkIn.findMany({ where: { pactId }, select: CHECK_IN })
+			const { members, ...rest } = pact
+			return { pact: rest, members: members.map(toMember), checkIns }
+		},
+
+		/**
 		 * R27: what the public join page may show for a code, for anyone, signed in or not: the
 		 * pact, its members and every check-in's who, day and kind (the board and the streak are
 		 * computed from those). Never a photo, a verdict, a caption or a note.

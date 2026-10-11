@@ -200,12 +200,17 @@ type EventName =
 	//   pact_result_revealed  the drumroll ended on who pays. metadata: { pact_id,
 	//                         outcome: 'loser' | 'nobody_pays' }; a viewer who never
 	//                         taps the reveal shows as the gap after viewed.
+	//   pact_result_story_viewed  a results story slide showed. metadata: { pact_id,
+	//                         slide: 'wall' | 'awards' | 'drumroll' | 'loser' | 'signatures' };
+	//                         where the slides stop is where the finale loses people.
 	//   pact_result_shared    the share sheet was opened with the card.
-	//                         metadata: { pact_id, method: 'image' | 'link' }; `link` is
-	//                         the fallback when the card image couldn't load.
+	//                         metadata: { pact_id, method: 'image' | 'link', slide }; `link` is
+	//                         the fallback when the card image couldn't load, `slide` the
+	//                         story slide it was shared from.
 	//   pact_rematch_started  "Same crew, new pact" was tapped. metadata: { pact_id }
 	//                         The server records the rematch itself (pact_rematched).
 	| 'pact_result_viewed'
+	| 'pact_result_story_viewed'
 	| 'pact_result_revealed'
 	| 'pact_result_shared'
 	| 'pact_rematch_started'
@@ -213,6 +218,19 @@ type EventName =
 	// day is close to breaking. metadata: { pact_id }. Its use is check_in_submitted with
 	// kind 'saver'; offered → submitted says whether the offer saves streaks.
 	| 'saver_offered'
+	// The Crew Wall (the board's grid of real check-in photos). wall_photo_opened: a tile was
+	// tapped and its photo opened full screen. metadata: { pact_id, own: boolean }. Opens over
+	// board views say whether the crew actually looks at each other's proof, the social half of
+	// the loop; reactions from the viewer are check_in_reacted.
+	| 'wall_photo_opened'
+	// The signed pact: on create and join, each member signs the pact's card with a finger.
+	//   pact_sign_viewed  the signing card appeared. metadata: { pact_id, source: 'create' | 'join' }
+	//   pact_signed       the signature was saved (the server records pact_signed too, first-party).
+	//                     metadata: { pact_id, source }
+	// sign_viewed → signed is the step a new member can drop out at; the server's count over
+	// pact_joined says how many crews actually sign.
+	| 'pact_sign_viewed'
+	| 'pact_signed'
 	// The first-launch intro (three screens, before sign-in, once per device).
 	//   intro_step_viewed  metadata: { step: 1 | 2 | 3 }, the discriminator
 	//   intro_completed    metadata: { skipped: boolean }

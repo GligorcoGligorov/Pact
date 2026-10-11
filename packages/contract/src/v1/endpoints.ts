@@ -17,6 +17,7 @@ import {
 	reactionResponse
 } from './feed'
 import { listNotificationsQuery, listNotificationsResponse } from './notifications'
+import { wallResponse } from './wall'
 import {
 	blockBody,
 	blockParams,
@@ -183,6 +184,14 @@ export const endpoints = {
 		auth: 'user',
 		params: pactParams,
 		response: pactDetailResponse,
+		status: 200
+	},
+	getPactWall: {
+		method: 'GET',
+		path: '/api/app/v1/pacts/:id/wall',
+		auth: 'user',
+		params: pactParams,
+		response: wallResponse,
 		status: 200
 	},
 	getPactResult: {
