@@ -54,7 +54,7 @@ const CUT = 0.07
 const SIZES = {
 	/** Links on show, links before today, the largest link, stroke over width. */
 	hero: { count: 9, back: 5, maxW: 76, stroke: 0.11 },
-	small: { count: 9, back: 5, maxW: 34, stroke: 0.12 }
+	small: { count: 9, back: 5, maxW: 50, stroke: 0.12 }
 } as const
 
 /** The entrance: each link draws in this long, this far after the one before. */

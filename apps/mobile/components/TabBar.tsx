@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react'
-import { Platform, StyleSheet, View, type LayoutChangeEvent } from 'react-native'
+import { StyleSheet, View, type LayoutChangeEvent } from 'react-native'
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs'
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { BlurView } from 'expo-blur'
 import { LinearGradient } from 'expo-linear-gradient'
 import { PressableScale } from '@/components/motion/PressableScale'
 import { Text } from '@/components/ui/Text'
@@ -35,14 +34,13 @@ const CLEARANCE_GAP = 32
 const FADE_ABOVE = 28
 
 /**
- * A floating glass pill above the home indicator. The active tab sits in a
- * lens that slides between tabs on the smooth spring; a tab change ticks the
- * selection haptic. Glass is a real blur on iOS and the web; Android gets the
- * solid fallback surface (blur there is costly and uneven across devices).
+ * A floating paper pill above the home indicator, with a hairline edge and no
+ * glass. The active tab sits in an ink lens that slides between tabs on the
+ * smooth spring, its label in paper; a tab change ticks the selection haptic.
  */
 export default function TabBar({ state, navigation, descriptors }: BottomTabBarProps) {
 	const insets = useSafeAreaInsets()
-	const { colors: c, elevation, layout, isDark } = useTheme()
+	const { colors: c, layout } = useTheme()
 	const [width, setWidth] = useState(0)
 	const count = state.routes.length
 	const slot = count > 0 ? width / count : 0
@@ -67,8 +65,6 @@ export default function TabBar({ state, navigation, descriptors }: BottomTabBarP
 		navigation.navigate(routeName as never)
 	}
 
-	const glass = Platform.OS !== 'android'
-
 	return (
 		<>
 			{/* Content scrolls under the floating bar; this fade, the page's own colour, keeps it
@@ -84,33 +80,15 @@ export default function TabBar({ state, navigation, descriptors }: BottomTabBarP
 				style={[s.wrap, { bottom: barBottom(insets.bottom), paddingHorizontal: layout.gutter }]}
 			>
 				<View
-					style={[
-						s.bar,
-						{
-							borderColor: isDark ? c.borderGlass : c.borderSoft,
-							backgroundColor: glass ? 'transparent' : c.glassFallback
-						},
-						elevation.raised
-					]}
+					style={[s.bar, { borderColor: c.borderActive, backgroundColor: c.bg }]}
 					onLayout={onLayout}
 				>
-					{glass ? (
-						<>
-							<BlurView
-								intensity={60}
-								tint={c.blurTint}
-								style={[StyleSheet.absoluteFill, s.round]}
-							/>
-							<View style={[StyleSheet.absoluteFill, s.round, { backgroundColor: c.glassTint }]} />
-						</>
-					) : null}
-
 					{slot > 0 ? (
 						<Animated.View
 							pointerEvents="none"
 							style={[
 								s.lens,
-								{ width: slot - LENS_INSET * 2, backgroundColor: c.brandDim },
+								{ width: slot - LENS_INSET * 2, backgroundColor: c.textPrimary },
 								lensStyle
 							]}
 						/>
@@ -123,7 +101,7 @@ export default function TabBar({ state, navigation, descriptors }: BottomTabBarP
 							typeof options.tabBarLabel === 'string'
 								? options.tabBarLabel
 								: (options.title ?? route.name)
-						const color = focused ? c.brandInk : c.textTertiary
+						const color = focused ? c.bg : c.textSecondary
 						return (
 							<PressableScale
 								key={route.key}
@@ -137,10 +115,10 @@ export default function TabBar({ state, navigation, descriptors }: BottomTabBarP
 							>
 								{options.tabBarIcon?.({ focused, color, size: ICON_SIZE })}
 								<Text
-									variant="caption"
+									variant="mono"
 									numberOfLines={1}
 									maxFontSizeMultiplier={1.2}
-									style={[s.label, { color }, focused && s.labelActive]}
+									style={{ color }}
 								>
 									{label}
 								</Text>
@@ -159,11 +137,10 @@ const s = StyleSheet.create({
 	bar: {
 		height: TAB_BAR_HEIGHT,
 		borderRadius: TAB_BAR_HEIGHT / 2,
-		borderWidth: StyleSheet.hairlineWidth,
+		borderWidth: StyleSheet.hairlineWidth * 2,
 		flexDirection: 'row',
 		alignItems: 'center'
 	},
-	round: { borderRadius: TAB_BAR_HEIGHT / 2, overflow: 'hidden' },
 	lens: {
 		position: 'absolute',
 		left: 0,
@@ -171,7 +148,5 @@ const s = StyleSheet.create({
 		bottom: LENS_INSET,
 		borderRadius: (TAB_BAR_HEIGHT - LENS_INSET * 2) / 2
 	},
-	item: { flex: 1, height: '100%', alignItems: 'center', justifyContent: 'center', gap: 3 },
-	label: { fontSize: 11, lineHeight: 14 },
-	labelActive: { fontWeight: '600' }
+	item: { flex: 1, height: '100%', alignItems: 'center', justifyContent: 'center', gap: 3 }
 })
