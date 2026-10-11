@@ -5,6 +5,21 @@ call stays where it is). The slop it answers: [audit.md](audit.md). References:
 [refs/](refs/) (karma.business, 8xresearch.com, first viewport of each; both reveal the rest
 on scroll, so a full-page capture is blank).
 
+## Revision, 2026-10-11: louder
+
+After the first board ("the editorial base is right, but too quiet"): each screen gets **one
+loud block in the crew's solid colour** (`components/pact/CrewHero.tsx`), its text and chain in
+the crew's `onFill`, and everything else stays paper and ink. The chain got bigger, thicker and
+a halo in the crew's colour lifted toward white (`CrewTone.glow`); it is one row around today
+(future days fade out) instead of the full pact in rows; links draw in 60ms apart on open,
+today's link breathes, and when it closes it snaps shut with a haptic and a halo pulse. Stats
+count up (`components/motion/CountUp.tsx`), the countdown ticks every second, and the board
+shows the whole crew with each member's link (`components/pact/CrewLinks.tsx`). The hero grows
+in on open; a true shared-element transition needs Reanimated's static
+`ENABLE_SHARED_ELEMENT_TRANSITIONS` flag, a native rebuild, so it is not in this OTA-only pass.
+The sections below are the original plan; where they say "the crew colour only as a line",
+the revision wins.
+
 ## The system
 
 **One signature: the chain.** Interlocking links, one per pact day
@@ -42,13 +57,15 @@ the haptic, instead of the emoji burst. The results reveal keeps its drumroll ti
 
 ## Order (one commit per step, gates green each time)
 
-0. Foundation: brand tokens, fonts, flat fills, one shadow, `Chain`, `CornerMarks`.
-1. **Board** (shown first, before the rest).
-2. Home (pact cards with the small chain, no per-card primary button, tab bar without glass).
-3. Check-in and verdict (no italic, no emoji burst; the crew wall shows links).
-4. Results (chain, awards as a hairline list, the loser reveal without emoji).
-5. Onboarding: intro and welcome (one idea per screen, no floating emoji).
-6. Web: landing, join page, results page and its share card and OG images.
+0. Foundation: brand tokens, fonts, flat fills, one shadow, `CornerMarks`. Done.
+1. **Board**. Done.
+2. Home: the owed pact as the loud block with its check-in, quiet rows, paper tab bar. Done.
+3. Verdict: the photo on the crew block, today's link closing, monochrome crew wall. Done.
+4. Results: the whole chain, awards as a numbered list, the reveal as a mono drumroll. Done.
+5. Onboarding: intro and welcome (one idea per screen, no floating emoji). To do.
+6. Web: landing, join page, results page and its share card and OG images. To do; the web
+   already picks up the new fonts and palette from `@app/brand`, but its components still
+   carry the old cards, emoji and gradients.
 
 Each step: before/after screenshots in [shots/](shots/).
 

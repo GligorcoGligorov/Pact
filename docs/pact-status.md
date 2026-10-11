@@ -10,6 +10,15 @@ done.** Earlier: 2026-10-06, Phase 5 done on branch `feat/phase-5-finale`. Earli
 this trial, see [trial-local-only](memory/trial-local-only.md)). Build traps:
 [device-build-traps](memory/device-build-traps.md).
 
+## UI revamp (2026-10-11, branch `feat/ui-revamp`)
+
+A visual pass only, no features or events: [design/ui-revamp/](design/ui-revamp/plan.md)
+(audit, plan, before/after shots). Paper and ink, Inter Tight and IBM Plex Mono, one loud
+crew-colour block per screen, the chain (`components/pact/Chain.tsx`) as the signature. Done:
+foundation, board, home, verdict, results. To do: onboarding (intro, welcome) and the web
+(landing, join page, results page, share card, OG images). `app.json`'s splash colour moved to
+the new paper; it shows from the next binary.
+
 ## Phases
 
 | Phase                              | State | Notes                                                                              |
