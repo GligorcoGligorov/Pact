@@ -17,7 +17,8 @@ export function DrawnSignature({
 	delay = 0,
 	duration = SIGN_S,
 	className,
-	strokeWidth = 2.6
+	strokeWidth = 2.6,
+	isFromStart = false
 }: {
 	path: string
 	isDrawn: boolean
@@ -26,6 +27,8 @@ export function DrawnSignature({
 	duration?: number
 	className?: string
 	strokeWidth?: number
+	/** Draw in on mount even when already `isDrawn` (a signature that has just been made). */
+	isFromStart?: boolean
 }) {
 	return (
 		<svg
@@ -40,7 +43,7 @@ export function DrawnSignature({
 				strokeWidth={strokeWidth}
 				strokeLinecap="round"
 				strokeLinejoin="round"
-				initial={false}
+				initial={isFromStart ? { pathLength: 0, opacity: 0 } : false}
 				animate={{ pathLength: isDrawn ? 1 : 0, opacity: isDrawn ? 1 : 0 }}
 				transition={{
 					pathLength: {

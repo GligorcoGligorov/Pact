@@ -2,33 +2,9 @@ import { Container } from '@/components/Container'
 import { Hero } from './Hero'
 import { Marquee } from './Marquee'
 import { HowItWorks } from './how/HowItWorks'
-import { DeviceFrame } from '@/components/device/DeviceFrame'
+import { YourTurn } from './YourTurn'
 import { CodeForm } from '@/components/join/CodeForm'
 import { crewStyle } from '@/lib/pacts/crew'
-
-/** Real screens from the app, taken on the simulator with the demo crews. */
-const SCREENS = [
-	{
-		src: '/screens/board.jpg',
-		label: 'The board: the crew’s colour, today’s clock and the Crew Wall of photos',
-		title: 'The board',
-		body: 'Today’s clock, the streak, and the wall of everyone’s photos.'
-	},
-	{
-		src: '/screens/home.jpg',
-		label: 'Home: the pact you still owe today, with the last three days of its wall',
-		title: 'Home',
-		body: 'What you still owe today, one tap from the camera.'
-	},
-	{
-		src: '/screens/verdict.jpg',
-		label: 'The verdict: your photo, the AI’s line, and today’s row of the wall kept',
-		title: 'The verdict',
-		body: 'Your photo lands on the wall. When the row fills, the day is kept.'
-	}
-] as const
-
-const pad = (n: number) => String(n).padStart(2, '0')
 
 /**
  * Pact's landing, dark and photo-first: the hook as a two-tone headline beside a real Crew Wall,
@@ -42,38 +18,7 @@ export function PactLanding() {
 
 			<HowItWorks />
 
-			<section id="app" className="scroll-mt-24 overflow-hidden py-20">
-				<Container>
-					<div className="border-t-2 border-ink pt-4">
-						<p className="font-mono text-xs uppercase tracking-[0.06em] text-ink-secondary">
-							The app · real screens, a demo crew
-						</p>
-						<h2 className="t-h1 mt-4 max-w-[22ch] text-balance">
-							Your crew’s photos. <span className="text-ink-tertiary">Not a progress bar.</span>
-						</h2>
-					</div>
-				</Container>
-				<ul className="mx-auto mt-12 flex max-w-content snap-x snap-mandatory gap-8 overflow-x-auto px-5 pb-4 sm:px-8 lg:justify-between lg:overflow-visible">
-					{SCREENS.map((screen, i) => (
-						<li
-							key={screen.src}
-							className="flex w-[250px] shrink-0 snap-center flex-col gap-5 sm:w-[280px]"
-						>
-							<DeviceFrame
-								src={screen.src}
-								label={screen.label}
-								isPriority={i === 0}
-								className="[--screen:230] sm:[--screen:260]"
-							/>
-							<div>
-								<span className="font-mono text-xs text-ink-tertiary">{pad(i + 1)} /</span>
-								<h3 className="t-h3 mt-1">{screen.title}</h3>
-								<p className="mt-1.5 text-pretty text-ink-secondary">{screen.body}</p>
-							</div>
-						</li>
-					))}
-				</ul>
-			</section>
+			<YourTurn />
 
 			<section id="join" className="scroll-mt-24 py-20">
 				<Container>

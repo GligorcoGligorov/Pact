@@ -1,6 +1,6 @@
 'use client'
 
-import { motion } from 'motion/react'
+import { Stamp } from '@/components/wall/Stamp'
 import { DrawnSignature, SIGN_S } from '@/components/wall/DrawnSignature'
 import { DEMO_PACT, PLEDGE, SIGNATURES } from '../demo-pact'
 import { useBeats, useTyped } from './useBeats'
@@ -86,17 +86,7 @@ export function PactCardVisual({ phase, isActive }: { phase: 'type' | 'sign'; is
 				))}
 			</ul>
 
-			<motion.span
-				aria-hidden="true"
-				className="label absolute bottom-[4.25rem] right-5 rounded-[4px] border-2 border-[color:var(--crew-coral-line)] px-3 py-2 text-[11px] text-[color:var(--crew-coral-ink)] sm:bottom-[4.75rem] sm:right-8"
-				initial={false}
-				animate={
-					stamped ? { opacity: 1, scale: 1, rotate: -8 } : { opacity: 0, scale: 1.6, rotate: -16 }
-				}
-				transition={stamped ? { type: 'spring', stiffness: 700, damping: 22 } : { duration: 0.2 }}
-			>
-				Signed · 4 / 4
-			</motion.span>
+			<Stamp isDown={stamped}>Signed · 4 / 4</Stamp>
 		</div>
 	)
 }
