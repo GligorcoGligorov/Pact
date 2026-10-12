@@ -1,5 +1,6 @@
 import { Container } from '@/components/Container'
 import { Hero } from './Hero'
+import { Marquee } from './Marquee'
 import { DeviceFrame } from '@/components/device/DeviceFrame'
 import { CodeForm } from '@/components/join/CodeForm'
 import { crewStyle } from '@/lib/pacts/crew'
@@ -55,6 +56,7 @@ export function PactLanding() {
 	return (
 		<div className="bg-bg" style={crewStyle('coral')}>
 			<Hero />
+			<Marquee />
 
 			<section id="how" className="scroll-mt-24 py-20">
 				<Container>

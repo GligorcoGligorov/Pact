@@ -199,6 +199,26 @@
 		transform: scaleX(1);
 	}
 
+	/* ── Marquee ── a track of the row twice, moved by half its width. The edges fade by mask. */
+	.marquee-mask {
+		mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+	}
+	.marquee-track {
+		animation: marquee var(--loop, 60s) linear infinite;
+	}
+	.marquee-reverse {
+		animation-direction: reverse;
+	}
+	.marquee-mask:hover .marquee-track,
+	.marquee-mask[data-held] .marquee-track {
+		animation-play-state: paused;
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.marquee-track {
+			animation: none;
+		}
+	}
+
 	/* Crosshair corner marks: four thin brackets just outside the block, like a print trim. */
 	.corner-marks {
 		--mark: 10px;
@@ -611,6 +631,11 @@
 	from {
 		transform: translateY(130%);
 		filter: blur(8px);
+	}
+}
+@keyframes marquee {
+	to {
+		transform: translateX(-50%);
 	}
 }
 @keyframes line-rise {
