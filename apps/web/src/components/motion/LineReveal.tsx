@@ -9,12 +9,14 @@ import type { CssVars } from '@/lib/utils'
 export function LineReveal({
 	lines,
 	as: Tag = 'h2',
+	id,
 	className,
 	delay = 0,
 	isOnView = false
 }: {
 	lines: { text: string; muted?: boolean }[]
 	as?: 'h1' | 'h2' | 'p'
+	id?: string
 	className?: string
 	/** Milliseconds before the first line moves. */
 	delay?: number
@@ -22,7 +24,7 @@ export function LineReveal({
 	isOnView?: boolean
 }) {
 	return (
-		<Tag className={className}>
+		<Tag id={id} className={className}>
 			<span className="sr-only">{lines.map((l) => l.text).join(' ')}</span>
 			<span aria-hidden="true">
 				{lines.map((line, i) => (
