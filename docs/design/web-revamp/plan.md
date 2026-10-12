@@ -125,3 +125,32 @@ Each section after its commit, screenshots at 1440 and 390 and a short video in
 | Join         | 8     | 8      | 8           | 8       | Two columns: the pact name, the habit in grey, a mono fact row with the live countdown, the pledge sentence big, and the one CTA (sign in a minute); on the right the presence wall assembling oldest row first, tile by tile, and the signatures drawing in turn (CSS only, so the page stays a server component). Pass 1: the phone scrolled sideways (grid items at min-content width), the habit at hero size wrapped to three lines, the wall's caption crowded its label. No photos (R27). `shots/07-*`, `videos/join.mp4`.                                        |
 | Results      | 8     | 9      | 8           | 8       | The app's stories as a scroll: a cover, then four chapters that pin and stack on a desktop (each slides over the last, which sinks back) under a four-segment story rail: the whole wall assembling, awards beside the scores, a 03-02-01 mono drumroll then "Dan buys the coffees." on full violet, the signed pact drawing and stamped. Phone: flows and reveals. Pass 1: missed days were invisible (the dashed tile's colour class did not exist), the stamp was coral on a violet crew, a title wrapped badly. No photos (R25). `shots/08-*`, `videos/results.mp4`. |
 | Share card   | 9     | n/a    | 8           | 9       | The 1080×1350 card and the 1200×630 previews (results and, beyond the brief, the join invite, which still had the old ring and avatar discs) in the site's language: near-black with the construction grid and corner marks, two-tone headline, mono labels, the presence wall in the crew colour, who pays on a crew panel set in two lines, signatures in white. No photos. `shots/09-*`, `shots/10-*`.                                                                                                                                                                |
+
+All sections at 8 or above; no section was left below 8. Pass-1 scores and what changed are in
+each row's notes.
+
+## Slop pass (whole site)
+
+Read every page at 1440 and 390 looking only for tells. Fixed: both not-found pages (icon in a
+tinted square, centred stack, the old "P" logo) now use the site's language; an arrow glyph
+became the icon set's; the invite link preview's progress ring and avatar discs became the
+presence wall. Checked and clean: no emoji in anything rendered (the remaining 🎨 markers are
+comments in template components the site no longer renders), one shadow token used once, no
+gradients but the grid's hairlines and the marquee's edge mask, no glass, no icon cards, no
+centred-everything section, copy specific to Pact throughout.
+
+## Lighthouse (production build, landing)
+
+| Run                        | Performance | Accessibility | Best practices | SEO |
+| -------------------------- | ----------- | ------------- | -------------- | --- |
+| Desktop                    | 99          | 100           | 96             | 100 |
+| Mobile (simulated slow 4G) | 77–85       | 100           | 96             | 100 |
+| Mobile, first pass         | 64          | 100           | 96             | 100 |
+
+Mobile went from 64 to the low 80s by hydrating a section at a time (total blocking time 720ms →
+~150ms), painting the first viewport's text from the first frame, starting Lenis when idle, and
+not preloading the hero photos. The remaining gap is Lighthouse's simulated LCP (~4.4s): the
+**observed** LCP in the same runs is 0.37s (it is the first paint), but the simulation charges
+the ~300KB of first-load JS (React, motion, Lenis, PostHog) to it. Getting to 90 means cutting
+that bundle (lazy-load motion below the fold, defer PostHog until idle): not done in this pass.
+Best practices is 96 only because `/_vercel/insights/script.js` 404s off Vercel. CLS is 0.

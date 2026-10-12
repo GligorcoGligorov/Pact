@@ -3,12 +3,28 @@
 The one "where are we" file. Read it first; update it at the end of every phase.
 Spec: [pact-requirements.md](pact-requirements.md) (R-numbers). Plan: [pact-plan.md](pact-plan.md).
 
-**Last updated:** 2026-10-06, Phase 6 done on branch `feat/phase-6-final`: polish pass, `npm run
+**Last updated:** 2026-10-12, web revamp on branch `feat/web-revamp` (see below). Earlier: 2026-10-06, Phase 6 done on branch `feat/phase-6-final`: polish pass, `npm run
 demo:reset`, the showcase ([docs/showcase/](showcase/captions.md)) and the README. **All phases
 done.** Earlier: 2026-10-06, Phase 5 done on branch `feat/phase-5-finale`. Earlier: 2026-10-05, fun pass steps 0–7 merged (PR #8). Earlier:
 2026-10-04, end of Phase 4, on branch `feat/phase-4-web-social` (no CI in
 this trial, see [trial-local-only](memory/trial-local-only.md)). Build traps:
 [device-build-traps](memory/device-build-traps.md).
+
+## Web revamp (2026-10-12, branch `feat/web-revamp`)
+
+[design/web-revamp/plan.md](design/web-revamp/plan.md): the references (karma.business,
+8xresearch.com, captured in `refs/`), ten techniques mapped to Pact, the section scores, the
+slop pass and Lighthouse. The landing is new end to end (`components/pact-landing/`): the hero
+Crew Wall assembling itself, the check-in marquee, "How it works" pinned with a step rail
+(`how/`), "Your turn." (sign a pact on the page; nothing saved), the demo crews counted, the
+coral close. Shell: Lenis (`components/site/SmoothScroll.tsx`), a progress line, the nav pill,
+a light/dark toggle (`lib/scheme.ts`). Join and results pages, the share card and both link
+previews redone in the same language; still presence only, never a photo. Events added:
+`demo_pact_signed`, `site_theme_changed`; `cta_clicked` gained `hero_start`, `hero_code`,
+`your_turn`, `closing`. The seed's signature generator now lives in
+`src/lib/pacts/demo-signature.ts`. Open: Lighthouse mobile performance is 77–85 (simulated;
+observed LCP 0.37s), see the plan; the old landing components (`components/landing/`,
+`device/`, `wall/PhotoWall.tsx`) are unused but kept.
 
 ## UI revamp (2026-10-11, branch `feat/ui-revamp`)
 
