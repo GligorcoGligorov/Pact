@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { ArrowDown } from 'lucide-react'
 import { motion, useInView, useMotionValueEvent, useScroll, useTransform } from 'motion/react'
 import { pledgeLine } from '@app/contract'
 import { DrawnSignature } from '@/components/wall/DrawnSignature'
@@ -110,9 +111,10 @@ function Cover({ page }: { page: ResultPage }) {
 				className="label enter mt-12 flex items-center gap-2 text-ink-tertiary"
 				style={{ '--enter-delay': '600ms' } as CssVars}
 			>
-				<span aria-hidden="true" className="inline-block animate-bounce motion-reduce:animate-none">
-					↓
-				</span>
+				<ArrowDown
+					aria-hidden="true"
+					className="h-3.5 w-3.5 animate-bounce motion-reduce:animate-none"
+				/>
 				Scroll for the results
 			</p>
 		</section>
