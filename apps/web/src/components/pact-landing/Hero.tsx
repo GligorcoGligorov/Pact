@@ -17,7 +17,7 @@ export function Hero() {
 		<section className="relative isolate overflow-hidden">
 			<Container className="grid items-center gap-x-12 gap-y-14 pb-20 pt-28 sm:pt-36 lg:min-h-[100svh] lg:grid-cols-2 lg:pb-16 lg:pt-28">
 				<div className="relative z-10">
-					<p className="label enter mb-7 flex items-center gap-3 text-ink-secondary">
+					<p className="label enter-rise mb-7 flex items-center gap-3 text-ink-secondary">
 						<span aria-hidden="true" className="h-px w-8 bg-[color:var(--crew-coral-line)]" />
 						Habits, kept by your friends
 					</p>
@@ -31,14 +31,14 @@ export function Hero() {
 						]}
 					/>
 					<p
-						className="t-lead enter mt-7 max-w-[38ch] text-pretty text-ink-secondary"
+						className="t-lead enter-rise mt-7 max-w-[38ch] text-pretty text-ink-secondary"
 						style={{ '--enter-delay': `${LEAD_AT}ms` } as CssVars}
 					>
 						One habit, one photo a day, one crew. A day only counts when everyone is in, so when you
 						skip, the gap on the wall has your name on it.
 					</p>
 					<div
-						className="enter mt-9 flex flex-wrap items-center gap-x-4 gap-y-3"
+						className="enter-rise mt-9 flex flex-wrap items-center gap-x-4 gap-y-3"
 						style={{ '--enter-delay': `${CTAS_AT}ms` } as CssVars}
 					>
 						<PrimaryCta href="#start" cta="hero_start">

@@ -666,6 +666,13 @@
 		}
 	}
 
+	/* The first viewport's entrance: a rise by transform alone, so the text is painted (and counted
+	   as the largest paint) from the first frame instead of after a fade. */
+	.enter-rise {
+		animation: enter-rise var(--dur-rise) var(--ease-out) both;
+		animation-delay: var(--enter-delay, 0ms);
+	}
+
 	.enter {
 		animation: enter var(--dur-rise) var(--ease-out) both;
 		animation-delay: var(--enter-delay, 0ms);
@@ -777,6 +784,11 @@
 @keyframes enter {
 	from {
 		opacity: 0;
+		transform: translateY(var(--rise));
+	}
+}
+@keyframes enter-rise {
+	from {
 		transform: translateY(var(--rise));
 	}
 }

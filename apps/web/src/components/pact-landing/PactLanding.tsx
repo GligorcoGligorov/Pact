@@ -4,6 +4,7 @@ import { HowItWorks } from './how/HowItWorks'
 import { YourTurn } from './YourTurn'
 import { Numbers } from './Numbers'
 import { ClosingBand } from './ClosingBand'
+import { Suspense } from 'react'
 import { crewStyle } from '@/lib/pacts/crew'
 
 /**
@@ -14,12 +15,26 @@ import { crewStyle } from '@/lib/pacts/crew'
 export function PactLanding() {
 	return (
 		<div className="bg-bg" style={crewStyle('coral')}>
-			<Hero />
-			<Marquee />
-			<HowItWorks />
-			<YourTurn />
-			<Numbers />
-			<ClosingBand />
+			{/* A boundary per section: React hydrates each in its own task, so no single long task
+			    holds the first viewport's input hostage while the whole page wakes up. */}
+			<Suspense>
+				<Hero />
+			</Suspense>
+			<Suspense>
+				<Marquee />
+			</Suspense>
+			<Suspense>
+				<HowItWorks />
+			</Suspense>
+			<Suspense>
+				<YourTurn />
+			</Suspense>
+			<Suspense>
+				<Numbers />
+			</Suspense>
+			<Suspense>
+				<ClosingBand />
+			</Suspense>
 		</div>
 	)
 }

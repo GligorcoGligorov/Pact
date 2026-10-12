@@ -335,7 +335,6 @@ function Cell({
 				fill
 				sizes={TILE_SIZES}
 				className="object-cover"
-				priority={row.id === 0 || row.id === -1}
 			/>
 			{animateIn ? (
 				<motion.span
