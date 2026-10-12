@@ -3,6 +3,7 @@ import { Marquee } from './Marquee'
 import { HowItWorks } from './how/HowItWorks'
 import { YourTurn } from './YourTurn'
 import { Numbers } from './Numbers'
+import { ClosingBand } from './ClosingBand'
 import { crewStyle } from '@/lib/pacts/crew'
 
 /**
@@ -18,6 +19,7 @@ export function PactLanding() {
 			<HowItWorks />
 			<YourTurn />
 			<Numbers />
+			<ClosingBand />
 		</div>
 	)
 }
