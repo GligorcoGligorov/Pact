@@ -11,7 +11,7 @@ export function Stamp({ isDown, children }: { isDown: boolean; children: React.R
 	return (
 		<motion.span
 			aria-hidden="true"
-			className="label absolute -bottom-4 right-6 rounded-[4px] border-2 border-[color:var(--crew-coral-line)] bg-surface px-3 py-2 text-[11px] text-[color:var(--crew-coral-ink)] sm:right-9"
+			className="label absolute -bottom-4 right-6 rounded-[4px] border-2 border-[color:var(--crew-line)] bg-surface px-3 py-2 text-[11px] text-[color:var(--crew-ink)] sm:right-9"
 			initial={false}
 			animate={
 				isDown ? { opacity: 1, scale: 1, rotate: -6 } : { opacity: 0, scale: 1.7, rotate: -18 }

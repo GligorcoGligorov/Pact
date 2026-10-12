@@ -84,7 +84,7 @@ export function PresenceWall({
 								<span
 									key={cell.userId}
 									style={{ '--j': j } as CssVars}
-									className={`wall-cell border-line grid ${tile} place-items-center rounded-[4px] border-[1.5px] border-dashed font-mono text-[11px] text-ink-secondary ${day.open ? 'animate-pulse motion-reduce:animate-none' : ''}`}
+									className={`wall-cell grid border-[color:var(--crew-line)] ${tile} place-items-center rounded-[4px] border-[1.5px] border-dashed font-mono text-[11px] text-ink-secondary ${day.open ? 'animate-pulse motion-reduce:animate-none' : ''}`}
 								>
 									{compact ? null : initials(names.get(cell.userId) ?? null)}
 								</span>

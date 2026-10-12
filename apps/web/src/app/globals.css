@@ -290,6 +290,19 @@
 		animation-delay: calc(700ms + var(--i, 0) * 420ms);
 	}
 
+	/* ── Results as stories: on a desktop with motion allowed, each chapter pins and the next
+	 * slides over it (ResultStories). Elsewhere they simply flow. */
+	@media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+		.results-chapter {
+			position: sticky;
+			top: 0;
+			height: 100svh;
+		}
+		.results-chapter-body {
+			height: 100%;
+		}
+	}
+
 	/* ── Marquee ── a track of the row twice, moved by half its width. The edges fade by mask. */
 	.marquee-mask {
 		mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
