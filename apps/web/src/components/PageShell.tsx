@@ -4,9 +4,11 @@ import { Nav } from './Nav'
 import { Footer } from './Footer'
 import { Container } from './Container'
 import { MotionProvider } from './motion/MotionProvider'
+import { ScrollProgress } from './site/ScrollProgress'
+import { SmoothScroll } from './site/SmoothScroll'
 
 /**
- * The marketing site's frame: the capsule nav, the page, the footer, inside
+ * The marketing site's frame: smooth scroll, the progress line, the nav pill, the page, the footer, inside
  * the motion root. The nav floats over the page, so a page that does not open
  * on its own full-bleed hero asks for `isPadded` to clear it.
  */
@@ -19,6 +21,8 @@ export function PageShell({
 }) {
 	return (
 		<MotionProvider tokens={motionTokens}>
+			<SmoothScroll />
+			<ScrollProgress />
 			<Nav siteName={brandConfig.siteName} />
 			<main id="main" className={isPadded ? 'min-h-[60vh] pt-28 sm:pt-32' : undefined}>
 				{children}

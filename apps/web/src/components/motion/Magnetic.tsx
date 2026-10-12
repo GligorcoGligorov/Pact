@@ -5,7 +5,7 @@ import { motion, useMotionValue, useReducedMotion, useSpring } from 'motion/reac
 import { cn } from '@/lib/utils'
 import { useMotionTokens } from './MotionProvider'
 
-/** How far, in px, the child leans toward the pointer at the element's edge. */
+/** How far, in px, the child leans toward the pointer at the element's edge, by default. */
 const PULL_PX = 7
 
 /**
@@ -15,10 +15,13 @@ const PULL_PX = 7
  */
 export function Magnetic({
 	children,
-	className
+	className,
+	pull = PULL_PX
 }: {
 	children: React.ReactNode
 	className?: string
+	/** Px at the edge of the field. Give the wrapper padding to widen the field past the button. */
+	pull?: number
 }) {
 	const ref = useRef<HTMLSpanElement>(null)
 	const isStill = useReducedMotion()
@@ -31,8 +34,8 @@ export function Magnetic({
 	function onPointerMove(e: PointerEvent<HTMLSpanElement>) {
 		const rect = ref.current?.getBoundingClientRect()
 		if (isStill || e.pointerType !== 'mouse' || rect == null) return
-		x.set(((e.clientX - rect.left) / rect.width - 0.5) * 2 * PULL_PX)
-		y.set(((e.clientY - rect.top) / rect.height - 0.5) * 2 * PULL_PX)
+		x.set(((e.clientX - rect.left) / rect.width - 0.5) * 2 * pull)
+		y.set(((e.clientY - rect.top) / rect.height - 0.5) * 2 * pull)
 	}
 
 	function onPointerLeave() {
@@ -45,7 +48,9 @@ export function Magnetic({
 			ref={ref}
 			onPointerMove={onPointerMove}
 			onPointerLeave={onPointerLeave}
-			style={isStill ? undefined : { x: springX, y: springY }}
+			// Always the same style: the server cannot read the setting, and the handler above never
+			// moves it under reduced motion.
+			style={{ x: springX, y: springY }}
 			className={cn('inline-flex', className)}
 		>
 			{children}

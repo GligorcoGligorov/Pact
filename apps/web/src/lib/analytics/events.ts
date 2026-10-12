@@ -59,18 +59,30 @@ export const FUNNEL_EVENTS = {
 
 	/**
 	 * An in-page call to action was clicked. metadata: { cta }
-	 * `cta` is the discriminator: 'nav' (the capsule nav's "Get the app") or
-	 * 'pricing_teaser' (the landing pricing section's link to /pricing). Compare
-	 * each against `store_badge_clicked` to see whether the nav or the page is
-	 * doing the sending.
+	 * `cta` is the discriminator: 'nav' (the nav pill's "Join a pact"),
+	 * 'hero_start' / 'hero_code' (the hero's two), 'your_turn' (under the demo pact
+	 * card) or 'closing' (the coral band). Compare each against `landing_view` to see
+	 * which part of the page is doing the sending.
 	 */
 	ctaClicked: 'cta_clicked',
 	/**
-	 * The scene-scroll story on the landing page came into view (once per page view).
+	 * "How it works" on the landing page pinned into view (once per page view).
 	 * Its share of `landing_view` is how many visitors get past the first
 	 * viewport; if it is low, the hero is the problem, not the story.
 	 */
 	storyView: 'story_view',
+	/**
+	 * A visitor finished a signature on the landing's "Your turn." pad (once per page
+	 * view). Nothing is saved; it is the landing's engagement signal. Many signing but
+	 * few `cta_clicked` with `your_turn` means the CTA is the problem; few signing means
+	 * the section is.
+	 */
+	demoPactSigned: 'demo_pact_signed',
+	/**
+	 * The light/dark toggle in the nav was used. metadata: { scheme: 'light' | 'dark' }
+	 * Answers whether light mode earns its keep. Not a discriminator: one row a day is enough.
+	 */
+	siteThemeChanged: 'site_theme_changed',
 	/**
 	 * A FAQ answer was opened, on the landing page or /pricing. metadata: { question }
 	 * `question` is the discriminator (a stable slug from src/lib/faq.ts), so the

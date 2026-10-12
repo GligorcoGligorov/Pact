@@ -2,70 +2,48 @@ import Link from 'next/link'
 import { brandConfig } from '@app/brand'
 import { Container } from './Container'
 
-const COLUMNS = [
-	{
-		title: 'Product',
-		links: [
-			{ href: '/#how', label: 'How it works' },
-			{ href: '/#app', label: 'The app' },
-			{ href: '/#join', label: 'Join a pact' }
-		]
-	},
-	{
-		title: 'Help',
-		links: [{ href: '/support', label: 'Support' }]
-	},
-	{
-		title: 'Legal',
-		links: [
-			{ href: '/privacy', label: 'Privacy' },
-			{ href: '/terms', label: 'Terms' },
-			{ href: '/delete-account', label: 'Delete account' }
-		]
-	}
+const LINKS = [
+	{ href: '/#how', label: 'How it works' },
+	{ href: '/support', label: 'Support' },
+	{ href: '/privacy', label: 'Privacy' },
+	{ href: '/terms', label: 'Terms' },
+	{ href: '/delete-account', label: 'Delete account' }
 ]
 
-const TAGLINE = 'Habits your friends keep you to: a photo a day, an AI judge, one crew.'
-
+/** The minimal footer: the wordmark and one line, the links, the year. */
 export function Footer() {
 	const { siteName } = brandConfig
 	const year = new Date().getFullYear()
 	return (
-		<footer className="border-t border-line-hairline pb-10 pt-16 sm:pt-20">
-			<Container>
-				<div className="grid gap-12 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
-					<div className="max-w-xs">
-						<Link href="/" className="inline-flex items-center gap-2.5 rounded-lg">
-							<span className="font-mono text-sm uppercase tracking-[0.08em]">{siteName}</span>
-						</Link>
-						<p className="mt-4 text-pretty text-sm leading-relaxed text-ink-secondary">{TAGLINE}</p>
-					</div>
-
-					{COLUMNS.map((col) => (
-						<nav key={col.title} aria-label={col.title}>
-							<p className="text-sm font-semibold text-ink">{col.title}</p>
-							<ul className="mt-4 space-y-1">
-								{col.links.map((l) => (
-									<li key={l.href}>
-										<Link
-											href={l.href}
-											className="inline-flex min-h-9 items-center text-sm text-ink-secondary transition-colors duration-fast hover:text-ink"
-										>
-											{l.label}
-										</Link>
-									</li>
-								))}
-							</ul>
-						</nav>
-					))}
-				</div>
-
-				<div className="mt-16 flex flex-col gap-2 border-t border-line-hairline pt-6 text-sm text-ink-tertiary sm:flex-row sm:items-center sm:justify-between">
-					<p>
-						© {year} {siteName}. All rights reserved.
+		<footer className="border-t border-line-hairline py-10">
+			<Container className="flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
+				<div>
+					<Link href="/" className="label inline-flex items-center gap-2 text-sm text-ink">
+						<span
+							aria-hidden="true"
+							className="h-2 w-2 rounded-full bg-[color:var(--crew-coral-fill)]"
+						/>
+						{siteName}
+					</Link>
+					<p className="mt-3 max-w-[34ch] text-sm text-ink-secondary">
+						Habits your friends keep you to. One photo a day, one crew, one stake.
 					</p>
-					<p>Built on the 8x template.</p>
 				</div>
+				<nav aria-label="Footer">
+					<ul className="flex flex-wrap gap-x-6 gap-y-2">
+						{LINKS.map((l) => (
+							<li key={l.href}>
+								<Link
+									href={l.href}
+									className="inline-flex min-h-9 items-center text-sm text-ink-secondary transition-colors duration-fast hover:text-ink"
+								>
+									{l.label}
+								</Link>
+							</li>
+						))}
+					</ul>
+				</nav>
+				<p className="label text-ink-tertiary">© {year}</p>
 			</Container>
 		</footer>
 	)

@@ -1,20 +1,8 @@
 import { Container } from '@/components/Container'
+import { Hero } from './Hero'
 import { DeviceFrame } from '@/components/device/DeviceFrame'
 import { CodeForm } from '@/components/join/CodeForm'
-import { PhotoWall, type PhotoRow } from '@/components/wall/PhotoWall'
 import { crewStyle } from '@/lib/pacts/crew'
-import type { CssVars } from '@/lib/utils'
-
-/** Entrance timings, ms: the hook first, then the code box, then the wall. */
-const FORM_AT = 360
-const WALL_AT = 160
-
-/** A demo crew's wall: today one still out, the two days before kept by everyone. */
-const WALL: PhotoRow[] = [
-	{ tiles: [1, 2, 3, { waiting: 'DA' }] },
-	{ tiles: [4, 5, 6, 7], kept: true },
-	{ tiles: [8, 9, 10, 11], kept: true }
-]
 
 const STEPS = [
 	{
@@ -66,47 +54,7 @@ const pad = (n: number) => String(n).padStart(2, '0')
 export function PactLanding() {
 	return (
 		<div className="bg-bg" style={crewStyle('coral')}>
-			<section className="relative isolate overflow-hidden">
-				<Container className="grid items-center gap-14 pb-16 pt-28 sm:pt-32 lg:min-h-[92svh] lg:grid-cols-[1.05fr_0.95fr] lg:gap-12">
-					<div>
-						<p className="enter mb-6 font-mono text-xs uppercase tracking-[0.08em] text-ink-secondary">
-							Pact · habits, kept by your friends
-						</p>
-						<h1 className="t-hero text-balance">
-							Nobody notices when you quit.{' '}
-							<span className="text-ink-tertiary">Your friends will.</span>
-						</h1>
-						<p className="t-lead mt-6 max-w-[40ch] text-pretty text-ink-secondary">
-							Make a pact with your crew: one habit, a photo every day, and an AI judge that keeps
-							it honest. Miss a day and the wall shows it.
-						</p>
-						<div
-							className="enter mt-9 max-w-md"
-							style={{ '--enter-delay': `${FORM_AT}ms` } as CssVars}
-						>
-							<p className="mb-3 font-mono text-xs uppercase tracking-[0.06em] text-ink-secondary">
-								Got an invite code?
-							</p>
-							<CodeForm />
-							<p className="mt-3 text-sm text-ink-tertiary">
-								No code yet? Start a pact in the app and send your crew theirs.
-							</p>
-						</div>
-					</div>
-					<div className="enter" style={{ '--enter-delay': `${WALL_AT}ms` } as CssVars}>
-						<div className="corner-marks relative p-1">
-							<div className="mb-3 flex justify-between font-mono text-xs uppercase tracking-[0.06em]">
-								<span className="text-ink">6am Run Club</span>
-								<span className="text-ink-secondary">Day 08 / 21 · 3 / 4 in</span>
-							</div>
-							<PhotoWall
-								rows={WALL}
-								label="A crew’s wall of check-in photos: two days kept, today waiting on Dan"
-							/>
-						</div>
-					</div>
-				</Container>
-			</section>
+			<Hero />
 
 			<section id="how" className="scroll-mt-24 py-20">
 				<Container>

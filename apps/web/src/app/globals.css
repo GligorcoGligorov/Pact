@@ -112,9 +112,19 @@
 		opacity: 1;
 	}
 
+	/* The focus ring: the crew coral, offset clear of the control, on every focusable thing. */
 	:focus-visible {
-		outline: 2px solid rgb(var(--c-border-focus));
+		outline: 2px solid var(--crew-coral-line);
 		outline-offset: 3px;
+	}
+
+	/* Lenis drives the scroll; the browser's own smoothing would fight it. */
+	html.lenis,
+	html.lenis body {
+		height: auto;
+	}
+	html.lenis {
+		scroll-behavior: auto;
 	}
 
 	a {
@@ -131,6 +141,64 @@
 }
 
 @layer components {
+	/* ── Construction ─────────────────────────────────────────────────────
+	 * The drafting layer under the hero and the stages: a faint 80px grid that fades out toward
+	 * the edges (a mask, so it is lines, not a painted wash), and `+` crosshairs on its nodes. */
+	.construction-grid {
+		--grid-ink: rgb(var(--c-border-hairline) / calc(var(--c-border-hairline-a, 1) * 0.9));
+		background-image:
+			linear-gradient(to right, var(--grid-ink) 1px, transparent 1px),
+			linear-gradient(to bottom, var(--grid-ink) 1px, transparent 1px);
+		background-size: var(--grid, 80px) var(--grid, 80px);
+		background-position: var(--grid-x, 0) var(--grid-y, 0);
+		mask-image: radial-gradient(
+			ellipse 70% 65% at var(--grid-focus, 70% 45%),
+			black 20%,
+			transparent 78%
+		);
+		pointer-events: none;
+	}
+	.crosshair {
+		position: absolute;
+		width: 13px;
+		height: 13px;
+		translate: -50% -50%;
+		pointer-events: none;
+		background:
+			linear-gradient(currentColor, currentColor) center / 1px 100% no-repeat,
+			linear-gradient(currentColor, currentColor) center / 100% 1px no-repeat;
+	}
+
+	/* A mono micro-label: Plex Mono caps, tracked, tabular. */
+	.label {
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+		line-height: 1.2;
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		font-variant-numeric: tabular-nums;
+	}
+
+	/* Nav links: an underline that draws from the left on hover. */
+	.nav-link {
+		position: relative;
+	}
+	.nav-link::after {
+		content: '';
+		position: absolute;
+		left: 0.875rem;
+		right: 0.875rem;
+		bottom: 0.3rem;
+		height: 1px;
+		background: currentColor;
+		transform: scaleX(0);
+		transform-origin: left;
+		transition: transform var(--dur-base) var(--ease-out);
+	}
+	.nav-link:hover::after {
+		transform: scaleX(1);
+	}
+
 	/* Crosshair corner marks: four thin brackets just outside the block, like a print trim. */
 	.corner-marks {
 		--mark: 10px;
@@ -168,6 +236,14 @@
 		letter-spacing: var(--type-display-hero-tracking);
 		font-size: clamp(2.75rem, 1.55rem + 4.95vw, 6rem);
 		line-height: var(--lh-display);
+	}
+	/* The landing's hero: three set lines that never re-wrap on a desktop. */
+	.t-hero-pact {
+		font-family: var(--type-display-hero-family);
+		font-weight: var(--type-display-hero-weight);
+		letter-spacing: -0.055em;
+		font-size: clamp(2.75rem, 1rem + 4.4vw, 5.1rem);
+		line-height: 0.95;
 	}
 	.t-display {
 		font-family: var(--type-display-family);
@@ -444,6 +520,28 @@
 		animation-name: word-rise-dissolve;
 	}
 
+	/* A line rising out of its own clip (LineReveal). */
+	.line-clip {
+		display: block;
+		overflow: hidden;
+		padding: 0.06em 0 0.14em;
+		margin: -0.06em 0 -0.14em;
+	}
+	.line-rise,
+	.line-rise-on-view {
+		display: block;
+	}
+	.line-rise,
+	.is-visible .line-rise-on-view {
+		animation: line-rise 900ms cubic-bezier(0.2, 0.9, 0.1, 1) both;
+		animation-delay: calc(var(--rise-delay, 0ms) + var(--i, 0) * 110ms);
+	}
+	@media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
+		.reveal:not(.is-visible) .line-rise-on-view {
+			transform: translateY(110%);
+		}
+	}
+
 	.enter {
 		animation: enter var(--dur-rise) var(--ease-out) both;
 		animation-delay: var(--enter-delay, 0ms);
@@ -515,6 +613,11 @@
 		filter: blur(8px);
 	}
 }
+@keyframes line-rise {
+	from {
+		transform: translateY(110%) rotate(1.5deg);
+	}
+}
 @keyframes pop {
 	0% {
 		opacity: 0;
@@ -542,6 +645,12 @@
 	from {
 		opacity: 0;
 		transform: translateY(35%) scale(0.8);
+	}
+}
+/* A tile still waiting on someone: it breathes. */
+@keyframes waiting {
+	50% {
+		opacity: 0.45;
 	}
 }
 @keyframes menu-in {

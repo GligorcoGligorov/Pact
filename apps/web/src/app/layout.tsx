@@ -5,6 +5,7 @@ import { Analytics } from '@vercel/analytics/next'
 import { brandConfig, brandCss, palette, theme } from '@app/brand'
 import { PostHogProvider } from '@/components/PostHogProvider'
 import { GoogleAnalytics } from '@/components/GoogleAnalytics'
+import { SCHEME_SCRIPT } from '@/lib/scheme'
 import './globals.css'
 
 // Fonts. Inter is the text face for both presets; the display face is picked
@@ -52,12 +53,10 @@ const SITE_NAME = brandConfig.siteName
 // first child so it survives the build and anyone can read it in view-source.
 // React cannot emit a bare comment, so it rides inside an inert, hidden div.
 const DIRECTION_CONTRACT = `<!--
-THESIS: The first viewport is the product: the app's home screen, drawn from brand tokens on a real-proportion phone beside the headline and store buttons. Refuses a centred headline over a screenshot slot.
-OWN-WORLD: One structure, two worlds. dusk: midnight ladder, Source Serif 4 at 600, film grain, blur dissolves; the accent as glow for atmosphere, as ink for interactive text and the one primary fill. daylight: stone paper, Bricolage Grotesque 800 tracked tight, marigold fields under graphite ink, crisp rises. Ink store pills, glass capsule nav.
-STORY: See the app work; watch four acts dealt onto one pinned phone; see features shown, not claimed; tap a store or join the waitlist.
-FIRST VIEWPORT: Capsule nav above. Left 55%: word-rise headline to 6rem, promise, store buttons above the fold at 1440x900 and 390x844. Right: 320pt phone on its glow or field.
-FORM: brief-pinned to the two presets PRODUCT.md names; no roll, no seed.
-FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
+THESIS: The first viewport is the product's signature: a Crew Wall of real check-in photos assembling itself, one row kept when the last friend checks in. Refuses a centred headline over a screenshot slot.
+WORLD: near-black ground (light by toggle), one saturated crew colour per section (coral leads), Inter Tight two-tone headlines, Plex Mono micro-labels, corner marks, crosshairs and a faint construction grid. No emoji, gradients, glass or icon cards.
+STORY: hero wall, a marquee of check-ins, how it works as a pinned four-step stage with a rail, "Your turn." (sign a pact yourself), the numbers, a coral band.
+REFERENCES AND SCORES: docs/design/web-revamp/plan.md
 -->`
 
 // Replace with your real domain. Falls back to NEXT_PUBLIC_SITE_URL in env.
@@ -102,9 +101,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 			lang="en"
 			data-preset={theme.preset}
 			data-scheme={theme.primaryScheme}
+			suppressHydrationWarning
 			className={`${inter.variable} ${sourceSerif.variable} ${interTight.variable} ${plexMono.variable}`}
 		>
 			<head>
+				{/* Before first paint: the visitor's stored light/dark choice (see ThemeToggle). */}
+				<script dangerouslySetInnerHTML={{ __html: SCHEME_SCRIPT }} />
 				<style id="brand-tokens" dangerouslySetInnerHTML={{ __html: BRAND_CSS }} />
 			</head>
 			<body>
