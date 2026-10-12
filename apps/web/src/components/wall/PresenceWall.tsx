@@ -1,3 +1,5 @@
+import type { CssVars } from '@/lib/utils'
+
 /** One row of the public wall: who was held and who was in that day. */
 export type PresenceDay = {
 	day: string
@@ -22,7 +24,8 @@ export function PresenceWall({
 	days,
 	members,
 	label,
-	compact
+	compact,
+	isBuilt
 }: {
 	days: PresenceDay[]
 	members: Member[]
@@ -30,12 +33,14 @@ export function PresenceWall({
 	label: (day: PresenceDay, index: number) => string
 	/** Thin rows, for a whole pact at once. */
 	compact?: boolean
+	/** Assemble on load: rows drop in, oldest first, and each tile lands in turn (CSS). */
+	isBuilt?: boolean
 }) {
 	const tile = compact ? 'h-4' : 'h-9'
 	const names = new Map(members.map((m) => [m.userId, m.name]))
 	return (
 		<div
-			className={compact ? 'space-y-1' : 'space-y-2'}
+			className={`${compact ? 'space-y-1' : 'space-y-2'} ${isBuilt ? 'wall-in' : ''}`}
 			role="img"
 			aria-label="Who was in, day by day"
 		>
@@ -50,7 +55,11 @@ export function PresenceWall({
 				))}
 			</div>
 			{days.map((day, i) => (
-				<div key={day.day} className="flex items-center gap-2">
+				<div
+					key={day.day}
+					className="wall-row flex items-center gap-2"
+					style={{ '--i': days.length - 1 - i } as CssVars}
+				>
 					<span className="w-10 font-mono text-[11px] uppercase tracking-[0.06em] text-ink-tertiary">
 						{label(day, i)}
 					</span>
@@ -62,18 +71,20 @@ export function PresenceWall({
 						}`}
 						style={{ gridTemplateColumns: `repeat(${day.cells.length}, minmax(0, 1fr))` }}
 					>
-						{day.cells.map((cell) =>
+						{day.cells.map((cell, j) =>
 							!cell.held ? (
 								<span key={cell.userId} className={tile} />
 							) : cell.in ? (
 								<span
 									key={cell.userId}
-									className={`${tile} rounded-[4px] bg-[color:var(--crew-fill)]`}
+									className={`wall-cell ${tile} rounded-[4px] bg-[color:var(--crew-fill)]`}
+									style={{ '--j': j } as CssVars}
 								/>
 							) : (
 								<span
 									key={cell.userId}
-									className={`border-line grid ${tile} place-items-center rounded-[4px] border-[1.5px] border-dashed font-mono text-[11px] text-ink-secondary ${day.open ? 'animate-pulse motion-reduce:animate-none' : ''}`}
+									style={{ '--j': j } as CssVars}
+									className={`wall-cell border-line grid ${tile} place-items-center rounded-[4px] border-[1.5px] border-dashed font-mono text-[11px] text-ink-secondary ${day.open ? 'animate-pulse motion-reduce:animate-none' : ''}`}
 								>
 									{compact ? null : initials(names.get(cell.userId) ?? null)}
 								</span>

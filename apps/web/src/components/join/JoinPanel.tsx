@@ -175,7 +175,7 @@ export function JoinPanel({
 		<a
 			href={`pact://pact/${pactId}`}
 			onClick={() => gaEvent(JOIN_PAGE_EVENTS.joinOpenAppClicked, { target: 'app' })}
-			className="inline-flex h-14 w-full items-center justify-center gap-2 rounded-full bg-brand-fill px-6 text-base font-semibold text-on-brand shadow-cta transition active:scale-[0.98]"
+			className="inline-flex h-14 w-full items-center justify-center gap-2 rounded-pill bg-ink px-6 text-base font-semibold text-ink-inverse transition-[transform,background-color] duration-base hover:bg-ink/90 active:scale-[0.98]"
 		>
 			<Smartphone className="h-5 w-5" aria-hidden="true" />
 			Open Pact
@@ -183,7 +183,10 @@ export function JoinPanel({
 	)
 
 	return (
-		<section aria-live="polite" className="border-t-2 border-ink pt-4">
+		<section
+			aria-live="polite"
+			className="corner-marks relative rounded-[10px] border border-line-soft bg-surface p-5 sm:p-7"
+		>
 			{step.name === 'checking' ? (
 				<div className="flex h-28 items-center justify-center text-ink-tertiary">
 					<Loader2 className="h-6 w-6 animate-spin" aria-label="Loading" />
@@ -211,7 +214,7 @@ export function JoinPanel({
 						type="button"
 						onClick={() => join()}
 						disabled={busy}
-						className="inline-flex h-14 w-full items-center justify-center gap-2 rounded-full bg-brand-fill px-6 text-base font-semibold text-on-brand shadow-cta transition active:scale-[0.98] disabled:opacity-70"
+						className="inline-flex h-14 w-full items-center justify-center gap-2 rounded-pill bg-ink px-6 text-base font-semibold text-ink-inverse transition-[transform,background-color] duration-base hover:bg-ink/90 active:scale-[0.98] disabled:opacity-70"
 					>
 						{busy ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" /> : null}
 						Join the pact
@@ -220,7 +223,9 @@ export function JoinPanel({
 				</div>
 			) : step.name === 'details' ? (
 				<form onSubmit={sendCode} className="space-y-3" noValidate>
-					<p className="font-display text-xl font-bold text-ink">Join in a minute</p>
+					<p className="font-display text-2xl font-semibold tracking-[-0.03em] text-ink">
+						Sign the pact in a minute
+					</p>
 					<label className="block">
 						<span className="sr-only">Your name</span>
 						<input
@@ -229,7 +234,7 @@ export function JoinPanel({
 							maxLength={NAME_MAX}
 							autoComplete="given-name"
 							placeholder="Your first name"
-							className="w-full rounded-input border border-line-soft bg-well px-4 py-3.5 text-base text-ink outline-none placeholder:text-ink-tertiary focus:border-brand-ink"
+							className="w-full rounded-input border border-line-soft bg-well px-4 py-3.5 text-base text-ink outline-none placeholder:text-ink-tertiary focus:border-[color:var(--crew-line)]"
 						/>
 					</label>
 					<label className="block">
@@ -241,13 +246,13 @@ export function JoinPanel({
 							value={email}
 							onChange={(e) => setEmail(e.target.value)}
 							placeholder="you@example.com"
-							className="w-full rounded-input border border-line-soft bg-well px-4 py-3.5 text-base text-ink outline-none placeholder:text-ink-tertiary focus:border-brand-ink"
+							className="w-full rounded-input border border-line-soft bg-well px-4 py-3.5 text-base text-ink outline-none placeholder:text-ink-tertiary focus:border-[color:var(--crew-line)]"
 						/>
 					</label>
 					<button
 						type="submit"
 						disabled={busy}
-						className="inline-flex h-14 w-full items-center justify-center gap-2 rounded-full bg-brand-fill px-6 text-base font-semibold text-on-brand shadow-cta transition active:scale-[0.98] disabled:opacity-70"
+						className="inline-flex h-14 w-full items-center justify-center gap-2 rounded-pill bg-ink px-6 text-base font-semibold text-ink-inverse transition-[transform,background-color] duration-base hover:bg-ink/90 active:scale-[0.98] disabled:opacity-70"
 					>
 						{busy ? (
 							<Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
@@ -264,7 +269,9 @@ export function JoinPanel({
 				</form>
 			) : (
 				<div className="space-y-3">
-					<p className="font-display text-xl font-bold text-ink">Check your email</p>
+					<p className="font-display text-2xl font-semibold tracking-[-0.03em] text-ink">
+						Check your email
+					</p>
 					<p className="text-sm text-ink-secondary">
 						We sent a six-digit code to <span className="font-semibold text-ink">{step.email}</span>
 						.
@@ -283,7 +290,7 @@ export function JoinPanel({
 						placeholder="••••••"
 						className={cn(
 							'w-full rounded-input border bg-well px-4 py-4 text-center font-sans text-3xl tracking-[0.5em] text-ink outline-none placeholder:text-ink-disabled',
-							error ? 'border-error-text' : 'border-line-soft focus:border-brand-ink'
+							error ? 'border-error-text' : 'border-line-soft focus:border-[color:var(--crew-line)]'
 						)}
 					/>
 					{busy ? (
