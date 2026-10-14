@@ -95,10 +95,9 @@ coverage/
 # `git add -A` would otherwise commit them as embedded repositories.
 .claude/worktrees/
 
-# NOTE: .claude-logs/ is intentionally COMMITTED in a play — build logs ride to GitHub.
-# The template itself keeps none: log-session.py writes nothing while the root
-# package is named app-template, and check:template fails if one is tracked.
-
 # Claude Code's personal settings: each engineer's own permission approvals.
 # The shared ones are .claude/settings.json, which is committed.
 .claude/settings.local.json
+
+# Claude Code session transcripts (kept out of this public copy)
+.claude-logs/
