@@ -1,5 +1,7 @@
 # Pact
 
+A habit app for small crews of friends: one habit, a daily photo check-in, and a stake for whoever slips.
+
 **Nobody notices when you quit. Your friends will.**
 
 Pact is a habit app for a small crew. You and up to seven friends pick one habit, a fixed run of
@@ -9,14 +11,53 @@ flags anything odd and adds a one-liner, but it only advises and never fails any
 counts when everyone is in: miss one and the chain breaks for the whole crew. At the end,
 Pact reveals the results, hands out awards and names who pays.
 
-## Screenshots
+Built during the 8x Playmakers C1 trial (2-week build).
 
-|                                        |                                                 |                                                    |                                                         |
-| -------------------------------------- | ----------------------------------------------- | -------------------------------------------------- | ------------------------------------------------------- |
-| ![Intro](docs/showcase/01-intro-1.png) | ![Home](docs/showcase/08-home.png)              | ![Create a pact](docs/showcase/09-create-pact.png) | ![Invite code](docs/showcase/10-invite-code.png)        |
-| ![Board](docs/showcase/14-board.png)   | ![Activity](docs/showcase/15-activity-feed.png) | ![Results](docs/showcase/16-results-awards.png)    | ![Results on the web](docs/showcase/17-results-web.png) |
+## Features
 
-All 20 shots, in story order and with one-line captions: [docs/showcase/](docs/showcase/captions.md).
+- **Crews of up to eight**, joined with an invite code or a `/join/[code]` link.
+- **Daily photo check-ins** with that day's challenge, so an old photo won't pass.
+- **An AI judge** (Groq, with Gemini as fallback) that flags odd photos and never fails anyone.
+- **Shared chains:** a day counts only when the whole crew is in.
+- **Nudges, crew messages and an activity feed** inside the app.
+- **Results with awards and the loser named**, on a public web page with a share card and link
+  previews.
+- **A marketing site** with the landing, join and results pages, in light and dark.
+
+## Tech stack
+
+- **Mobile:** Expo SDK 55, React Native 0.83, expo-router, NativeWind, TanStack Query, i18next
+- **Web and API:** Next.js 15 (App Router), React 19, Tailwind, Prisma 6
+- **Backend:** Supabase (Auth and Postgres)
+- **Shared:** a Zod contract (`packages/contract`) and brand tokens (`packages/brand`) used by
+  both apps
+- **AI:** Groq, with Gemini as the fallback
+- **Analytics and errors:** PostHog, first-party events, Sentry on mobile
+- **Tooling:** npm workspaces, Node 22, TypeScript, Jest, ESLint, Prettier, gitleaks
+
+## Screenshots / Demo
+
+- **Demo video:** _coming soon_ <!-- add the link here -->
+- **Live site:** _coming soon_ <!-- add the URL here -->
+
+### The app
+
+|                                                                         |                                                                |                                                                     |
+| ----------------------------------------------------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------------- |
+| ![Intro](docs/design/ui-revamp/shots/12-intro-after-1.png)              | ![Home](docs/design/ui-revamp/shots/02-home-after.png)         | ![Board](docs/design/ui-revamp/shots/01-board-after.png)            |
+| ![Check-in kept](docs/design/ui-revamp/shots/03-verdict-after-kept.png) | ![Activity](docs/design/ui-revamp/shots/13-activity-after.png) | ![Results](docs/design/ui-revamp/shots/04-results-after-reveal.png) |
+
+### The website
+
+![Landing: the crew wall](docs/design/web-revamp/shots/01-hero-1440.jpg)
+
+|                                                                     |                                                                                      |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| ![How it works](docs/design/web-revamp/shots/03-how-step1-1440.jpg) | ![Your turn: sign a pact](docs/design/web-revamp/shots/04-your-turn-signed-1440.jpg) |
+| ![Join a pact](docs/design/web-revamp/shots/07-join-1440.jpg)       | ![Results as stories](docs/design/web-revamp/shots/08-results-1-1440.jpg)            |
+
+Every shot, with before and after: [docs/design/ui-revamp/](docs/design/ui-revamp/plan.md)
+(the app) and [docs/design/web-revamp/](docs/design/web-revamp/plan.md) (the website).
 
 ## Run it in 5 commands
 
@@ -62,7 +103,7 @@ day it runs. More (the closer, the judge's eval, a new build): [docs/pact-status
   pinned by tests.
 - **The judge never blocks.** A check-in answers at once as `pending`; the verdict is written
   in the background and the app polls for it.
-- **Analytics** are registered before the feature: 58 mobile events and 38 web events, checked
+- **Analytics** are registered before the feature: 62 mobile events and 41 web events, checked
   by `npm run check:events`.
 
 This repo started from the 8x mobile monorepo template; [AGENTS.md](AGENTS.md) and

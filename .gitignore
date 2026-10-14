@@ -50,7 +50,15 @@ android/local.properties
 .env.preview
 .env.prod
 .env.production
+# Catch any other variant (.env.backup, .env.vercel, ...); the template stays tracked.
+.env*
 !.env.example
+
+# Credentials that must never be committed
+*.pem
+google-services.json
+GoogleService-Info.plist
+*service-account*.json
 
 # Logs
 npm-debug.log*
