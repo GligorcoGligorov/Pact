@@ -35,10 +35,7 @@ Built during the 8x Playmakers C1 trial (2-week build).
 - **Analytics and errors:** PostHog, first-party events, Sentry on mobile
 - **Tooling:** npm workspaces, Node 22, TypeScript, Jest, ESLint, Prettier, gitleaks
 
-## Screenshots / Demo
-
-- **Demo video:** _coming soon_ <!-- add the link here -->
-- **Live site:** _coming soon_ <!-- add the URL here -->
+## Screenshots
 
 ### The app
 
